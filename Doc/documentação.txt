@@ -32,6 +32,9 @@
         "TABELA 13.2": [
             "Na tabela original, valores inteiros e percentuais referentes a uma determinada classe de dados foram armazenados na mesma coluna, como mesma variável. Para fins de organização, os valores percentuais foram extraídos da coluna “Valor” e adicionados à nova coluna “Percentual”."
         ],
+        "GRÁFICO 13.8": [
+            "Na última publicação do arquivo os dados de interesse estão armazenados da Tabela 1.42, não mais na Tabela 1.40"
+        ],
         "TABELA 18.6": [
             "Na tabela original, na coluna que armazena os dados sobre as regiões do país, há o valor “total”, que foi entendido como valor referente à taxa de morbidade no país, e renomeado para “Brasil”."
         ],
@@ -44,7 +47,7 @@
         "GRÁFICO 19.12": [
             "O site fornecido na documentação não dispõe de dados para download. Para realizar a coleta de dados, acessou-se o site https://dados.mj.gov.br/dataset/sistema-nacional-de-estatisticas-de-seguranca-publica/resource/feeae05e-faba-406c-8a4a-512aec91a9d1.",
             "Diferentemente da documentação, os dados fornecidos na última edição do arquivo são valores inteiros, não taxas.",
-            "A tabela original não dispõe de dados agregados por outro nível regional além do estadual. O arquivo não será enviado para o repositório."
+            "A tabela original não dispõe de dados agregados por outro nível regional além do estadual. Os valores agregados foram calculados a partir da média de ocorrências de todos os estados do país e de todos os estados do Nordeste"
         ],
         "TABELA 19.1": [
             "O site fornecido na documentação não dispõe de dados para download. Para realizar a coleta de dados, acessou-se o site https://dados.mj.gov.br/dataset/sistema-nacional-de-estatisticas-de-seguranca-publica/resource/feeae05e-faba-406c-8a4a-512aec91a9d1.",
