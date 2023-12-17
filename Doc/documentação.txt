@@ -19,7 +19,24 @@
         "GRÁFICO 19.2",
         "GRÁFICO 19.12",
         "TABELA 19.1",
-        "TABELA 19.2"
+        "TABELA 19.2",
+        "GRÁFICO 17.1",
+        "GRÁFICO 17.2",
+        "TABELA 17.1",
+        "GRÁFICO 18.1",
+        "GRÁFICO 18.2",
+        "GRÁFICO 18.4",
+        "GRÁFICO 18.5",
+        "GRÁFICO 18.7",
+        "GRÁFICO 18.8",
+        "TABELA 18.1",
+        "TABELA 18.2",
+        "GRÁFICO 20.1",
+        "GRÁFICO 20.2",
+        "GRÁFICO 20.3",
+        "GRÁFICO 20.4",
+        "GRÁFICO 20.11",
+        "GRÁFICO 20.12"
     ],
     "Observações": {
         "GRÁFICO 8.2": [
@@ -58,6 +75,21 @@
             "A tabela original não dispõe de dados agregados por outro nível regional além do estadual. O arquivo não será enviado para o repositório.",
             "Na documentação é pedido dados a partir de 2015, porém na última publicação não há dados históricos. A coleta automática de publicações anteriores é inviável, pois elas não seguem uma padronização no que se refere à ordenação ou à rotulação das abas, sendo variadas a cada arquivo.",
             "Na publicação não há informações que indiquem se a despesa per capita com segurança pública é calculada por habitante ou por preso. Os dados são anuais."
+        ],
+        "GRÁFICO 18.1": [
+            "Não entendi muito bem o procedimento da deflação, mas programei a coleta dos dados."
+        ],
+        "GRÁFICO 18.2": [
+            "Não entendi muito bem o procedimento da deflação, mas programei a coleta dos dados."
+        ],
+        "GRÁFICO 18.7": [
+            "A série temporal de uma das tabelas fontes agora é iniciada a partir de 2010."
+        ],
+        "GRÁFICO 18.8": [
+            "A série temporal de uma das tabelas fontes agora é iniciada a partir de 2010."
+        ],
+        "GRÁFICO 20.11": [
+            "A ordenação das tabelas no arquivo zip parece ter sido alterada. Acredito que a tabela correspondente agora seja a Tabela 2.13."
         ]
     }
 }
