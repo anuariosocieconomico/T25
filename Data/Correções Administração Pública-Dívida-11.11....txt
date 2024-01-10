@@ -1,0 +1,4 @@
+Correções Administração Pública-Dívida-11.11...
+
+g11.12b
+* O dado do RN parece incorreto: A figura trata das maiores reduções, porém o dado do RN está positivo.
