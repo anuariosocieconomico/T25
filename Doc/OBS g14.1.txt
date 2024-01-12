@@ -1,0 +1,1 @@
+No gráfico 14.1, foi alterada a tabela do sidra para 5436. O rendimento passou a ser o habitual, conforme preferências na divulgação das notícias do IBGE. Como o rendimento já é real, fica dispensado deflacionar a série. Agora são dados trimestrais.

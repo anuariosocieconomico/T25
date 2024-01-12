@@ -1,0 +1,1 @@
+No gráfico 14.2, foi alterada a tabela do sidra para 5606. A massa de rendimento mensal passou a ser a habitual, conforme preferências na divulgação das notícias do IBGE. Como a massa de rendimento já é real, fica dispensado deflacionar a série. Agora são dados trimestrais.
