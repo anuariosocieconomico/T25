@@ -1,0 +1,4 @@
+Gráficos 19.5, 19.6, 19.7 e 19.8: a fonte agora é o Atlas da Violência do IPEA: https://www.ipea.gov.br/atlasviolencia/filtros-series
+
+
+Nos gráficos 19.7 e 19.8 foram substituídos homens jovens por arma de fogo por homens por arma de fogo
