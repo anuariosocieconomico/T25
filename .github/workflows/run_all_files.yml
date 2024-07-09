@@ -1,0 +1,82 @@
+name: Run Python Scripts Based on Datetime
+on:
+  schedule:
+    # Script 1: Executar em 30 de Janeiro às 00:00
+    - cron: '0 0 30 12 *'
+    # Script 2: Executar bimestralmente no dia 28 às 00:00
+    - cron: '0 0 28 2,4,6,8,10,12 *'
+    # Script 3: Executar em 27 de Maio e de Junho às 00:00
+    - cron: '0 0 27 5,6 *'
+    # Script 4: Executar em 26 de todos os meses às 00:00
+    - cron: '0 0 26 * *'
+    # Script 5: Executar em 25 de Abril, Agosto e Dezembro às 00:00
+    - cron: '0 0 25 4,8,12 *'
+    # Script 5: Executar em 24 de Janeiro e Julho às 00:00
+    - cron: '0 0 24 1,7 *'
+  
+  workflow_dispatch:
+  
+env:
+  ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  GIT_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+concurrency:
+  group: works
+  
+jobs:
+  update_data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out repo
+        uses: actions/checkout@v4
+        
+      - name: Setting up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.11'
+          
+      - name: Installing package list
+        run: apt list --installed
+        
+      - name: Removing previous chrome instances on runner 
+        run: sudo apt purge google-chrome-stable  
+        
+      - name: Installing all necessary packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r Scripts/Daniel/requirements.txt
+          
+      - name: Install xvfb
+        run: sudo apt-get install xvfb
+
+      - name: Executar Script Bienal com att anual
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 30 12 *' }}
+        run: python Scripts/Daniel/execucao_bienal_atualizacao_anual.py
+
+      - name: Executar Script bimestral com att bimestral
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 28 2,4,6,8,10,12 *' }}
+        run: python Scripts/Daniel/execucao_bimestral_atualizacao_bimestral.py
+
+      - name: Executar Script anual com att em junho
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 27 5,6 *' }}
+        run: python Scripts/Daniel/execucao_anual_atualizacao_junho.py
+
+      - name: Executar Script mensal com att mensal
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 26 * *' }}
+        run: python Scripts/Daniel/execucao_mensal_atualizacao_mensal.py
+
+      - name: Executar Script quadrimestral com att quadrimestral
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 25 4,8,12 *' }}
+        run: python Scripts/Daniel/execucao_quadrimestral_atualizacao_quadrimestral.py
+
+      - name: Executar Script anual com att semestral
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 24 1,7 *' }}
+        run: python Scripts/Daniel/execucao_anual_atualizacao_semestral.py
+        
+      - name: Commit and Push The Results From Python Selenium Action
+        run: |
+         git config --global user.name "GitHub Action"
+         git config --global user.email "action@github.com"
+         git add -A
+         git commit -m "Atualização agendada das bases de dados"
+         git push
