@@ -33,8 +33,8 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
                          'Chrome/118.0.0.0 Safari/537.36'}
 
 # folders
-sheets_dir = 'AutomacaoScripts/planilhas'
-errors_dir = 'AutomacaoScripts/relatorios_de_erros'
+sheets_dir = 'Data'
+errors_dir = 'Doc/relatorios_de_erros'
 
 repo_path = 'anuariosocieconomico/T25'
 git_token = os.environ['GIT_TOKEN']
