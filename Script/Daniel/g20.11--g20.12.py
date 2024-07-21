@@ -2,7 +2,7 @@ import functions as c
 import os
 import pandas as pd
 import json
-import requests
+import sidrapy
 import traceback
 import tempfile
 import shutil
@@ -15,44 +15,6 @@ errors_path = c.errors_dir
 
 # inicializa o dicionário para armazenar informações sobre possíveis erros durante a execução
 errors = {}
-
-# ************************
-# DOWNLOAD DA BASE DE DADOS
-# ************************
-
-url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas/?caminho=Indicadores_Sociais' \
-      '/Sintese_de_Indicadores_Sociais'
-
-try:
-    response = requests.get(url, headers=c.headers)
-
-    url_to_last_pub = response.json()[-2]['path'].split('/')[-1] + '/xls'
-    response = requests.get(url + '/' + url_to_last_pub)
-
-    df_pubs = pd.DataFrame(response.json())
-    link = df_pubs.loc[
-        (df_pubs['name'].str.contains('Padrao_de_vida')) & (df_pubs['name'].str.endswith('xls.zip')), 'url'
-    ].values[0]
-    file = requests.get(link)
-
-    data = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 2.13', skiprows=7)
-    tables = [tb for tb in data.keys() if '(CV)' not in tb]
-
-    dfs = []
-    for tb in tables:
-        df = data[tb]
-        df.columns = ['Região', 'Índice de Gini']
-        i = df.loc[df['Região'] == 'Brasília'].index.values[0]
-        df_filtered = df.iloc[:i + 1].copy()
-        df_filtered['Ano'] = str(tb)
-        dfs.append(df_filtered)
-
-    df_concat = pd.concat(dfs, ignore_index=True)
-
-    c.to_csv(df_concat, dbs_path, 'ibge (ÍNDICE GINI).csv')
-
-except Exception as e:
-    errors[url] = traceback.format_exc()
 
 
 # ************************
@@ -93,22 +55,21 @@ SE ADICIONAR ESSA AO GITHUB RETORNARÁ ERRO NA FIGURA DO DASHBOARD!
 
 # g20.12
 try:
-    data = c.open_file(dbs_path, 'ibge (ÍNDICE GINI).csv', 'csv')
+    regions = [('1', 'all'), ('2', '2'), ('3', '28')]
+    dfs = []
+    for reg in regions:
+        data = sidrapy.get_table(table_code='7435', territorial_level=reg[0], ibge_territorial_code=reg[1],
+                                 variable='10681', period='all', header='n')
+        data = data[['D1N', 'D2N', 'V']]
+        dfs.append(data)
+        c.delay_requests(1)
 
-    br_states = ['Rondônia', 'Acre', 'Amazonas', 'Roraima', 'Pará', 'Amapá', 'Tocantins', 'Maranhão', 'Piauí', 'Ceará',
-                 'Rio Grande do Norte', 'Paraíba', 'Pernambuco', 'Alagoas', 'Sergipe', 'Bahia', 'Minas Gerais',
-                 'Espírito Santo', 'Rio de Janeiro', 'São Paulo', 'Paraná', 'Santa Catarina', 'Rio Grande do Sul',
-                 'Mato Grosso do Sul', 'Mato Grosso', 'Goiás', 'Distrito Federal']
+    df_concat = pd.concat(dfs, ignore_index=True)
+    df_concat.columns = ['Região', 'Ano', 'Índice de Gini']
+    c.convert_type(df_concat, 'Ano', 'int')
+    c.convert_type(df_concat, 'Índice de Gini', 'float')
 
-    df_unique = data.drop_duplicates(subset=['Região', 'Ano']).copy()
-
-    df_states = df_unique.loc[df_unique['Região'].isin(br_states + ['Brasil', 'Nordeste'])].copy()
-    df_states = df_states[['Região', 'Ano', 'Índice de Gini']].copy()
-    df_states.sort_values(by=['Região', 'Ano'], inplace=True)
-
-    c.convert_type(df_states, 'Ano', 'datetime')
-
-    c.to_excel(df_states, sheets_path, 'g20.12.xlsx')
+    c.to_excel(df_concat, sheets_path, 'g20.12.xlsx')
 
 except Exception as e:
     errors['Gráfico 20.12'] = traceback.format_exc()
