@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import time
+import os
 
 '''
 NO SCRIPT "g20.11--g20.12.py" APENAS A PLANILHA G19.12 SERÁ ELABORADA, POIS A OUTRA JÁ FOI CONFIGURADA POR RODRIGO.
