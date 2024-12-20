@@ -151,13 +151,13 @@ try:
 
     # Variável Atendimentos
     # agrupamento de dados para obter valores referentes a Nordeste
-    df_atend_ne = df_atend.loc[df_atend['UF'].isin(ne_states)]
+    df_atend_ne = df_atend.loc[df_atend['UF'].isin(ne_states)].copy()
     assert len(df_atend_ne.UF.unique()) == len(ne_states)
     df_atend_ne.loc[:, 'UF'] = 'Nordeste'
     df_atend_ne_sum = df_atend_ne.groupby(['UF', 'Ano', 'Variável'])['Valor'].sum().reset_index()
 
     # seleção de Sergipe e Brasil (Total)
-    df_atend_se_br = df_atend.loc[df_atend['UF'].isin(['Sergipe', 'TOTAL'])]
+    df_atend_se_br = df_atend.loc[df_atend['UF'].isin(['Sergipe', 'TOTAL'])].copy()
     assert len(df_atend_se_br.UF.unique()) == 2
     df_atend_se_br.loc[df_atend_se_br['UF'] == 'TOTAL', 'UF'] = 'Brasil'
 
@@ -167,13 +167,13 @@ try:
 
     # Variável Beneficiários
     # agrupamento de dados para obter valores referentes a Nordeste
-    df_benef_ne = df_benef.loc[df_benef['UF'].isin(ne_states)]
+    df_benef_ne = df_benef.loc[df_benef['UF'].isin(ne_states)].copy()
     assert len(df_benef_ne.UF.unique()) == len(ne_states)
     df_benef_ne.loc[:, 'UF'] = 'Nordeste'
     df_benef_ne_sum = df_benef_ne.groupby(['UF', 'Ano', 'Variável'])['Valor'].sum().reset_index()
 
     # seleção de Sergipe e Brasil (Total)
-    df_benef_se_br = df_benef.loc[df_benef['UF'].isin(['Sergipe', 'TOTAL'])]
+    df_benef_se_br = df_benef.loc[df_benef['UF'].isin(['Sergipe', 'TOTAL'])].copy()
     assert len(df_benef_se_br.UF.unique()) == 2
     df_benef_se_br.loc[df_benef_se_br['UF'] == 'TOTAL', 'UF'] = 'Brasil'
 

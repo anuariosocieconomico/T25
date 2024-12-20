@@ -1,3 +1,6 @@
 
 /.idea
-git_token.txt
+.env
+TESTS.py
+read_erros.py
+run_all.py
