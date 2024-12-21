@@ -95,7 +95,8 @@ try:
         dfs.append(df_temp)
 
     df_concat = pd.concat(dfs, ignore_index=True)
-    df_concat.dropna(axis='index', inplace=True, ignore_index=True)
+    # df_concat.dropna(axis='index', inplace=True, ignore_index=True)
+    df_concat.dropna(axis='index', inplace=True)
     df_pivoted = df_concat.pivot(columns='Consumo', index='Ano', values='Diff').reset_index()
     df_pivoted.rename(columns={'Consumo (GWh)': 'Total'}, inplace=True)
     df_pivoted = df_pivoted[['Ano', 'Residencial', 'Industrial', 'Comercial', 'Total']]

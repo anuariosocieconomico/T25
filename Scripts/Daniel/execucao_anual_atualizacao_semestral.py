@@ -17,5 +17,5 @@ files = [
 ]
 
 for f in files:
-    subprocess.run([sys.executable, os.path.join('Scripts/Daniel', f)])
+    subprocess.run([sys.executable, f])
     time.sleep(3)

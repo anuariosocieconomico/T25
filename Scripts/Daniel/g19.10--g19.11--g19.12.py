@@ -3,6 +3,7 @@ import os
 from github import Github
 from github import Auth
 import pandas as pd
+import json
 import traceback
 import tempfile
 import shutil
@@ -22,15 +23,20 @@ errors = {}
 # ************************
 
 # inicialização do repositório
-auth = Auth.Token(c.git_token)
-g = Github(auth=auth)
-repo = g.get_repo(c.repo_path)
-contents = repo.get_contents(c.source_dir)
+try:
+    auth = Auth.Token(c.git_token)
+    g = Github(auth=auth)
+    repo = g.get_repo(c.repo_path)
+    contents = repo.get_contents(c.source_dir)
+except:
+    contents = []
+    errors['GitHub Content'] = traceback.format_exc()
 
 # coleta dos formulários
-forms = []
-for content_file in contents:
-    forms.append(content_file.path)
+if contents:
+    forms = []
+    for content_file in contents:
+        forms.append(content_file.path)
 
 
 # ************************
@@ -76,6 +82,10 @@ try:
     c.from_form_to_file(df_sheet, 'g19.12.xlsx')
 except:
     errors['Gráfico 19.12'] = traceback.format_exc()
+
+if errors:
+    with open(os.path.join(errors_path, 'script--g19.10--g19.11--g19.12.txt'), 'w', encoding='utf-8') as f:
+        f.write(json.dumps(errors, indent=4, ensure_ascii=False))
 
 g.close()  # encerramento da conexão com o Github
 shutil.rmtree(dbs_path)
