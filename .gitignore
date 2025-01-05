@@ -1,3 +1,11 @@
-
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
 /.idea
+.env
 git_token.txt
+TESTS.py
+read_erros.py
+run_all.py

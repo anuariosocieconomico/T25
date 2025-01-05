@@ -56,64 +56,70 @@ except Exception as e:
 # PLANILHA
 # ************************
 
-# g1.5, g1.6, g1.7, g1.8
-df = c.open_file(dbs_path, 'ibge_pib_otica_renda.xls', 'xls', skiprows=8)
-tables = ['Tabela1', 'Tabela10', 'Tabela18']
+try:
+    # g1.5, g1.6, g1.7, g1.8
+    df = c.open_file(dbs_path, 'ibge_pib_otica_renda.xls', 'xls', skiprows=8)
+    tables = ['Tabela1', 'Tabela10', 'Tabela18']
 
-mapping = {
-    'grafico_1-5': 'Salários',
-    'grafico_1-6': 'Contribuição social',
-    'grafico_1-7': 'Impostos sobre produto, líquidos de subsídios',
-    'grafico_1-8': 'Excedente Operacional Bruto (EOB) e Rendimento Misto (RM)'
-}
+    mapping = {
+        'grafico_1-5': 'Salários',
+        'grafico_1-6': 'Contribuição social',
+        'grafico_1-7': 'Impostos sobre produto, líquidos de subsídios',
+        'grafico_1-8': 'Excedente Operacional Bruto (EOB) e Rendimento Misto (RM)'
+    }
+except Exception as e:
+    errors['Sem arquivo'] = traceback.format_exc()
 
-# seleção das tabelas e componentes de interesse
-for k, v in mapping.items():
-    try:
-        dfs = []
-        for tb in tables:
-            # seleção de linhas não vazias
-            # renomeação da coluna
-            df_tb = df[tb]
-            df_tb = df_tb.iloc[:9]
-            df_tb = df_tb.rename(columns={'Unnamed: 0': 'Componente'})
+try:
+    # seleção das tabelas e componentes de interesse
+    for k, v in mapping.items():
+        try:
+            dfs = []
+            for tb in tables:
+                # seleção de linhas não vazias
+                # renomeação da coluna
+                df_tb = df[tb]
+                df_tb = df_tb.iloc[:9]
+                df_tb = df_tb.rename(columns={'Unnamed: 0': 'Componente'})
 
-            # reordenação da variável ano para o eixo y
-            # seleção das linhas e das colunas de interesse
-            df_melted = pd.melt(df_tb, id_vars='Componente', value_vars=df_tb.columns[1:], var_name='Ano',
-                                value_name='Valor')
-            df_melted = df_melted.loc[(df_melted['Componente'] == v) &
-                                      (df_melted['Ano'].str.endswith('.1'))]
+                # reordenação da variável ano para o eixo y
+                # seleção das linhas e das colunas de interesse
+                df_melted = pd.melt(df_tb, id_vars='Componente', value_vars=df_tb.columns[1:], var_name='Ano',
+                                    value_name='Valor')
+                df_melted = df_melted.loc[(df_melted['Componente'] == v) &
+                                          (df_melted['Ano'].str.endswith('.1'))]
 
-            # remoção do ".1" ao final dos valores de Ano
-            # decorrentes da ordenação padrão das variáveis Ano como colunas
-            df_melted.loc[:, 'Ano'] = df_melted.loc[:, 'Ano'].apply(lambda x: x[:-2])
+                # remoção do ".1" ao final dos valores de Ano
+                # decorrentes da ordenação padrão das variáveis Ano como colunas
+                df_melted.loc[:, 'Ano'] = df_melted.loc[:, 'Ano'].apply(lambda x: x[:-2])
 
-            # adição da variável região
-            df_melted['Região'] = 'Brasil' if tb.endswith('1') else (
-                'Nordeste' if tb.endswith('10') else 'Sergipe')
+                # adição da variável região
+                df_melted['Região'] = 'Brasil' if tb.endswith('1') else (
+                    'Nordeste' if tb.endswith('10') else 'Sergipe')
 
-            df_melted[df_melted.columns[2]] = df_melted[df_melted.columns[2]] * 100
+                df_melted[df_melted.columns[2]] = df_melted[df_melted.columns[2]] * 100
 
-            # classificação dos dados
-            df_melted[df_melted.columns[0]] = df_melted[df_melted.columns[0]].astype('str')
-            df_melted[df_melted.columns[1]] = pd.to_datetime(df_melted[df_melted.columns[1]], format='%Y')
-            df_melted[df_melted.columns[1]] = df_melted[df_melted.columns[1]].dt.strftime('%d/%m/%Y')
-            df_melted[df_melted.columns[2]] = df_melted[df_melted.columns[2]].astype('float64')
-            df_melted[df_melted.columns[3]] = df_melted[df_melted.columns[3]].astype('str')
+                # classificação dos dados
+                df_melted[df_melted.columns[0]] = df_melted[df_melted.columns[0]].astype('str')
+                df_melted[df_melted.columns[1]] = pd.to_datetime(df_melted[df_melted.columns[1]], format='%Y')
+                df_melted[df_melted.columns[1]] = df_melted[df_melted.columns[1]].dt.strftime('%d/%m/%Y')
+                df_melted[df_melted.columns[2]] = df_melted[df_melted.columns[2]].astype('float64')
+                df_melted[df_melted.columns[3]] = df_melted[df_melted.columns[3]].astype('str')
 
-            dfs.append(df_melted)
+                dfs.append(df_melted)
 
-        # conversão para arquivo csv
-        df_concat = pd.concat(dfs, ignore_index=True)
-        c.to_excel(df_concat, sheets_path, k[0] + k.split('_')[1].replace('-', '.') + '.xlsx')
+            # conversão para arquivo csv
+            df_concat = pd.concat(dfs, ignore_index=True)
+            c.to_excel(df_concat, sheets_path, k[0] + k.split('_')[1].replace('-', '.') + '.xlsx')
 
-    except Exception as e:
-        g = k.split('_')[0].capitalize()
-        g = g.replace('a', 'á')
-        n = k.split('_')[1]
-        n = n.replace('-', '.')
-        errors[g + ' ' + n] = traceback.format_exc()
+        except Exception as e:
+            g = k.split('_')[0].capitalize()
+            g = g.replace('a', 'á')
+            n = k.split('_')[1]
+            n = n.replace('-', '.')
+            errors[g + ' ' + n] = traceback.format_exc()
+except Exception as e:
+    errors['Erro no looping'] = traceback.format_exc()
 
 # t1.1
 try:

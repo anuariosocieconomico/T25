@@ -1,7 +1,6 @@
 import functions as c
 import os
 import pandas as pd
-import numpy as np
 import json
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ActionChains
@@ -45,17 +44,7 @@ try:
     finally:
         # procura a url de download do arquivo recém publicado
         url_element = driver.browser.find_element(By.XPATH, '/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div['
-                                                            '2]/div[1]/div/div[2]/div/div/div/div[2]/ul/li/a[1]')
-        url = url_element.get_attribute('href')
-        driver.get(url)
-
-        # abre a seção de publicações anteriores
-        driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[1]/div[1]/div[2]/a')
-
-        # procura a url de download dos arquivos
-        url_element = driver.browser.find_element(By.XPATH,
-                                                  '/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div['
-                                                  '2]/div/div[2]/div/div/div/div[2]/ul/li/a')
+                                                            '2]/div/div/ul[3]/li/a')
         url = url_element.get_attribute('href')
         driver.get(url)
         time.sleep(3)
@@ -72,92 +61,55 @@ except Exception as e:
 # ************************
 
 try:
-    ideb_files = [f for f in os.listdir(dbs_path) if 'ideb' in f]
-    ideb_files.sort(reverse=True)
+    df = c.open_file(dbs_path, os.listdir(dbs_path)[0], 'zip', excel_name='divulgacao', skiprows=9)
 
-    df = c.open_file(dbs_path, ideb_files[1],
-                     'zip', excel_name='divulgacao_regioes_ufs_ideb', skiprows=9)
-    dfs_old = []
+    dfs = []
     for i, tb in enumerate(df.keys()):
-        # seleção das linhas e colunas de interesse
-        # indicação da série com base na aba aberta
-        df_tb = df[tb]
-        df_tb = df_tb.loc[df_tb[df_tb.columns[0]] == 'Sergipe', df_tb.iloc[:, [0, 1] + list(
-            np.arange(-16, -0))].columns]
+        df_tb = df[tb].copy()  # cópia de cada aba da planilha
+        uf_col = df_tb.columns[0]  # rótulo da coluna de UFs
+        rede_col = df_tb.columns[1]  # rótulo da coluna de UFs
+        # seleção das colunas de UF, Rede, IDEB e Projeções
+        select_cols = [col for col in df_tb.columns if
+                       col.startswith('Unnamed:') or col.startswith('VL_OBSERVADO') or col.startswith('VL_PROJECAO')]
+        df_tb = df_tb.loc[df_tb[uf_col] == 'Sergipe', select_cols]  # filtragem de linhas e colunas
 
+        # verticalização do df
+        df_tb = df_tb.melt(id_vars=df_tb.columns[:2], value_vars=df_tb.columns[2:],
+                           var_name='Cat', value_name='Val')
+
+        # extração do ano a partir dos valores da categoria (VL_OBSERVADO_2005)
+        df_tb['Ano'] = df_tb['Cat'].str.split('_').str[-1]
+        # indicação da série
         df_tb['Série'] = 'Fundamental - Anos Iniciais' if i == 0 else (
             'Fundamental - Anos Finais' if i == 1 else 'Ensino Médio')
 
-        # renomeação das colunas para indicação do ano a que se refere o dado, para posterior tratamento
-        # índice IDEB
-        base_year = 2005
-        for col in df_tb[df_tb.columns[-17:-9]].columns:
-            df_tb.rename(columns={col: 'IDEB ' + str(base_year)}, inplace=True)
-            base_year += 2
-        # projeções
-        base_year = 2007
-        for col in df_tb[df_tb.columns[-9:-1]].columns:
-            df_tb.rename(columns={col: 'Projeção ' + str(base_year)}, inplace=True)
-            base_year += 2
+        # remoção de parênteses de valores de Rede e renomeação das categorias
+        df_tb[rede_col] = df_tb[rede_col].str.split(' ').str[0]
+        df_tb['Cat'] = df_tb['Cat'].apply(lambda x: 'IDEB' if x.startswith('VL_OBSERVADO') else 'Projeção')
 
-        # reorganização da tabela
-        df_melted = pd.melt(df_tb, id_vars=list(df_tb.iloc[:, [0, 1, -1]].columns),
-                            value_vars=list(df_tb.columns[2:-1]), var_name='var', value_name='val')
-        df_melted['Classe'] = df_melted['var'].apply(lambda x: x[:-5])
-        df_melted['Ano'] = df_melted['var'].apply(lambda x: x[-4:])
-        df_melted.drop('var', axis='columns', inplace=True)
+        # renomeação e reordenação das colunas
+        df_tb.rename(columns={uf_col: 'Região'}, inplace=True)
+        df_tb.rename(columns={rede_col: 'Rede'}, inplace=True)
+        df_tb.rename(columns={'Cat': 'Classe'}, inplace=True)
+        df_tb.rename(columns={'Val': 'Valor'}, inplace=True)
 
-        # renomeação das colunas
-        # reordenação das colunas
-        df_melted.columns = ['Região', 'Rede', 'Série', 'Valor', 'Classe', 'Ano']
-        df_melted = df_melted[['Ano', 'Região', 'Série', 'Rede', 'Classe', 'Valor']]
-
-        dfs_old.append(df_melted)
-
-    df_old = pd.concat(dfs_old, ignore_index=True)
-    year = df_old['Ano'].to_list()
-    year.sort(reverse=True)
-
-    df = c.open_file(dbs_path, ideb_files[0],
-                     'zip', excel_name='divulgacao_regioes_ufs_ideb', skiprows=9)
-    dfs_last = []
-    for i, tb in enumerate(df.keys()):
-        # seleção das linhas e colunas de interesse
-        df_tb = df[tb]
-        df_tb = df_tb.loc[df_tb[df_tb.columns[0]] == 'Sergipe',
-                          df_tb.iloc[:, [0, 1, -1]].columns]
-
-        # indicação da série com base na aba aberta
-        # indicação do ano com base no valor da última publicação
-        # indicação do tipo do dado; as últimas publicações dispõem apenas de dados, não há projeções
-        df_tb['Série'] = 'Fundamental - Anos Iniciais' if i == 0 else (
-            'Fundamental - Anos Finais' if i == 1 else 'Ensino Médio')
-        df_tb['Ano'] = str(int(year[0]) + 2)
-        df_tb['Classe'] = 'IDEB'
-
-        # renomeação das colunas
-        # reordenação das colunas
-        df_tb.columns = ['Região', 'Rede', 'Valor', 'Série', 'Ano', 'Classe']
         df_tb = df_tb[['Ano', 'Região', 'Série', 'Rede', 'Classe', 'Valor']]
 
-        dfs_last.append(df_tb)
+        # appeding
+        dfs.append(df_tb)
 
-    df_last = pd.concat(dfs_last, ignore_index=True)
-
-    # união de todas as publicações
-    df_united = pd.concat([df_last, df_old], ignore_index=True)
-    df_united.sort_values(by=['Ano', 'Região', 'Classe', 'Série'], ascending=[True] * 4, inplace=True)
-
-    df_united['Rede'] = df_united['Rede'].apply(lambda x: x.split()[0])
+    # unificação das planilhas
+    df_concat = pd.concat(dfs, ignore_index=True)
+    df_concat.sort_values(by=['Ano', 'Região', 'Série', 'Classe', 'Rede'], inplace=True)
+    df_concat.reset_index(drop=True, inplace=True)
 
     # classificação dos dados
-    df_united[df_united.columns[0]] = pd.to_datetime(df_united[df_united.columns[0]], format='%Y')
-    df_united[df_united.columns[0]] = df_united[df_united.columns[0]].dt.strftime('%d/%m/%Y')
-    df_united[df_united.columns[1:-1]] = df_united[df_united.columns[1:-1]].astype('str')
-    df_united[df_united.columns[-1]] = df_united[df_united.columns[-1]].astype('float64')
+    df_concat['Ano'] = pd.to_datetime(df_concat['Ano'], format='%Y')
+    df_concat['Ano'] = df_concat['Ano'].dt.strftime('%d/%m/%Y')
+    df_concat['Valor'] = df_concat['Valor'].astype('float')
 
     # conversão em arquivo xlsx
-    c.to_excel(df_united, sheets_path, 't17.2.xlsx')
+    c.to_excel(df_concat, sheets_path, 't17.2.xlsx')
 
 except Exception as e:
     errors['Tabela 17.2'] = traceback.format_exc()
