@@ -28,7 +28,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sih/cnv/nruf.def'
 
 # tenta baixar o arquivo conforme os comandos anteriores; caso haja alguma atualização no site, registra-se o erro
 try:
-    driver = c.Google(visible=True, rep=dbs_path)  # instância do objeto driver do Selenium
+    driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
