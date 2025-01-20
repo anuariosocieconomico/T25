@@ -3,6 +3,7 @@ TESTS.py
 .idea
 Doc/relatorios_de_erros/read_erros.py
 Scripts/Daniel/run_all.py
+notes.txt
 
 # Byte-compiled / optimized / DLL files
 Scripts/Daniel/__pycache__/

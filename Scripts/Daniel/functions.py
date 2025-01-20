@@ -267,7 +267,7 @@ def convert_type(dataframe, column, dtype):
     elif dtype == 'float':
         dataframe[column] = dataframe[column].astype('float')
     else:
-        dataframe[column] = dataframe[column].astype('int')
+        dataframe[column] = dataframe[column].astype('int64')
 
 
 # concede permissão para excluir pasta
