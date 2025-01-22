@@ -17,82 +17,82 @@ errors_path = c.errors_dir
 # inicializa o dicionário para armazenar informações sobre possíveis erros durante a execução
 errors = {}
 
-# # ************************
-# # DOWNLOAD DA BASE DE DADOS
-# # ************************
+# ************************
+# DOWNLOAD DA BASE DE DADOS
+# ************************
 
-# # url
-# url = 'https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023'
+# url
+url = 'https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023'
 
-# # tenta baixar o arquivo conforme os comandos anteriores; caso haja alguma atualização no site, registra-se o erro
-# try:
-#     # request ao site e extração dos elementos da html
-#     html = c.open_url(url)
-#     soup = BeautifulSoup(html.text, 'html.parser')
+# tenta baixar o arquivo conforme os comandos anteriores; caso haja alguma atualização no site, registra-se o erro
+try:
+    # request ao site e extração dos elementos da html
+    html = c.open_url(url)
+    soup = BeautifulSoup(html.text, 'html.parser')
 
-#     # Extrai a tag div com id="content-core"
-#     content_core = soup.find('div', id='content-core')
+    # Extrai a tag div com id="content-core"
+    content_core = soup.find('div', id='content-core')
 
-#     # Extrai todas as tags div com class="column col-md-2" dentro de content_core
-#     columns = content_core.find_all('div', class_='column col-md-2')
+    # Extrai todas as tags div com class="column col-md-2" dentro de content_core
+    columns = content_core.find_all('div', class_='column col-md-2')
 
-#     # Itera pelas colunas para extrair a href
-#     hrefs = []
-#     for column in columns:
-#         # Extrai a tag div com class="cover-banner-tile tile-content"
-#         tile_content = column.find('div', class_='cover-banner-tile tile-content')
-#         if tile_content:
-#             # Extrai a href da tag <a>
-#             link = tile_content.find('a', href=True)
-#             if link:
-#                 hrefs.append(link['href'])
+    # Itera pelas colunas para extrair a href
+    hrefs = []
+    for column in columns:
+        # Extrai a tag div com class="cover-banner-tile tile-content"
+        tile_content = column.find('div', class_='cover-banner-tile tile-content')
+        if tile_content:
+            # Extrai a href da tag <a>
+            link = tile_content.find('a', href=True)
+            if link:
+                hrefs.append(link['href'])
 
-#     for i, href in enumerate(hrefs):
-#         for tries in range(5):
-#             try:
-#                 file = c.open_url(href)
-#                 print(f'Base de dados {i+1} baixada com sucesso!')
-#                 break
-#             except:
-#                 print(f'Erro ao baixar base de dados {i+1}. Tentativa {tries+1} de 5.')
-#                 if tries  == 4:
-#                     raise
-#                 sleep(5)
+    for i, href in enumerate(hrefs):
+        for tries in range(5):
+            try:
+                file = c.open_url(href)
+                print(f'Base de dados {i+1} baixada com sucesso!')
+                break
+            except:
+                print(f'Erro ao baixar base de dados {i+1}. Tentativa {tries+1} de 5.')
+                if tries  == 4:
+                    raise
+                sleep(5)
         
-#         c.to_file(dbs_path, f'VDE{i+1}.xlsx', file.content)
+        c.to_file(dbs_path, f'VDE{i+1}.xlsx', file.content)
 
-#     print('Bases de dados baixadas com sucesso!')
-# except Exception as e:
-#     errors[url] = traceback.format_exc()
+    print('Bases de dados baixadas com sucesso!')
+except Exception as e:
+    errors[url] = traceback.format_exc()
 
-# # ************************
-# # ELABORAÇÃO DA PLANILHA 
-# # ************************
+# ************************
+# ELABORAÇÃO DA PLANILHA 
+# ************************
 
 try:
-    # # leitura do conteúdo da base de dados
-    # dfs = []
-    # for excel in os.listdir(dbs_path):
-    #     if 'concat' not in excel:
-    #         print(f'A executar arquivo {excel}')
+    # leitura do conteúdo da base de dados
+    dfs = []
+    for excel in os.listdir(dbs_path):
+        if 'concat' not in excel:
+            print(f'A executar arquivo {excel}')
             
-    #         # extração das colunas 
-    #         df = pd.read_excel(
-    #             os.path.join(dbs_path, excel),
-    #             usecols=[0, 2, 3, 7, 8 , 9, 10, 11, 12],
-    #             dtype={0: str, 1: str, 2: str, 3: float, 4: float, 5: float, 6: float, 7: float, 8: float}
-    #         )
+            # extração das colunas 
+            df = pd.read_excel(
+                os.path.join(dbs_path, excel),
+                usecols=[0, 2, 3, 7, 8 , 9, 10, 11, 12],
+                dtype={0: str, 1: str, 2: str, 3: float, 4: float, 5: float, 6: float, 7: float, 8: float}
+            )
             
-    #         cols = df.columns
-    #         df['Ano'] = pd.to_datetime(df[cols[2]], format='%Y-%m-%d %H:%M:%S').dt.year
-    #         df_grouped = df.groupby([cols[0], cols[1], df.columns[-1]], as_index=False)[cols[3:]].sum()  # df.columns[-1] porque a coluna Ano não está presente em cols
-    #         dfs.append(df_grouped)
-    #         print('Pronto!')
+            cols = df.columns
+            df['Ano'] = pd.to_datetime(df[cols[2]], format='%Y-%m-%d %H:%M:%S').dt.year
+            df_grouped = df.groupby([cols[0], cols[1], df.columns[-1]], as_index=False)[cols[3:]].sum()  # df.columns[-1] porque a coluna Ano não está presente em cols
+            dfs.append(df_grouped)
+            print('Pronto!')
 
-    # df_concat = pd.concat(dfs, ignore_index=True)  # concatena os dataframes
+    df_concat = pd.concat(dfs, ignore_index=True)  # concatena os dataframes
     
-    # # salvamento da base de dados concatenada para evitar retrabalho em caso de erros
-    # c.to_excel(df_concat, dbs_path, 'VDE_concat.xlsx')
+    # salvamento da base de dados concatenada para evitar retrabalho em caso de erros
+    c.to_excel(df_concat, dbs_path, 'VDE_concat.xlsx')
 
     # coleta dados populacionais das UFs (GERAL)
     data = sidrapy.get_table(
@@ -192,10 +192,6 @@ try:
             df_year['Ranking'] = df_year['Taxa'].rank(ascending=False)
             
             dfs_ranked.append(df_year)
-        
-            # if (event == 'latrocínio') and (year == 2015): ################ REMOVEEEEEEERRRRRR #################
-            #     print(df_year)
-            #     breakpoint()
 
     # concatena os dataframes rankeados
     df_ranked = pd.concat(dfs_ranked, ignore_index=True)
