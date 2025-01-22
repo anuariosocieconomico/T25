@@ -85,7 +85,6 @@ try:
 except:
     errors['https://apidatalake.tesouro.gov.br/ords/siconfi/'] = traceback.format_exc()
 
-breakpoint()
 # DOWNLOAD DA BASE DE DADOS IPCA ---------------------------------------------------------------------------------------
 url = 'http://www.ipeadata.gov.br/ExibeSerie.aspx?serid=1410807112&module=M'
 try:
