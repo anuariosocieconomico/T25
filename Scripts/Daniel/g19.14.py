@@ -7,12 +7,9 @@ import io
 import numpy as np
 import json
 import traceback
-import tempfile
-import shutil
-
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
-dbs_path = tempfile.mkdtemp()
+dbs_path = 'Scripts/Daniel/Diversos'
 sheets_path = c.sheets_dir
 errors_path = c.errors_dir
 
@@ -59,7 +56,9 @@ try:
     }
 
     dfs = []
+    faileds = {}
     for k, v in estados_ibge.items():  # estrutura para percorrer os estados
+        print(f'A baixar dados do estado: {k}\n')
         for y in range(startY, endY + 1):  # estrutura para percorrer os anos
 
             url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt/rreo?an_exercicio={y}&nr_periodo=6' \
@@ -72,13 +71,21 @@ try:
                 df['uf'] = k
 
                 dfs.append(df)
+                print(f'{k} ano {y} baixado com sucesso!')
+            else:
+                if k not in faileds:
+                    faileds[k] = [y]
+                else:
+                    faileds[k].append(y)
 
     df_state = pd.concat(dfs, ignore_index=True)  # df com todos os anos de determinado estado
-    c.from_form_to_file(df_state, dbs_path, 'siconfi-database.csv')
+    c.to_csv(df_state, dbs_path, 'siconfi-database.csv')
+    if faileds:
+        errors['Falhas de requisição'] = faileds
 except:
     errors['https://apidatalake.tesouro.gov.br/ords/siconfi/'] = traceback.format_exc()
 
-
+breakpoint()
 # DOWNLOAD DA BASE DE DADOS IPCA ---------------------------------------------------------------------------------------
 url = 'http://www.ipeadata.gov.br/ExibeSerie.aspx?serid=1410807112&module=M'
 try:
@@ -101,7 +108,7 @@ try:
         else:
             df.iloc[i, -1] = df.iloc[i-1, -1] / (1 + df.iloc[i-1, -2])
 
-    c.from_form_to_file(df, dbs_path, 'tb-ipca.csv')
+    c.to_csv(df, dbs_path, 'tb-ipca.csv')
 except:
     errors[url] = traceback.format_exc()
 
@@ -112,14 +119,22 @@ except:
 
 try:
     # carregamento da base de dados siconfi; filtragem das variáveis de interesse
-    df_siconfi = pd.read_csv(os.path.join(dbs_path, 'siconfi-database.csv'))
+    df_siconfi = pd.read_csv(
+        os.path.join(dbs_path, 'siconfi-database.csv'),
+        dtype={'valor':float, 'população': int, 'exercicio':int}
+        , decimal=','
+    )
     df_siconfi = df_siconfi.query(
         'coluna.str.startswith("DESPESAS LIQUIDADAS ATÉ O BIMESTRE") & conta == "Segurança Pública" & '
         'cod_conta == "RREO2TotalDespesas"'
     ).copy()
 
     # carregamento da base de dados ipca
-    df_ipca = pd.read_csv(os.path.join(dbs_path, 'tb-ipca.csv'))
+    df_ipca = pd.read_csv(
+        os.path.join(dbs_path, 'tb-ipca.csv'),
+        dtype={'Ano':int, 'IPCA':float, 'Index': float}
+        , decimal=','
+    )
 
     # união das planilhas; cálculo do valor real
     df_merged = df_siconfi.merge(df_ipca, left_on='exercicio', right_on='Ano', how='left', validate='m:1')
@@ -167,6 +182,3 @@ except:
 if errors:
     with open(os.path.join(errors_path, 'script--g19.14.txt'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(errors, indent=4, ensure_ascii=False))
-
-# remove os arquivos baixados
-shutil.rmtree(dbs_path)
