@@ -43,8 +43,9 @@ try:
         driver.click('/html/body/div[5]/div/div/div/div/div[2]/button[2]')
     finally:
         # procura a url de download do arquivo recém publicado
-        url_element = driver.browser.find_element(By.XPATH, '/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div['
-                                                            '2]/div/div/ul[3]/li/a')
+        url_element = driver.browser.find_element(
+            By.XPATH, '/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a'
+        )
         url = url_element.get_attribute('href')
         driver.get(url)
         time.sleep(3)
@@ -67,21 +68,25 @@ try:
     for i, tb in enumerate(df.keys()):
         df_tb = df[tb].copy()  # cópia de cada aba da planilha
         uf_col = df_tb.columns[0]  # rótulo da coluna de UFs
-        rede_col = df_tb.columns[1]  # rótulo da coluna de UFs
+        rede_col = df_tb.columns[1]  # rótulo da coluna de Redes
+
         # seleção das colunas de UF, Rede, IDEB e Projeções
-        select_cols = [col for col in df_tb.columns if
-                       col.startswith('Unnamed:') or col.startswith('VL_OBSERVADO') or col.startswith('VL_PROJECAO')]
+        select_cols = [
+            col for col in df_tb.columns if col.startswith('Unnamed:') or col.startswith('VL_OBSERVADO') or col.startswith('VL_PROJECAO')
+        ]
         df_tb = df_tb.loc[df_tb[uf_col] == 'Sergipe', select_cols]  # filtragem de linhas e colunas
 
         # verticalização do df
-        df_tb = df_tb.melt(id_vars=df_tb.columns[:2], value_vars=df_tb.columns[2:],
-                           var_name='Cat', value_name='Val')
+        df_tb = df_tb.melt(
+            id_vars=select_cols[:2], value_vars=select_cols[2:], var_name='Cat', value_name='Val'
+        )
 
         # extração do ano a partir dos valores da categoria (VL_OBSERVADO_2005)
         df_tb['Ano'] = df_tb['Cat'].str.split('_').str[-1]
         # indicação da série
         df_tb['Série'] = 'Fundamental - Anos Iniciais' if i == 0 else (
-            'Fundamental - Anos Finais' if i == 1 else 'Ensino Médio')
+            'Fundamental - Anos Finais' if i == 1 else 'Ensino Médio'
+        )
 
         # remoção de parênteses de valores de Rede e renomeação das categorias
         df_tb[rede_col] = df_tb[rede_col].str.split(' ').str[0]
@@ -100,7 +105,7 @@ try:
 
     # unificação das planilhas
     df_concat = pd.concat(dfs, ignore_index=True)
-    df_concat.sort_values(by=['Ano', 'Região', 'Série', 'Classe', 'Rede'], inplace=True)
+    df_concat.sort_values(by=['Ano', 'Classe', 'Série', 'Rede'], inplace=True)
     df_concat.reset_index(drop=True, inplace=True)
 
     # classificação dos dados
