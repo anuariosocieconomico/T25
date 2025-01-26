@@ -153,6 +153,9 @@ class Google:
         self.prefs = {'download.default_directory': self.rep_path}
         self.options.add_experimental_option('prefs', self.prefs)
         self.options.add_argument('--allow-running-insecure-content')
+        self.options.add_argument('--disable-dev-shm-usage')  # REMOVER EM CASO DE ERRO
+        self.options.add_argument('--no-sandbox')  # REMOVER EM CASO DE ERRO
+        self.options.add_argument('--remote-debugging-port=9222')  # REMOVER EM CASO DE ERRO
 
         if not visible:
             self.options.add_argument('--headless=new')
