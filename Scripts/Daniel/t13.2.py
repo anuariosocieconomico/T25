@@ -21,10 +21,13 @@ errors = {}
 # ************************
 
 try:
-    data = sidrapy.get_table(table_code='5434', territorial_level='3', ibge_territorial_code='28',
-                             variable='4090,4108',
-                             classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
-                             period="all")
+    data = sidrapy.get_table(
+        table_code='5434',
+        territorial_level='3', ibge_territorial_code='28',
+        variable='4090,4108',
+        classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
+        period="all"
+    )
 
     # remoção da linha 0, dados para serem usados como rótulos das colunas
     # não foram usados porque variam de acordo com a tabela
@@ -40,16 +43,14 @@ try:
 
     # renomeação das colunas
     # filtragem de dados referentes ao 4º trimestre de cada ano
-    data.columns = ['Região', 'Ano', 'Variável', 'Atividade', 'Valor', 'Percentual']
-    data = data.loc[data['Ano'].str.startswith('4º trimestre')].copy()
-    data['Ano'] = data['Ano'].apply(lambda x: x[-4:])
-    data.drop('Variável', axis='columns', inplace=True)
+    data.columns = ['Região', 'Trimestre', 'Classe', 'Variável', 'Pessoas', 'Percentual']
+    data = data.loc[data['Trimestre'].str.startswith('4º trimestre')].copy()
+    data['Trimestre'] = data['Trimestre'].apply(lambda x: '01/10/' + x[-4:])
+    data = data[['Região', 'Variável', 'Trimestre', 'Pessoas', 'Percentual']]
 
     # classificação dos dados
-    data[data.columns[:-2]] = data[data.columns[:-2]].astype('str')
-    data[data.columns[-2:]] = data[data.columns[-2:]].astype('float64')
-    data['Ano'] = pd.to_datetime(data['Ano'], format='%Y')
-    data['Ano'] = data['Ano'].dt.strftime('%d/%m/%Y')
+    data['Pessoas'] = data['Pessoas'].astype(int)
+    data['Percentual'] = data['Percentual'].astype(float)
 
     # conversão em arquivo csv
     c.to_excel(data, sheets_path, 't13.2.xlsx')

@@ -24,11 +24,13 @@ try:
     regions = [('1', 'all'), ('2', '2'), ('3', '28')]
     dfs = []
     for reg in regions:
-        data = sidrapy.get_table(table_code='6402', territorial_level=reg[0],
-                                 ibge_territorial_code=reg[1],
-                                 variable='4099',
-                                 classifications={'86': '95251'},
-                                 period="all")
+        data = sidrapy.get_table(
+            table_code='6402', territorial_level=reg[0],
+            ibge_territorial_code=reg[1],
+            variable='4099',
+            classifications={'86': '95251'},
+            period="all"
+        )
 
         # remoção da linha 0, dados para serem usados como rótulos das colunas
         # não foram usados porque variam de acordo com a tabela
@@ -45,18 +47,15 @@ try:
     # filtragem de dados referentes ao 4º trimestre de cada ano
     # seleção dos dígitos referentes ao ano
     df_concat = pd.concat(dfs, ignore_index=True)
-    df_concat.columns = ['Região', 'Ano', 'Variável', 'Classe', 'Valor']
-    df_concat = df_concat.loc[df_concat['Ano'].str.startswith('4º trimestre')]
-    df_concat['Ano'] = df_concat['Ano'].apply(lambda x: x[-4:])
+    df_concat.columns = ['Região', 'Trimestre', 'Variável', 'Classe', 'Valor']
+    df_concat = df_concat.loc[df_concat['Trimestre'].str.startswith('4º trimestre')].copy()
+    df_concat['Trimestre'] = df_concat['Trimestre'].apply(lambda x: '01/10/' + x[-4:])
 
     # classificação dos dados
-    df_concat[df_concat.columns[:-1]] = df_concat[df_concat.columns[:-1]].astype('str')
     df_concat['Valor'] = df_concat['Valor'].replace('...', '0.0')
     df_concat['Valor'] = df_concat['Valor'].astype('float64')
-    df_concat['Ano'] = pd.to_datetime(df_concat['Ano'], format='%Y')
-    df_concat['Ano'] = df_concat['Ano'].dt.strftime('%d/%m/%Y')
 
-    df_concat.drop(['Variável', 'Classe'], axis='columns', inplace=True)
+    df_concat = df_concat[['Região', 'Variável', 'Trimestre', 'Valor']]
 
     # conversão em arquivo csv
     c.to_excel(df_concat, sheets_path, 'g13.6.xlsx')
