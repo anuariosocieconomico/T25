@@ -31,10 +31,14 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click(['/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[2]',
-                  '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[2]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=False, prefix='Dez')
@@ -61,10 +65,14 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click(['/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[2]',
-                  '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[2]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=False, prefix='Dez')
@@ -98,19 +106,25 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click(['/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[2]',
-                  '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[2]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=False, prefix='Dez')
 
     # abre a tabela
-    driver.click([
-        '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/img',
-        '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/select[2]/option[27]'
-    ])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/img',
+            '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/select[2]/option[27]'
+        ]
+    )
 
     driver.click('/html/body/div/div/center/div/form/div[4]/div[2]/div[2]/input[1]')
 
@@ -135,10 +149,14 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click(['/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[3]',
-                  '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[3]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=False, prefix='Dez')
@@ -165,18 +183,24 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click(['/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[3]',
-                  '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[3]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=False, prefix='Dez')
 
-    driver.click([
-        '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[1]/img',
-        '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[1]/select/option[3]'
-    ])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[1]/img',
+            '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[1]/select/option[3]'
+        ]
+    )
 
     driver.click('/html/body/div/div/center/div/form/div[4]/div[2]/div[2]/input[1]')
 
@@ -201,18 +225,24 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click(['/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
-                  '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[3]',
-                  '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[14]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[3]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=False, prefix='Dez')
 
-    driver.click([
-        '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/img',
-        '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/select[2]/option[27]'
-    ])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/img',
+            '/html/body/div/div/center/div/form/div[4]/div[1]/div/div[2]/select[2]/option[27]'
+        ]
+    )
 
     driver.click('/html/body/div/div/center/div/form/div[4]/div[2]/div[2]/input[1]')
 
@@ -237,20 +267,24 @@ try:
     driver.get(url)  # acessa a página
 
     # seleciona as opções da tabela
-    driver.click([
-        '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]',
-        '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[4]',
-        '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[1]',
-        '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[1]'
-    ])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[2]/select/option[4]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[1]',
+            '/html/body/div/div/center/div/form/div[2]/div/div[3]/select/option[1]'
+        ]
+    )
 
     # seleciona todos os períodos disponíveis
     driver.periods('select', 'A', 'option', all_periods=True)
 
-    driver.click([
-        '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]',
-        '/html/body/div/div/center/div/form/div[4]/div[2]/div[2]/input[1]'
-    ])
+    driver.click(
+        [
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[1]/div[1]/input[1]',
+            '/html/body/div/div/center/div/form/div[4]/div[2]/div[2]/input[1]'
+        ]
+    )
 
     # altera para a última aba aberta e baixa o arquivo
     driver.change_window()
@@ -334,8 +368,9 @@ try:
     df_pop_filtered = df_pop_filtered.loc[(df_pop_filtered['Ano'] >= min_year) & (df_pop_filtered['Ano'] <= max_year)]
 
     # união das tabelas para posterior cálculo da taxa
-    df_united = df_int.set_index(['Região', 'Ano']).join(df_pop_filtered.set_index(['Região', 'Ano']),
-                                                         how='outer', lsuffix='_int', rsuffix='_pop').reset_index()
+    df_united = df_int.set_index(['Região', 'Ano']).join(
+        df_pop_filtered.set_index(['Região', 'Ano']), how='outer', lsuffix='_int', rsuffix='_pop'
+    ).reset_index()
     df_united['Taxa de internação'] = df_united['Valor_int'].replace(np.nan, 0).astype(float) / (df_united['Valor_pop'] / 100000)
     df_united.drop(['Valor_int', 'Valor_pop'], axis='columns', inplace=True)
     df_united = df_united[['Região', 'Leito', 'Natureza Jurídica', 'Ano', 'Taxa de internação']]
