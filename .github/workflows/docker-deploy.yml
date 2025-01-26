@@ -1,0 +1,34 @@
+name: Docker Deploy and Push
+
+on:
+    schedule:
+        # Executar no primeiro dia de cada mês às 00:00 UTC
+        - cron: '0 0 1 * *'  # A cron expression para rodar mensalmente no primeiro dia do mês
+    workflow_dispatch:  # Permite a execução manual a partir da interface do GitHub Actions
+
+jobs:
+    build:
+        runs-on: ubuntu-latest  # GitHub Actions executa em Ubuntu, mas o Docker em si será configurado para Windows.
+
+        steps:
+            - name: Checkout code
+                uses: actions/checkout@v2
+
+            - name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v2
+
+            - name: Build Docker image
+                run: |
+                    docker build -t my-python-app .
+
+            - name: Run Docker container
+                run: |
+                    docker run --rm my-python-app
+
+            - name: Commit and push updated files
+                run: |
+                    git config --global user.name "GitHub Action"
+                    git config --global user.email "action@github.com"
+                    git add .
+                    git commit -m "Atualização agendada das bases de dados"
+                    git push origin docker-test  # Enviar alterações para a branch docker-test
