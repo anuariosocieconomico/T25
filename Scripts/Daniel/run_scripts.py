@@ -1,8 +1,13 @@
 import datetime
 import subprocess
+import os
+import sys
 
 # Obtém o mês atual
 current_month = datetime.datetime.now().month
+
+# Obtém o diretório atual onde o script principal está localizado
+script_path = os.path.dirname(os.path.abspath(__file__))
 
 # Define os scripts a serem executados com base no mês
 if current_month == 1:
@@ -18,4 +23,4 @@ else:
 
 # Executa os scripts selecionados
 for script in scripts_to_run:
-    subprocess.run(['python', script])
+    subprocess.run([sys.executable, os.path.join(script_path, script)])

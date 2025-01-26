@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 from time import sleep
 
 # Obtém o diretório atual onde o script principal está localizado
@@ -41,5 +42,5 @@ for script in scripts_python:
     caminho_script = os.path.join(diretorio_atual, script)
     
     # Usa subprocess para executar o script
-    subprocess.run(['python', caminho_script])
+    subprocess.run([sys.executable, caminho_script])
     sleep(3)
