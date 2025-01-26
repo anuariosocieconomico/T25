@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . /app
 
 # Instalar as dependências do projeto
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r Scripts/Daniel/requirements.txt
 
-# Comando para executar o script (substitua 'seu_script.py' pelo nome do script a ser executado)
-CMD ["python", "run_scripts.py"]
+# Comando para executar o script
+CMD ["python", "Scripts/Daniel/run_scripts.py"]

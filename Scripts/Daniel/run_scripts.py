@@ -1,5 +1,7 @@
 import datetime
 import subprocess
+import os
+import sys
 
 # Obtém o mês atual
 current_month = datetime.datetime.now().month
@@ -18,4 +20,4 @@ else:
 
 # Executa os scripts selecionados
 for script in scripts_to_run:
-    subprocess.run(['python', script])
+    subprocess.run([sys.executable, os.path.join('Scripts\Daniel', script)])
