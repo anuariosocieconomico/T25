@@ -74,7 +74,7 @@ except Exception as e:
 # PLANILHA
 # ************************
 
-if os.path.exists(dbs_path + '/ibge_pib_otica_renda.xls'):
+if os.path.exists(os.path.join(dbs_path, 'ibge_pib_otica_renda.xls')):
     # g1.5, g1.6, g1.7, g1.8
     df = c.open_file(dbs_path, 'ibge_pib_otica_renda.xls', 'xls', skiprows=8)
     tables = ['Tabela1', 'Tabela10', 'Tabela18']

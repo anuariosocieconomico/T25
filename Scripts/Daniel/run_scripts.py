@@ -24,3 +24,9 @@ else:
 # Executa os scripts selecionados
 for script in scripts_to_run:
     subprocess.run([sys.executable, os.path.join(script_path, script)])
+
+with open(os.path.abspath(os.path.join('Doc', 'relatorios_de_erros', 'update_log.txt')), 'w', encoding='utf-8') as f:
+    f.write(
+        f'''Executado(s) o(s) scipt(s): {scripts_to_run} ...
+Data da execução: {datetime.datetime.today().strftime('%A, %d de %B de %Y - %H:%M:%S')}.'''
+    )
