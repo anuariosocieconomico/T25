@@ -10,7 +10,7 @@ from time import sleep
 
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
-dbs_path = 'Scripts/Daniel/VDE'
+dbs_path = os.path.abspath(os.path.join('Scripts', 'Daniel', 'VDE'))
 sheets_path = c.sheets_dir
 errors_path = c.errors_dir
 

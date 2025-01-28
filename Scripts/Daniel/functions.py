@@ -34,10 +34,13 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
                          'Chrome/118.0.0.0 Safari/537.36'}
 
 # folders
-script_dir = os.path.dirname(__file__)
-project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
-sheets_dir = os.path.join(project_root, 'Data')
-errors_dir = os.path.join(project_root, 'Doc/relatorios_de_erros')
+# script_dir = os.path.dirname(__file__)
+# project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
+# sheets_dir = os.path.join(project_root, 'Data')
+# errors_dir = os.path.join(project_root, 'Doc/relatorios_de_erros')
+
+sheets_dir = os.path.abspath('Data')
+errors_dir = os.path.abspath(os.path.join('Doc', 'relatorios_de_erros'))
 
 load_dotenv()
 repo_path = 'anuariosocieconomico/T25'

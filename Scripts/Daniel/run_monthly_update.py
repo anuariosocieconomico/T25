@@ -10,21 +10,16 @@ diretorio_atual = os.path.dirname(os.path.abspath(__file__))
 arquivos = os.listdir(diretorio_atual)
 
 # Filtra apenas os arquivos Python (.py)
-# scripts_python = [
-#     'g19.14.py',
-#     'g8.1--g8.2.py',
-#     'g18.5.py',
-#     'g18.6.py',
-#     't18.1.py',
-#     't18.2.py',
-#     'g11.11.py',
-#     't13.2.py',
-#     'g13.6.py'
-# ]
-
 scripts_python = [
+    'g19.14.py',
     'g8.1--g8.2.py',
-    'g18.5.py'
+    'g18.5.py',
+    'g18.6.py',
+    't18.1.py',
+    't18.2.py',
+    'g11.11.py',
+    't13.2.py',
+    'g13.6.py'
 ]
 
 # Executa cada script Python encontrado
