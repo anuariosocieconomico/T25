@@ -1,0 +1,222 @@
+import functions as c
+import os
+import pandas as pd
+import numpy as np
+import json
+import sidrapy
+import traceback
+import tempfile
+import shutil
+from datetime import datetime
+from time import sleep
+
+
+# obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
+dbs_path = tempfile.mkdtemp()
+sheets_path = c.sheets_dir
+errors_path = c.errors_dir
+
+# inicializa o dicionário para armazenar informações sobre possíveis erros durante a execução
+errors = {}
+
+
+# ************************
+# DOWNLOAD DA BASE DE DADOS E PLANILHA
+# ************************
+
+
+# Tabela 16.1
+try:
+    # looping de requisições para cada tabela da figura
+    dbs = []
+    for key, table in {
+        'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': {
+            'tb': '6402', 'var': '4088', 'class': {'86': '95251'}
+        },
+        'População': {
+            'tb': '5917', 'var': '606', 'class': {'2': '6794'}
+        }
+    }.items():
+        # looping de requisições para cada região da tabela
+        dfs = []
+        for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
+            data = sidrapy.get_table(
+                table_code=table['tb'],
+                territorial_level=reg[0],ibge_territorial_code=reg[1],
+                variable=table['var'],
+                classifications=table['class'],
+                period="all"
+            )
+
+            # remoção da linha 0, dados para serem usados como rótulos das colunas
+            data.drop(0, axis='index', inplace=True)
+
+            dfs.append(data)
+
+        # união das regiões da variável
+        data = pd.concat(dfs, ignore_index=True)
+        dbs.append(data)
+        sleep(1)
+
+    # todos os dfs
+    df_concat = pd.concat(dbs, ignore_index=True)
+
+    # seleção das colunas e linhas de interesse e tratamentos básicos
+    df_concat = df_concat[['D1N', 'D3N', 'D2N', 'V']].copy()
+    df_concat.columns = ['Região', 'Variável', 'Ano', 'Valor']
+    df_concat['Trimestre'] = df_concat['Ano'].apply(lambda x: x[0]).astype(int)
+    df_concat['Ano'] = df_concat['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
+    df_concat['Valor'] = df_concat['Valor'].replace('...', 0).astype(int)  # valores nulos são definidos por '...'
+
+    # encontra o último trimestre do ano mais recente
+    df = df_concat.loc[df_concat['Ano'] == df_concat['Ano'].max()].copy()
+    df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
+    tri = df['Trimestre'].max()
+
+    # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
+    df_tri = df_concat[
+        (df_concat['Ano'].isin([df_concat['Ano'].max(), df_concat['Ano'].max() - 1])) &
+        (df_concat['Trimestre'] == tri)
+        ].copy()
+
+    # pivoting do valor e população, para cálculo da taxa
+    df_tri.loc[
+        df_tri['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
+        ] = 'Valor'
+    df_pivoted = pd.pivot_table(df_tri, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
+
+    # calculo da taxa
+    df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
+    df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
+
+    # seleção dos estados e ranqueamento para elaboração do arquivo g13.1a
+    df_states = df_pivoted[
+        ~(df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
+        (df_pivoted['Ano'] == df_pivoted['Ano'].max())
+    ].copy()
+
+    df_states['Colocação'] = df_states['Taxa'].rank(ascending=False).astype(int)
+
+    # seleção dos top 6
+    if 'Sergipe' in df_states[df_states['Colocação'] <= 6]['Região'].values:  # verifica se SE está entre os tops 6
+        df_filtered = df_states[df_states['Colocação'] <= 6].copy()
+    else:
+        df_filtered =df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')]  # adiciona SE e os tops 6
+
+    # seleção das regiões e concatenação ao df de estados ranqueados
+    df_regions = df_states = df_pivoted[
+        (df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
+        (df_pivoted['Ano'] == df_pivoted['Ano'].max())
+    ].copy()
+
+    df_final = pd.concat([df_filtered, df_regions], ignore_index=True)
+    df_final.sort_values(by=['Colocação', 'Região'], inplace=True)
+
+    # classificação dos dados
+    if tri == 1:
+        month = '01/'
+    elif tri == 2:
+        month = '04/'
+    elif tri == 3:
+        month = '07/'
+    elif tri == 4:
+        month = '10/'
+
+    df_final['Variável'] = 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
+    df_final['Trimesetre'] = '01/' + month + df_final['Ano'].astype(str)
+    
+    df_final.drop('Valor', axis='columns', inplace=True)
+    df_final.rename(columns={'Taxa': 'Valor'}, inplace=True)
+    df_final['Valor'] = df_final['Valor'].round(2)
+    df_export = df_final[['Região', 'Variável', 'Trimesetre', 'Valor', 'Colocação']].copy()
+    
+    # tratamento para inclusão do símbolo de ordem
+    df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
+    df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
+
+    # conversão em arquivo csv
+    c.to_excel(df_export, sheets_path, 'g13.1a.xlsx')
+
+except Exception as e:
+    errors['Gráfico 13.1 A'] = traceback.format_exc()
+
+
+
+# # Gráfico 16.1
+# try:
+#     # looping de requisições para cada tabela da figura
+#     dfs = []
+#     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
+#         data = sidrapy.get_table(
+#             table_code='6578',
+#             territorial_level=reg[0],ibge_territorial_code=reg[1],
+#             variable='10163',
+#             period="all"
+#         )
+
+#         # remoção da linha 0, dados para serem usados como rótulos das colunas
+#         data.drop(0, axis='index', inplace=True)
+
+#         dfs.append(data)
+
+#     data = pd.concat(dfs, ignore_index=True)
+
+#     # seleção das colunas de interesse
+#     data = data[['D1N', 'D3N', 'D2N', 'V']].copy()
+#     data['D2N'] = pd.to_datetime(data['D2N'], format='%Y')
+
+#     # renomeação das colunas
+#     data.columns = ['Região', 'Variável', 'Ano', 'Valor']
+
+#     # classificação dos dados
+#     data['Ano'] = data['Ano'].dt.strftime('%d/%m/%Y')
+#     data['Valor'] = data['Valor'].astype('float')
+
+#     # conversão em arquivo csv
+#     c.to_excel(data, sheets_path, 'g16.1.xlsx')
+
+# except Exception as e:
+#     errors['Gráfico 16.1'] = traceback.format_exc()
+
+
+
+
+
+# # Planilha de Indicadores Sociais
+# try:
+#     # projeção da taxa
+#     url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
+#     response = c.open_url(url)
+#     df = pd.DataFrame(response.json())
+
+#     df = df.loc[df['name'].str.startswith('Sintese_de_Indicadores_Sociais_2'),
+#                 ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
+
+#     url_to_get = df['path'][0].split('/')[-1]
+#     response = c.open_url(url + '/' + url_to_get + '/Tabelas/xls')
+#     df = pd.DataFrame(response.json())
+#     url_to_get_pib = df.loc[df['name'].str.startswith('2_'), 'url'].values[0]
+
+#     file = c.open_url(url_to_get_pib)
+# except:
+#     errors['Planilha de Indicadores Sociais'] = traceback.format_exc()
+
+
+# # Gráfico 16.4
+# try:
+#     # importação dos indicadores
+#     df = c.open_file(file_path=file.content, ext='zip', excel_name='', skiprows=6, sheet_name='4) INDICADORES')
+# except:
+#     errors['Gráfico 16.4'] = traceback.format_exc()
+
+
+# geração do arquivo de erro caso ocorra algum
+# se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
+# se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
+file_name = 'script--g13.1a--g13.1b--g13.2--g13.3a--g13.3b--g13.4--g13.5a--g13.5b--g13.6--t13.1--g13.7--g13.8--t13.2--g13.9a--g13.9b--g13.10--t13.3.txt'
+if errors:
+    with open(os.path.join(errors_path, file_name), 'w', encoding='utf-8') as f:
+        f.write(json.dumps(errors, indent=4, ensure_ascii=False))
+
+# remove os arquivos baixados
+shutil.rmtree(dbs_path)
