@@ -89,6 +89,7 @@ try:
     df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
     df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
 
+    # Gráfico 13.1 A --------------------------------------------------------------------------
     # seleção dos estados e ranqueamento para elaboração do arquivo g13.1a
     df_states = df_pivoted[
         ~(df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
@@ -137,8 +138,45 @@ try:
     # conversão em arquivo csv
     c.to_excel(df_export, sheets_path, 'g13.1a.xlsx')
 
+
+    # Gráfico 13.1 B ---------------------------------------------------------------------------
+    # pivoting do valores por ano
+    years = sorted(df_pivoted['Ano'].unique().tolist())
+    df_diff = pd.pivot_table(df_pivoted, index=['Região'], columns='Ano', values='Taxa').reset_index()
+
+    # cálculo da diferença e ranqueamento
+    df_diff['Diferença'] = df_diff[years[-1]] - df_diff[years[-2]]
+    df_regions = df_diff[df_diff['Região'].isin(['Brasil', 'Nordeste'])].copy()
+    df_states = df_diff[~df_diff['Região'].isin(['Brasil', 'Nordeste'])].copy()
+    df_states['Colocação'] = df_states['Diferença'].rank(ascending=False)
+    
+    # filtra os top 6
+    if 'Sergipe' in df_states[df_states['Colocação'] <= 6]['Região'].values:
+        df_filtered = df_states[df_states['Colocação'] <= 6].copy()
+    else:
+        df_filtered =df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')]
+
+    # concatenação dos dfs
+    df_final = pd.concat([df_filtered, df_regions], ignore_index=True)
+    df_final.sort_values(by=['Colocação', 'Região'], inplace=True)
+
+    # seleção e renomeação de colunas
+    df_export = df_final[['Região', 'Diferença', 'Colocação']].copy()
+    df_export.rename(columns={'Diferença': 'Valor'}, inplace=True)
+    df_export['Valor'] = df_export['Valor'].round(2)
+    
+    # tratamento para definição do período na variável e inclusão do símbolo de ordem
+    df_export['Variável'] = f'Diferença {years[-1]}/{month[:-1]} - {years[-2]}/{month[:-1]}'
+    df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
+    df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
+    df_export = df_export[['Região', 'Variável', 'Valor', 'Colocação']].copy()
+
+    # conversão em arquivo csv
+    c.to_excel(df_export, sheets_path, 'g13.1b.xlsx')
+
+
 except Exception as e:
-    errors['Gráfico 13.1 A'] = traceback.format_exc()
+    errors['Gráfico 13.1'] = traceback.format_exc()
 
 
 
