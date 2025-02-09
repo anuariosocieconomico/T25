@@ -31,7 +31,7 @@ try:
     dbs = []
     for key, table in {
         'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': {
-            'tb': '6402', 'var': '4088', 'class': {'86': '95251'}
+            'tb': '6402', 'var': '4088,4090', 'class': {'86': '95251'}
         },
         'População': {
             'tb': '5917', 'var': '606', 'class': {'2': '6794'}
@@ -73,170 +73,237 @@ except:
     errors['Base Força de Trabalho'] = traceback.format_exc()
 
 
-# Gráfico 13.1 A
+# # Gráfico 13.1 A
+# try:
+#     # importação da base de dados
+#     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+#     data = data.loc[
+#         (data['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência') |
+#         (data['Variável'] == 'População')
+#     ].copy()
+
+#     # encontra o último trimestre do ano mais recente
+#     df = data.loc[data['Ano'] == data['Ano'].max()].copy()
+#     df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
+#     tri = df['Trimestre'].max()
+
+#     # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
+#     df_tri = data[
+#         (data['Ano'].isin([data['Ano'].max(), data['Ano'].max() - 1])) &
+#         (data['Trimestre'] == tri)
+#         ].copy()
+
+#     # pivoting do valor e população, para cálculo da taxa
+#     df_tri.loc[
+#         df_tri['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
+#         ] = 'Valor'
+#     df_pivoted = pd.pivot_table(df_tri, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
+
+#     # calculo da taxa
+#     df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
+#     df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
+
+#     # seleção dos estados e ranqueamento para elaboração do arquivo g13.1a
+#     df_states = df_pivoted[
+#         ~(df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
+#         (df_pivoted['Ano'] == df_pivoted['Ano'].max())
+#     ].copy()
+
+#     df_states['Colocação'] = df_states['Taxa'].rank(ascending=False).astype(int)
+
+#     # seleção dos top 6
+#     if 'Sergipe' in df_states[df_states['Colocação'] <= 6]['Região'].values:  # verifica se SE está entre os tops 6
+#         df_filtered = df_states[df_states['Colocação'] <= 6].copy()
+#     else:
+#         df_filtered =df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')]  # adiciona SE e os tops 6
+
+#     # seleção das regiões e concatenação ao df de estados ranqueados
+#     df_regions = df_states = df_pivoted[
+#         (df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
+#         (df_pivoted['Ano'] == df_pivoted['Ano'].max())
+#     ].copy()
+
+#     df_final = pd.concat([df_filtered, df_regions], ignore_index=True)
+#     df_final.sort_values(by=['Colocação', 'Região'], inplace=True)
+
+#     # classificação dos dados
+#     if tri == 1:
+#         month = '01/'
+#     elif tri == 2:
+#         month = '04/'
+#     elif tri == 3:
+#         month = '07/'
+#     elif tri == 4:
+#         month = '10/'
+
+#     df_final['Variável'] = 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
+#     df_final['Trimesetre'] = '01/' + month + df_final['Ano'].astype(str)
+    
+#     df_final.drop('Valor', axis='columns', inplace=True)
+#     df_final.rename(columns={'Taxa': 'Valor'}, inplace=True)
+#     df_final['Valor'] = df_final['Valor'].round(2)
+#     df_export = df_final[['Região', 'Variável', 'Trimesetre', 'Valor', 'Colocação']].copy()
+    
+#     # tratamento para inclusão do símbolo de ordem
+#     df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
+#     df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
+
+#     # conversão em arquivo csv
+#     c.to_excel(df_export, sheets_path, 'g13.1a.xlsx')
+# except:
+#     errors['Gráfico 13.1 A'] = traceback.format_exc()
+
+
+# # Gráfico 13.1 B
+# try:
+#     # importação da base de dados
+#     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+#     data = data.loc[
+#         (data['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência') |
+#         (data['Variável'] == 'População')
+#     ].copy()
+
+#     # encontra o último trimestre do ano mais recente
+#     df = data.loc[data['Ano'] == data['Ano'].max()].copy()
+#     df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
+#     tri = df['Trimestre'].max()
+
+#     # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
+#     df_tri = data[
+#         (data['Ano'].isin([data['Ano'].max(), data['Ano'].max() - 1])) &
+#         (data['Trimestre'] == tri)
+#         ].copy()
+
+#     # pivoting do valor e população, para cálculo da taxa
+#     df_tri.loc[
+#         df_tri['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
+#         ] = 'Valor'
+#     df_pivoted = pd.pivot_table(df_tri, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
+
+#     # calculo da taxa
+#     df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
+#     df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
+
+#     # pivoting do valores por ano
+#     years = sorted(df_pivoted['Ano'].unique().tolist())
+#     df_diff = pd.pivot_table(df_pivoted, index=['Região'], columns='Ano', values='Taxa').reset_index()
+
+#     # cálculo da diferença e ranqueamento
+#     df_diff['Diferença'] = df_diff[years[-1]] - df_diff[years[-2]]
+#     df_regions = df_diff[df_diff['Região'].isin(['Brasil', 'Nordeste'])].copy()
+#     df_states = df_diff[~df_diff['Região'].isin(['Brasil', 'Nordeste'])].copy()
+#     df_states['Colocação'] = df_states['Diferença'].rank(ascending=False)
+    
+#     # filtra os top 6
+#     if 'Sergipe' in df_states[df_states['Colocação'] <= 6]['Região'].values:
+#         df_filtered = df_states[df_states['Colocação'] <= 6].copy()
+#     else:
+#         df_filtered =df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')]
+
+#     # concatenação dos dfs
+#     df_final = pd.concat([df_filtered, df_regions], ignore_index=True)
+#     df_final.sort_values(by=['Colocação', 'Região'], inplace=True)
+
+#     # seleção e renomeação de colunas
+#     df_export = df_final[['Região', 'Diferença', 'Colocação']].copy()
+#     df_export.rename(columns={'Diferença': 'Valor'}, inplace=True)
+#     df_export['Valor'] = df_export['Valor'].round(2)
+    
+#     # tratamento para definição do período na variável e inclusão do símbolo de ordem
+#     if tri == 1:
+#         month = '01/'
+#     elif tri == 2:
+#         month = '04/'
+#     elif tri == 3:
+#         month = '07/'
+#     elif tri == 4:
+#         month = '10/'
+
+#     df_export['Variável'] = f'Diferença {years[-1]}/{month[:-1]} - {years[-2]}/{month[:-1]}'
+#     df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
+#     df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
+#     df_export = df_export[['Região', 'Variável', 'Valor', 'Colocação']].copy()
+
+#     # conversão em arquivo csv
+#     c.to_excel(df_export, sheets_path, 'g13.1b.xlsx')
+# except:
+#     errors['Gráfico 13.1 B'] = traceback.format_exc()
+
+
+# # Gráfico 13.2
+# try:
+#     # importação da base de dados
+#     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+#     data = data.loc[
+#         (data['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência') |
+#         (data['Variável'] == 'População')
+#     ].copy()
+#     df = data[data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe'])].copy()
+
+#     # pivoting do valor e população, para cálculo da taxa
+#     df.loc[
+#         df['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
+#         ] = 'Valor'
+#     df_pivoted = pd.pivot_table(df, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
+
+#     # calculo da taxa
+#     df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
+#     df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
+
+#     # concatenação do período
+#     tri = {
+#         1: '01',
+#         2: '04',
+#         3: '07',
+#         4: '10'
+#     }
+
+#     df_pivoted['Month'] = df_pivoted['Trimestre'].map(tri)
+#     df_pivoted['Period'] = '01/' + df_pivoted['Month'].astype(str) + '/' + df_pivoted['Ano'].astype(str)
+#     df_pivoted['Variável'] = 'Taxa de pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
+    
+#     # seleção das colunas
+#     df_final = df_pivoted[df_pivoted['Ano'] >= 2019][['Região', 'Variável', 'Period', 'Taxa']].copy()
+#     df_final.rename(columns={'Taxa': 'Valor', 'Period': 'Trimestre'}, inplace=True)
+#     df_final['Valor'] = df_final['Valor'].round(2)
+
+#     # conversão em arquivo csv
+#     c.to_excel(df_final, sheets_path, 'g13.2.xlsx')
+# except:
+#     errors['Gráfico 13.2'] = traceback.format_exc()
+
+
+# Gráfico 13.3
 try:
     # importação da base de dados
     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
-
-    # encontra o último trimestre do ano mais recente
-    df = data.loc[data['Ano'] == data['Ano'].max()].copy()
-    df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
-    tri = df['Trimestre'].max()
-
-    # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
-    df_tri = data[
-        (data['Ano'].isin([data['Ano'].max(), data['Ano'].max() - 1])) &
-        (data['Trimestre'] == tri)
-        ].copy()
-
-    # pivoting do valor e população, para cálculo da taxa
-    df_tri.loc[
-        df_tri['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
-        ] = 'Valor'
-    df_pivoted = pd.pivot_table(df_tri, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
-
-    # calculo da taxa
-    df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
-    df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
-
-    # seleção dos estados e ranqueamento para elaboração do arquivo g13.1a
-    df_states = df_pivoted[
-        ~(df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
-        (df_pivoted['Ano'] == df_pivoted['Ano'].max())
+    data = data.loc[  # filtra pelas variáveis de interesse e pelo ano mais recente
+        ((data['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência') |
+        (data['Variável'] == 'Pessoas de 14 anos ou mais de idade ocupadas na semana de referência')) &
+        (data['Ano'] == data['Ano'].max())
     ].copy()
+    data = data[data['Trimestre'] == data['Trimestre'].max()].copy()  # filtra o trimestre mais recente
 
-    df_states['Colocação'] = df_states['Taxa'].rank(ascending=False).astype(int)
+    # renomeação das variáveis
+    data.loc[data['Variável'].str.contains('ocupadas'), 'Variável'] = 'ocupados'
+    data.loc[data['Variável'].str.contains('Pessoas'), 'Variável'] = 'na força de trabalho'
 
-    # seleção dos top 6
-    if 'Sergipe' in df_states[df_states['Colocação'] <= 6]['Região'].values:  # verifica se SE está entre os tops 6
-        df_filtered = df_states[df_states['Colocação'] <= 6].copy()
-    else:
-        df_filtered =df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')]  # adiciona SE e os tops 6
+    # pivotagem e cálculo da taxa
+    df_pivoted = pd.pivot_table(data, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
+    df_pivoted['Taxa'] = (df_pivoted['ocupados'] / df_pivoted['na força de trabalho']) * 100
 
-    # seleção das regiões e concatenação ao df de estados ranqueados
-    df_regions = df_states = df_pivoted[
-        (df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
-        (df_pivoted['Ano'] == df_pivoted['Ano'].max())
-    ].copy()
+    # ranqueamento e seleção dos top 6 e regiões
+    df_states = df_pivoted[~df_pivoted['Região'].isin(['Brasil', 'Nordeste'])].copy()
+    df_states['Colocação'] = df_states['Taxa'].rank(ascending=False)
+    df_regions = df_pivoted[df_pivoted['Região'].isin(['Brasil', 'Nordeste'])].copy()
 
-    df_final = pd.concat([df_filtered, df_regions], ignore_index=True)
-    df_final.sort_values(by=['Colocação', 'Região'], inplace=True)
-
-    # classificação dos dados
-    if tri == 1:
-        month = '01/'
-    elif tri == 2:
-        month = '04/'
-    elif tri == 3:
-        month = '07/'
-    elif tri == 4:
-        month = '10/'
-
-    df_final['Variável'] = 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
-    df_final['Trimesetre'] = '01/' + month + df_final['Ano'].astype(str)
-    
-    df_final.drop('Valor', axis='columns', inplace=True)
-    df_final.rename(columns={'Taxa': 'Valor'}, inplace=True)
-    df_final['Valor'] = df_final['Valor'].round(2)
-    df_export = df_final[['Região', 'Variável', 'Trimesetre', 'Valor', 'Colocação']].copy()
-    
-    # tratamento para inclusão do símbolo de ordem
-    df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
-    df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
-
-    # conversão em arquivo csv
-    c.to_excel(df_export, sheets_path, 'g13.1a.xlsx')
-except:
-    errors['Gráfico 13.1 A'] = traceback.format_exc()
-
-
-# Gráfico 13.1 B
-try:
-    # importação da base de dados
-    data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
-
-    # encontra o último trimestre do ano mais recente
-    df = data.loc[data['Ano'] == data['Ano'].max()].copy()
-    df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
-    tri = df['Trimestre'].max()
-
-    # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
-    df_tri = data[
-        (data['Ano'].isin([data['Ano'].max(), data['Ano'].max() - 1])) &
-        (data['Trimestre'] == tri)
-        ].copy()
-
-    # pivoting do valor e população, para cálculo da taxa
-    df_tri.loc[
-        df_tri['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
-        ] = 'Valor'
-    df_pivoted = pd.pivot_table(df_tri, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
-
-    # calculo da taxa
-    df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
-    df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
-
-    # pivoting do valores por ano
-    years = sorted(df_pivoted['Ano'].unique().tolist())
-    df_diff = pd.pivot_table(df_pivoted, index=['Região'], columns='Ano', values='Taxa').reset_index()
-
-    # cálculo da diferença e ranqueamento
-    df_diff['Diferença'] = df_diff[years[-1]] - df_diff[years[-2]]
-    df_regions = df_diff[df_diff['Região'].isin(['Brasil', 'Nordeste'])].copy()
-    df_states = df_diff[~df_diff['Região'].isin(['Brasil', 'Nordeste'])].copy()
-    df_states['Colocação'] = df_states['Diferença'].rank(ascending=False)
-    
-    # filtra os top 6
     if 'Sergipe' in df_states[df_states['Colocação'] <= 6]['Região'].values:
-        df_filtered = df_states[df_states['Colocação'] <= 6].copy()
+        df_states = df_states[df_states['Colocação'] <= 6].copy()
     else:
-        df_filtered =df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')]
+        df_states = df_states[(df_states['Colocação'] <= 6) | (df_states['Região'] == 'Sergipe')].copy()
 
-    # concatenação dos dfs
-    df_final = pd.concat([df_filtered, df_regions], ignore_index=True)
+    df_final = pd.concat([df_states, df_regions], ignore_index=True)
     df_final.sort_values(by=['Colocação', 'Região'], inplace=True)
-
-    # seleção e renomeação de colunas
-    df_export = df_final[['Região', 'Diferença', 'Colocação']].copy()
-    df_export.rename(columns={'Diferença': 'Valor'}, inplace=True)
-    df_export['Valor'] = df_export['Valor'].round(2)
-    
-    # tratamento para definição do período na variável e inclusão do símbolo de ordem
-    if tri == 1:
-        month = '01/'
-    elif tri == 2:
-        month = '04/'
-    elif tri == 3:
-        month = '07/'
-    elif tri == 4:
-        month = '10/'
-
-    df_export['Variável'] = f'Diferença {years[-1]}/{month[:-1]} - {years[-2]}/{month[:-1]}'
-    df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
-    df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
-    df_export = df_export[['Região', 'Variável', 'Valor', 'Colocação']].copy()
-
-    # conversão em arquivo csv
-    c.to_excel(df_export, sheets_path, 'g13.1b.xlsx')
-except:
-    errors['Gráfico 13.1 B'] = traceback.format_exc()
-
-
-# Gráfico 13.2
-try:
-    # importação da base de dados
-    data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
-    df = data[data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe'])].copy()
-
-    # pivoting do valor e população, para cálculo da taxa
-    df.loc[
-        df['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
-        ] = 'Valor'
-    df_pivoted = pd.pivot_table(df, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
-
-    # calculo da taxa
-    df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
-    df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
 
     # concatenação do período
     tri = {
@@ -246,19 +313,25 @@ try:
         4: '10'
     }
 
-    df_pivoted['Month'] = df_pivoted['Trimestre'].map(tri)
-    df_pivoted['Period'] = '01/' + df_pivoted['Month'].astype(str) + '/' + df_pivoted['Ano'].astype(str)
-    df_pivoted['Variável'] = 'Taxa de pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
-    
+    df_final['Month'] = df_final['Trimestre'].map(tri)
+    df_final['Periodo'] = '01/' + df_final['Month'].astype(str) + '/' + df_final['Ano'].astype(str)
+    df_final['Variável'] = 'Taxa de pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
+
     # seleção das colunas
-    df_final = df_pivoted[df_pivoted['Ano'] >= 2019][['Região', 'Variável', 'Period', 'Taxa']].copy()
-    df_final.rename(columns={'Taxa': 'Valor', 'Period': 'Trimestre'}, inplace=True)
-    df_final['Valor'] = df_final['Valor'].round(2)
+    df_export = df_final[['Região', 'Variável', 'Periodo', 'Taxa', 'Colocação']].copy()
+    df_export.rename(columns={'Taxa': 'Valor', 'Periodo': 'Trimestre'}, inplace=True)
+    df_export['Valor'] = df_export['Valor'].round(2)
+
+    # tratamento para inclusão do símbolo de ordem
+    df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
+    df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
 
     # conversão em arquivo csv
-    c.to_excel(df_final, sheets_path, 'g13.2.xlsx')
+    c.to_excel(df_export, sheets_path, 'g13.3a.xlsx')
 except:
-    errors['Gráfico 13.2'] = traceback.format_exc()
+    errors['Gráfico 13.3 A'] = traceback.format_exc()
+
+
 
 # # Gráfico 16.1
 # try:
