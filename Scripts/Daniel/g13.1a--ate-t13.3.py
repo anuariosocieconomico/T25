@@ -68,15 +68,25 @@ try:
     df_concat['Ano'] = df_concat['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
     df_concat['Valor'] = df_concat['Valor'].replace('...', 0).astype(int)  # valores nulos são definidos por '...'
 
+    c.to_csv(df_concat, dbs_path, 'forca_trabalho.csv')
+except:
+    errors['Base Força de Trabalho'] = traceback.format_exc()
+
+
+# Gráfico 13.1 A
+try:
+    # importação da base de dados
+    data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+
     # encontra o último trimestre do ano mais recente
-    df = df_concat.loc[df_concat['Ano'] == df_concat['Ano'].max()].copy()
+    df = data.loc[data['Ano'] == data['Ano'].max()].copy()
     df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
     tri = df['Trimestre'].max()
 
     # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
-    df_tri = df_concat[
-        (df_concat['Ano'].isin([df_concat['Ano'].max(), df_concat['Ano'].max() - 1])) &
-        (df_concat['Trimestre'] == tri)
+    df_tri = data[
+        (data['Ano'].isin([data['Ano'].max(), data['Ano'].max() - 1])) &
+        (data['Trimestre'] == tri)
         ].copy()
 
     # pivoting do valor e população, para cálculo da taxa
@@ -89,7 +99,6 @@ try:
     df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
     df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
 
-    # Gráfico 13.1 A --------------------------------------------------------------------------
     # seleção dos estados e ranqueamento para elaboração do arquivo g13.1a
     df_states = df_pivoted[
         ~(df_pivoted['Região'].isin(['Brasil', 'Nordeste'])) &
@@ -137,9 +146,36 @@ try:
 
     # conversão em arquivo csv
     c.to_excel(df_export, sheets_path, 'g13.1a.xlsx')
+except:
+    errors['Gráfico 13.1 A'] = traceback.format_exc()
 
 
-    # Gráfico 13.1 B ---------------------------------------------------------------------------
+# Gráfico 13.1 B
+try:
+    # importação da base de dados
+    data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+
+    # encontra o último trimestre do ano mais recente
+    df = data.loc[data['Ano'] == data['Ano'].max()].copy()
+    df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
+    tri = df['Trimestre'].max()
+
+    # filtra o trimestre pelo ano mais recente e adiciona o trimestre do ano anterior
+    df_tri = data[
+        (data['Ano'].isin([data['Ano'].max(), data['Ano'].max() - 1])) &
+        (data['Trimestre'] == tri)
+        ].copy()
+
+    # pivoting do valor e população, para cálculo da taxa
+    df_tri.loc[
+        df_tri['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
+        ] = 'Valor'
+    df_pivoted = pd.pivot_table(df_tri, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
+
+    # calculo da taxa
+    df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
+    df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
+
     # pivoting do valores por ano
     years = sorted(df_pivoted['Ano'].unique().tolist())
     df_diff = pd.pivot_table(df_pivoted, index=['Região'], columns='Ano', values='Taxa').reset_index()
@@ -166,6 +202,15 @@ try:
     df_export['Valor'] = df_export['Valor'].round(2)
     
     # tratamento para definição do período na variável e inclusão do símbolo de ordem
+    if tri == 1:
+        month = '01/'
+    elif tri == 2:
+        month = '04/'
+    elif tri == 3:
+        month = '07/'
+    elif tri == 4:
+        month = '10/'
+
     df_export['Variável'] = f'Diferença {years[-1]}/{month[:-1]} - {years[-2]}/{month[:-1]}'
     df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
     df_export['Colocação'] = df_export['Colocação'].apply(lambda x: str(x) + 'º' if x != 0 else '')
@@ -173,12 +218,47 @@ try:
 
     # conversão em arquivo csv
     c.to_excel(df_export, sheets_path, 'g13.1b.xlsx')
+except:
+    errors['Gráfico 13.1 B'] = traceback.format_exc()
 
 
-except Exception as e:
-    errors['Gráfico 13.1'] = traceback.format_exc()
+# Gráfico 13.2
+try:
+    # importação da base de dados
+    data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+    df = data[data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe'])].copy()
 
+    # pivoting do valor e população, para cálculo da taxa
+    df.loc[
+        df['Variável'] == 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência', 'Variável'
+        ] = 'Valor'
+    df_pivoted = pd.pivot_table(df, index=['Região', 'Ano', 'Trimestre'], columns='Variável', values='Valor').reset_index()
 
+    # calculo da taxa
+    df_pivoted['Taxa'] = (df_pivoted['Valor'] / df_pivoted['População']) * 100
+    df_pivoted['Taxa'] = df_pivoted['Taxa'].replace(np.nan, 0)
+
+    # concatenação do período
+    tri = {
+        1: '01',
+        2: '04',
+        3: '07',
+        4: '10'
+    }
+
+    df_pivoted['Month'] = df_pivoted['Trimestre'].map(tri)
+    df_pivoted['Period'] = '01/' + df_pivoted['Month'].astype(str) + '/' + df_pivoted['Ano'].astype(str)
+    df_pivoted['Variável'] = 'Taxa de pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
+    
+    # seleção das colunas
+    df_final = df_pivoted[df_pivoted['Ano'] >= 2019][['Região', 'Variável', 'Period', 'Taxa']].copy()
+    df_final.rename(columns={'Taxa': 'Valor', 'Period': 'Trimestre'}, inplace=True)
+    df_final['Valor'] = df_final['Valor'].round(2)
+
+    # conversão em arquivo csv
+    c.to_excel(df_final, sheets_path, 'g13.2.xlsx')
+except:
+    errors['Gráfico 13.2'] = traceback.format_exc()
 
 # # Gráfico 16.1
 # try:
@@ -251,7 +331,7 @@ except Exception as e:
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
 # se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
-file_name = 'script--g13.1a--g13.1b--g13.2--g13.3a--g13.3b--g13.4--g13.5a--g13.5b--g13.6--t13.1--g13.7--g13.8--t13.2--g13.9a--g13.9b--g13.10--t13.3.txt'
+file_name = 'script--g13.1a--ate-t13.3.txt'
 if errors:
     with open(os.path.join(errors_path, file_name), 'w', encoding='utf-8') as f:
         f.write(json.dumps(errors, indent=4, ensure_ascii=False))
