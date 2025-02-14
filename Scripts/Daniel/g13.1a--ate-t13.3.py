@@ -11,6 +11,8 @@ from datetime import datetime
 from time import sleep
 
 
+# este script deve ser configurada para ser executado mensalmente
+
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
 dbs_path = tempfile.mkdtemp()
 sheets_path = c.sheets_dir
@@ -31,7 +33,7 @@ try:
     dbs = []
     for key, table in {
         'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': {
-            'tb': '6402', 'var': '4088,4090,4099', 'class': {'86': '95251'}
+            'tb': '6402', 'var': '1641,4088,4090,4092,4094,4099', 'class': {'86': '95251'}
         },
         'População': {
             'tb': '5917', 'var': '606', 'class': {'2': '6794'}
@@ -562,15 +564,91 @@ except:
 #     errors['Gráfico 13.5 B'] = traceback.format_exc()
 
 
-# Gráfico 13.6
+# # Gráfico 13.6
+# try:
+#     # importação da base de dados
+#     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+#     data = data.loc[  # filtra pelas variáveis de interesse e pelos anos mais recentes
+#         (data['Variável'] == 'Taxa de desocupação, na semana de referência, das pessoas de 14 anos ou mais de idade') &
+#         (data['Trimestre'] == 4) &
+#         (data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe']))
+#     ].copy()
+
+#     # concatenação do trimestre
+#     tri = {
+#         1: '01',
+#         2: '04',
+#         3: '07',
+#         4: '10'
+#     }
+
+#     data['Month'] = data['Trimestre'].map(tri)
+#     data['Trimestre'] = '01/' + data['Month'].max() + '/' + data['Ano'].astype(str)
+
+#     # seleção das colunas
+#     df = data[['Região', 'Variável', 'Trimestre', 'Valor']].copy()
+
+#     # conversão em arquivo csv
+#     c.to_excel(df, sheets_path, 'g13.6.xlsx')
+# except:
+#     errors['Gráfico 13.6'] = traceback.format_exc()
+
+
+# Tabela 13.1
 try:
     # importação da base de dados
     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
-    data = data.loc[  # filtra pelas variáveis de interesse e pelos anos mais recentes
-        (data['Variável'] == 'Taxa de desocupação, na semana de referência, das pessoas de 14 anos ou mais de idade') &
-        (data['Trimestre'] == 4) &
+
+    # encontra trimestre mais recente do ano mais recente
+    df = data.loc[data['Ano'] == data['Ano'].max()].copy()
+    df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
+    tri = df['Trimestre'].max()
+
+    # filtra pelas variáveis e períodos de interesse e faz mapeamento
+    variable_to_category = {
+        'Pessoas de 14 anos ou mais de idade': 'Categoria 1',
+        'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': 'Categoria 2',
+        'Pessoas de 14 anos ou mais de idade ocupadas na semana de referência': 'Categoria 3',
+        'Pessoas de 14 anos ou mais de idade, desocupadas na semana de referência': 'Categoria 4',
+        'Pessoas de 14 anos ou mais de idade, fora da força de trabalho, na semana de referência': 'Categoria 5',
+        'População': 'Categoria 6'
+    }
+
+    category_to_variable = {v: k for k, v in variable_to_category.items()}
+
+    df = data.loc[
+        (data['Variável'].isin(variable_to_category.keys())) &
+        (data['Trimestre'] == tri) &
         (data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe']))
     ].copy()
+
+    df['Categoria'] = df['Variável'].map(variable_to_category)
+
+    # seleciona os anos em intervalos de 2
+    years = df['Ano'].unique()
+    max_year = years.max()
+    [year - 2 for year in years]
+    selected_years = [max_year - 2 * i for i in range((max_year - years.min()) // 2 + 1)]
+
+    # pivotagem e cálculo da taxa
+    df_pivoted = pd.pivot_table(
+        df[df['Ano'].isin(selected_years)],
+        index=['Região', 'Ano', 'Trimestre'],
+        columns='Categoria',
+        values='Valor'
+        ).reset_index()
+    
+    for i, col in enumerate(df_pivoted.columns):
+        if col not in ['Região', 'Ano', 'Trimestre', 'Categoria 6']:
+            df_pivoted[category_to_variable[col]] = (df_pivoted[col] / df_pivoted['Categoria 6']) * 100
+            df_pivoted[category_to_variable[col]] = df_pivoted[category_to_variable[col]].replace(np.nan, 0)
+    
+    # melting das colunas
+    df_melted = pd.melt(
+        df_pivoted[[col for col in df_pivoted.columns if not col.startswith('Categoria')]],
+        id_vars=['Região', 'Ano', 'Trimestre'],
+        var_name='Variável', value_name='Valor'
+    )
 
     # concatenação do trimestre
     tri = {
@@ -580,16 +658,17 @@ try:
         4: '10'
     }
 
-    data['Month'] = data['Trimestre'].map(tri)
-    data['Trimestre'] = '01/' + data['Month'].max() + '/' + data['Ano'].astype(str)
+    df_melted['Month'] = df_melted['Trimestre'].map(tri)
+    df_melted['Trimestre'] = '01/' + df_melted['Month'].max() + '/' + df_melted['Ano'].astype(str)
 
     # seleção das colunas
-    df = data[['Região', 'Variável', 'Trimestre', 'Valor']].copy()
+    df = df_melted[['Região', 'Variável', 'Trimestre', 'Valor']].copy()
+    df.sort_values(by=['Região', 'Variável', 'Trimestre'], inplace=True)
 
     # conversão em arquivo csv
-    c.to_excel(df, sheets_path, 'g13.6.xlsx')
+    c.to_excel(df, sheets_path, 't13.1.xlsx')
 except:
-    errors['Gráfico 13.6'] = traceback.format_exc()
+    errors['Tabela 13.1'] = traceback.format_exc()
 
 
 
