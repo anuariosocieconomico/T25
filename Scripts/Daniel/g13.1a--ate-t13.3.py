@@ -23,56 +23,61 @@ errors = {}
 
 
 # ************************
-# DOWNLOAD DA BASE DE DADOS E PLANILHA
+# DOWNLOAD DA BASE DE DADOS
 # ************************
 
 
-# Tabela 16.1
-try:
-    # looping de requisições para cada tabela da figura
-    dbs = []
-    for key, table in {
-        'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': {
-            'tb': '6402', 'var': '1641,4088,4090,4092,4094,4099', 'class': {'86': '95251'}
-        },
-        'População': {
-            'tb': '5917', 'var': '606', 'class': {'2': '6794'}
-        }
-    }.items():
-        # looping de requisições para cada região da tabela
-        dfs = []
-        for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
-            data = sidrapy.get_table(
-                table_code=table['tb'],
-                territorial_level=reg[0],ibge_territorial_code=reg[1],
-                variable=table['var'],
-                classifications=table['class'],
-                period="all"
-            )
+# # Gráfico 13.1a até Tabela 13.1
+# try:
+#     # looping de requisições para cada tabela da figura
+#     dbs = []
+#     for key, table in {
+#         'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': {
+#             'tb': '6402', 'var': '1641,4088,4090,4092,4094,4099', 'class': {'86': '95251'}
+#         },
+#         'População': {
+#             'tb': '5917', 'var': '606', 'class': {'2': '6794'}
+#         }
+#     }.items():
+#         # looping de requisições para cada região da tabela
+#         dfs = []
+#         for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
+#             data = sidrapy.get_table(
+#                 table_code=table['tb'],
+#                 territorial_level=reg[0],ibge_territorial_code=reg[1],
+#                 variable=table['var'],
+#                 classifications=table['class'],
+#                 period="all"
+#             )
 
-            # remoção da linha 0, dados para serem usados como rótulos das colunas
-            data.drop(0, axis='index', inplace=True)
+#             # remoção da linha 0, dados para serem usados como rótulos das colunas
+#             data.drop(0, axis='index', inplace=True)
 
-            dfs.append(data)
+#             dfs.append(data)
 
-        # união das regiões da variável
-        data = pd.concat(dfs, ignore_index=True)
-        dbs.append(data)
-        sleep(1)
+#         # união das regiões da variável
+#         data = pd.concat(dfs, ignore_index=True)
+#         dbs.append(data)
+#         sleep(1)
 
-    # todos os dfs
-    df_concat = pd.concat(dbs, ignore_index=True)
+#     # todos os dfs
+#     df_concat = pd.concat(dbs, ignore_index=True)
 
-    # seleção das colunas e linhas de interesse e tratamentos básicos
-    df_concat = df_concat[['D1N', 'D3N', 'D2N', 'V']].copy()
-    df_concat.columns = ['Região', 'Variável', 'Ano', 'Valor']
-    df_concat['Trimestre'] = df_concat['Ano'].apply(lambda x: x[0]).astype(int)
-    df_concat['Ano'] = df_concat['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
-    df_concat['Valor'] = df_concat['Valor'].replace('...', 0).astype(float)  # valores nulos são definidos por '...'
+#     # seleção das colunas e linhas de interesse e tratamentos básicos
+#     df_concat = df_concat[['D1N', 'D3N', 'D2N', 'V']].copy()
+#     df_concat.columns = ['Região', 'Variável', 'Ano', 'Valor']
+#     df_concat['Trimestre'] = df_concat['Ano'].apply(lambda x: x[0]).astype(int)
+#     df_concat['Ano'] = df_concat['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
+#     df_concat['Valor'] = df_concat['Valor'].replace('...', 0).astype(float)  # valores nulos são definidos por '...'
 
-    c.to_csv(df_concat, dbs_path, 'forca_trabalho.csv')
-except:
-    errors['Base Força de Trabalho'] = traceback.format_exc()
+#     c.to_csv(df_concat, dbs_path, 'forca_trabalho.csv')
+# except:
+#     errors['Base Força de Trabalho'] = traceback.format_exc()
+
+
+# ************************
+# ELABORAÇÃO DAS PLANILHAS
+# ************************
 
 
 # # Gráfico 13.1 A
@@ -594,61 +599,123 @@ except:
 #     errors['Gráfico 13.6'] = traceback.format_exc()
 
 
-# Tabela 13.1
+# # Tabela 13.1
+# try:
+#     # importação da base de dados
+#     data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+
+#     # encontra trimestre mais recente do ano mais recente
+#     df = data.loc[data['Ano'] == data['Ano'].max()].copy()
+#     df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
+#     tri = df['Trimestre'].max()
+
+#     # filtra pelas variáveis e períodos de interesse e faz mapeamento
+#     variable_to_category = {
+#         'Pessoas de 14 anos ou mais de idade': 'Categoria 1',
+#         'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': 'Categoria 2',
+#         'Pessoas de 14 anos ou mais de idade ocupadas na semana de referência': 'Categoria 3',
+#         'Pessoas de 14 anos ou mais de idade, desocupadas na semana de referência': 'Categoria 4',
+#         'Pessoas de 14 anos ou mais de idade, fora da força de trabalho, na semana de referência': 'Categoria 5',
+#         'População': 'Categoria 6'
+#     }
+
+#     category_to_variable = {v: k for k, v in variable_to_category.items()}
+
+#     df = data.loc[
+#         (data['Variável'].isin(variable_to_category.keys())) &
+#         (data['Trimestre'] == tri) &
+#         (data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe']))
+#     ].copy()
+
+#     df['Categoria'] = df['Variável'].map(variable_to_category)
+
+#     # seleciona os anos em intervalos de 2
+#     years = df['Ano'].unique()
+#     max_year = years.max()
+#     [year - 2 for year in years]
+#     selected_years = [max_year - 2 * i for i in range((max_year - years.min()) // 2 + 1)]
+
+#     # pivotagem e cálculo da taxa
+#     df_pivoted = pd.pivot_table(
+#         df[df['Ano'].isin(selected_years)],
+#         index=['Região', 'Ano', 'Trimestre'],
+#         columns='Categoria',
+#         values='Valor'
+#         ).reset_index()
+    
+#     for i, col in enumerate(df_pivoted.columns):
+#         if col not in ['Região', 'Ano', 'Trimestre', 'Categoria 6']:
+#             df_pivoted[category_to_variable[col]] = (df_pivoted[col] / df_pivoted['Categoria 6']) * 100
+#             df_pivoted[category_to_variable[col]] = df_pivoted[category_to_variable[col]].replace(np.nan, 0)
+    
+#     # melting das colunas
+#     df_melted = pd.melt(
+#         df_pivoted[[col for col in df_pivoted.columns if not col.startswith('Categoria')]],
+#         id_vars=['Região', 'Ano', 'Trimestre'],
+#         var_name='Variável', value_name='Valor'
+#     )
+
+#     # concatenação do trimestre
+#     tri = {
+#         1: '01',
+#         2: '04',
+#         3: '07',
+#         4: '10'
+#     }
+
+#     df_melted['Month'] = df_melted['Trimestre'].map(tri)
+#     df_melted['Trimestre'] = '01/' + df_melted['Month'].max() + '/' + df_melted['Ano'].astype(str)
+
+#     # seleção das colunas
+#     df = df_melted[['Região', 'Variável', 'Trimestre', 'Valor']].copy()
+#     df.sort_values(by=['Região', 'Variável', 'Trimestre'], inplace=True)
+
+#     # conversão em arquivo csv
+#     c.to_excel(df, sheets_path, 't13.1.xlsx')
+# except:
+#     errors['Tabela 13.1'] = traceback.format_exc()
+
+
+# Gráfico 13.7
 try:
-    # importação da base de dados
-    data = c.open_file(dbs_path, 'forca_trabalho.csv', 'csv')
+    # looping de requisições para cada tabela da figura
+    
+    data = sidrapy.get_table(
+        table_code='4097',
+        territorial_level='3',ibge_territorial_code='28',
+        variable='4108',
+        classifications={'11913': '31722,31723,31725,31726,31727,31731,96170,96171'},
+        period="all"
+    )
 
-    # encontra trimestre mais recente do ano mais recente
-    df = data.loc[data['Ano'] == data['Ano'].max()].copy()
-    df = df.loc[df['Trimestre'] == df['Trimestre'].max()].copy()
-    tri = df['Trimestre'].max()
+    # remoção da linha 0, dados para serem usados como rótulos das colunas
+    data.drop(0, axis='index', inplace=True)
 
-    # filtra pelas variáveis e períodos de interesse e faz mapeamento
-    variable_to_category = {
-        'Pessoas de 14 anos ou mais de idade': 'Categoria 1',
-        'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência': 'Categoria 2',
-        'Pessoas de 14 anos ou mais de idade ocupadas na semana de referência': 'Categoria 3',
-        'Pessoas de 14 anos ou mais de idade, desocupadas na semana de referência': 'Categoria 4',
-        'Pessoas de 14 anos ou mais de idade, fora da força de trabalho, na semana de referência': 'Categoria 5',
-        'População': 'Categoria 6'
-    }
+    # seleção das colunas e linhas de interesse e tratamentos básicos
+    df = data[['D1N', 'D3N', 'D4N', 'D2N', 'V']].copy()
+    df.columns = ['Região', 'Variável', 'Classe', 'Ano', 'Valor']
+    df['Trimestre'] = df['Ano'].apply(lambda x: x[0]).astype(int)
+    df['Ano'] = df['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
+    df['Valor'] = df['Valor'].replace('...', 0).astype(float)  # valores nulos são definidos por '...'
+    df = df[df['Ano'] >= 2019].copy()
 
-    category_to_variable = {v: k for k, v in variable_to_category.items()}
-
-    df = data.loc[
-        (data['Variável'].isin(variable_to_category.keys())) &
-        (data['Trimestre'] == tri) &
-        (data['Região'].isin(['Brasil', 'Nordeste', 'Sergipe']))
+    # agrupamento das variáveis
+    df_formal = df[df['Classe'].str.contains('com carteira de trabalho')].copy()
+    df_informal = df[df['Classe'].str.contains('sem carteira de trabalho')].copy()
+    df_others = df[
+        (~df['Classe'].str.contains('sem carteira de trabalho')) &
+        (~df['Classe'].str.contains('com carteira de trabalho'))
     ].copy()
 
-    df['Categoria'] = df['Variável'].map(variable_to_category)
+    df_formal['Classe'] = 'Setor privado com carteira'
+    df_informal['Classe'] = 'Setor privado sem carteira'
+    df_others.loc[df_others['Classe'] == 'Empregado no setor público', 'Classe'] = 'Setor público'
 
-    # seleciona os anos em intervalos de 2
-    years = df['Ano'].unique()
-    max_year = years.max()
-    [year - 2 for year in years]
-    selected_years = [max_year - 2 * i for i in range((max_year - years.min()) // 2 + 1)]
+    df_formal_grouped = df_formal.groupby(['Região', 'Variável', 'Classe', 'Trimestre', 'Ano'])['Valor'].sum().reset_index()
+    df_informal_grouped = df_informal.groupby(['Região', 'Variável', 'Classe', 'Trimestre', 'Ano'])['Valor'].sum().reset_index()
 
-    # pivotagem e cálculo da taxa
-    df_pivoted = pd.pivot_table(
-        df[df['Ano'].isin(selected_years)],
-        index=['Região', 'Ano', 'Trimestre'],
-        columns='Categoria',
-        values='Valor'
-        ).reset_index()
-    
-    for i, col in enumerate(df_pivoted.columns):
-        if col not in ['Região', 'Ano', 'Trimestre', 'Categoria 6']:
-            df_pivoted[category_to_variable[col]] = (df_pivoted[col] / df_pivoted['Categoria 6']) * 100
-            df_pivoted[category_to_variable[col]] = df_pivoted[category_to_variable[col]].replace(np.nan, 0)
-    
-    # melting das colunas
-    df_melted = pd.melt(
-        df_pivoted[[col for col in df_pivoted.columns if not col.startswith('Categoria')]],
-        id_vars=['Região', 'Ano', 'Trimestre'],
-        var_name='Variável', value_name='Valor'
-    )
+    df_concat = pd.concat([df_formal_grouped, df_informal_grouped, df_others], ignore_index=True)
+    df_concat.sort_values(by=['Região', 'Classe', 'Ano', 'Trimestre'], inplace=True)
 
     # concatenação do trimestre
     tri = {
@@ -658,55 +725,25 @@ try:
         4: '10'
     }
 
-    df_melted['Month'] = df_melted['Trimestre'].map(tri)
-    df_melted['Trimestre'] = '01/' + df_melted['Month'].max() + '/' + df_melted['Ano'].astype(str)
+    df_concat['Month'] = df_concat['Trimestre'].map(tri)
+    df_concat['Trimestre'] = '01/' + df_concat['Month'] + '/' + df_concat['Ano'].astype(str)
 
     # seleção das colunas
-    df = df_melted[['Região', 'Variável', 'Trimestre', 'Valor']].copy()
-    df.sort_values(by=['Região', 'Variável', 'Trimestre'], inplace=True)
+    df_export = df_concat[['Região', 'Classe', 'Trimestre', 'Valor']].copy()
+    df_export.rename(columns={'Classe': 'Variável'}, inplace=True)
+    df_export['Valor'] = df_export['Valor'].round(2)
+    # df_export.sort_values(by=['Região', 'Variável', 'Trimestre'], inplace=True)
+
 
     # conversão em arquivo csv
-    c.to_excel(df, sheets_path, 't13.1.xlsx')
-except:
-    errors['Tabela 13.1'] = traceback.format_exc()
+    c.to_excel(df_export, sheets_path, 'g13.7.xlsx')
+
+except Exception as e:
+    errors['Gráfico 13.7'] = traceback.format_exc()
 
 
 
-# # Gráfico 16.1
-# try:
-#     # looping de requisições para cada tabela da figura
-#     dfs = []
-#     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-#         data = sidrapy.get_table(
-#             table_code='6578',
-#             territorial_level=reg[0],ibge_territorial_code=reg[1],
-#             variable='10163',
-#             period="all"
-#         )
 
-#         # remoção da linha 0, dados para serem usados como rótulos das colunas
-#         data.drop(0, axis='index', inplace=True)
-
-#         dfs.append(data)
-
-#     data = pd.concat(dfs, ignore_index=True)
-
-#     # seleção das colunas de interesse
-#     data = data[['D1N', 'D3N', 'D2N', 'V']].copy()
-#     data['D2N'] = pd.to_datetime(data['D2N'], format='%Y')
-
-#     # renomeação das colunas
-#     data.columns = ['Região', 'Variável', 'Ano', 'Valor']
-
-#     # classificação dos dados
-#     data['Ano'] = data['Ano'].dt.strftime('%d/%m/%Y')
-#     data['Valor'] = data['Valor'].astype('float')
-
-#     # conversão em arquivo csv
-#     c.to_excel(data, sheets_path, 'g16.1.xlsx')
-
-# except Exception as e:
-#     errors['Gráfico 16.1'] = traceback.format_exc()
 
 
 
