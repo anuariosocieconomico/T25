@@ -741,58 +741,95 @@ errors = {}
 #     errors['Gráfico 13.7'] = traceback.format_exc()
 
 
-# Gráfico 13.8
+# # Gráfico 13.8
+# try:
+#     # projeção da taxa
+#     url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
+#     response = c.open_url(url)
+#     df = pd.DataFrame(response.json())
+
+#     df = df.loc[df['name'].str.startswith('Sintese_de_Indicadores_Sociais_2'),
+#                 ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
+
+#     url_to_get = df['path'][0].split('/')[-1]
+#     response = c.open_url(url + '/' + url_to_get + '/Tabelas/xls')
+#     df = pd.DataFrame(response.json())
+#     url_to_get_pib = df.loc[df['name'].str.startswith('1_'), 'url'].values[0]
+
+#     file = c.open_url(url_to_get_pib)
+
+#     # importação dos indicadores
+#     df = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 1.42', skiprows=6)
+
+#     dfs = []
+#     for tb in df.keys():
+#         if '(CV)' not in tb:
+#             df_tb = df[tb].iloc[:, [0, 6, 7, 8, 9]]  # cópia de cada aba da planilha
+#             df_tb = df_tb[df_tb['Unnamed: 0'] == 'Sergipe'].copy()
+#             df_tb.dropna(how='all', inplace=True)
+#             df_tb.columns = ['Região'] + [col[:-2] for col in df_tb.columns if col != 'Unnamed: 0']
+#             df_tb['Ano'] = tb
+
+#             dfs.append(df_tb)
+
+#     df_concat = pd.concat(dfs, ignore_index=True)
+
+#     # melting das colunas
+#     df_melted = pd.melt(df_concat, id_vars=['Região', 'Ano'], var_name='Variável', value_name='Valor')
+#     df_melted['Ano'] = '31/12/' + df_melted['Ano']
+#     df_melted.loc[df_melted['Variável'] == 'Estuda e está ocupado', 'Variável'] = 'Estuda e trabalha'
+#     df_melted.loc[df_melted['Variável'] == 'Só está ocupado', 'Variável'] = 'Só trabalha'
+#     df_melted.loc[df_melted['Variável'] == 'Não estuda e não está ocupado', 'Variável'] = 'Não estuda e não trabalha'
+
+#     # seleção das colunas
+#     df_export = df_melted[['Região', 'Variável', 'Ano', 'Valor']].copy()
+#     df_export.sort_values(by=['Região', 'Variável', 'Ano'], inplace=True)
+
+#     # conversão em arquivo csv
+#     c.to_excel(df_export, sheets_path, 'g13.8.xlsx')
+
+# except:
+#     errors['Gráfico 13.8'] = traceback.format_exc()
+
+
+# Tabela 13.2
 try:
-    # projeção da taxa
-    url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
-    response = c.open_url(url)
-    df = pd.DataFrame(response.json())
+    data = sidrapy.get_table(
+        table_code='5434',
+        territorial_level='3', ibge_territorial_code='28',
+        variable='4090,4108',
+        classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
+        period="all"
+    )
 
-    df = df.loc[df['name'].str.startswith('Sintese_de_Indicadores_Sociais_2'),
-                ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
+    # remoção da linha 0, dados para serem usados como rótulos das colunas
+    # não foram usados porque variam de acordo com a tabela
+    # seleção das colunas de interesse
+    data.drop(0, axis='index', inplace=True)
+    data = data[['MN', 'D1N', 'D2N', 'D3N', 'D4N', 'V']]
 
-    url_to_get = df['path'][0].split('/')[-1]
-    response = c.open_url(url + '/' + url_to_get + '/Tabelas/xls')
-    df = pd.DataFrame(response.json())
-    url_to_get_pib = df.loc[df['name'].str.startswith('1_'), 'url'].values[0]
+    # separação de valores; valores inteiros e percentuais estão armazenados na mesma coluna
+    data_ab = data.loc[data['MN'] == 'Mil pessoas']
+    data_per = data.loc[data['MN'] == '%']
+    data = data_ab.iloc[:, 1:]
+    data['Percentual'] = data_per.loc[:, 'V'].to_list()
 
-    file = c.open_url(url_to_get_pib)
+    # renomeação das colunas
+    # filtragem de dados referentes ao 4º trimestre de cada ano
+    data.columns = ['Região', 'Trimestre', 'Classe', 'Variável', 'Pessoas', 'Percentual']
+    data = data.loc[data['Trimestre'].str.startswith('4º trimestre')].copy()
+    data['Trimestre'] = data['Trimestre'].apply(lambda x: '31/10/' + x[-4:])
+    data = data[['Região', 'Variável', 'Trimestre', 'Pessoas', 'Percentual']]
 
-    # importação dos indicadores
-    df = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 1.42', skiprows=6)
-
-    dfs = []
-    for tb in df.keys():
-        if '(CV)' not in tb:
-            df_tb = df[tb].iloc[:, [0, 6, 7, 8, 9]]  # cópia de cada aba da planilha
-            df_tb = df_tb[df_tb['Unnamed: 0'] == 'Sergipe'].copy()
-            df_tb.dropna(how='all', inplace=True)
-            df_tb.columns = ['Região'] + [col[:-2] for col in df_tb.columns if col != 'Unnamed: 0']
-            df_tb['Ano'] = tb
-
-            dfs.append(df_tb)
-
-    df_concat = pd.concat(dfs, ignore_index=True)
-
-    # melting das colunas
-    df_melted = pd.melt(df_concat, id_vars=['Região', 'Ano'], var_name='Variável', value_name='Valor')
-    df_melted['Ano'] = '31/12/' + df_melted['Ano']
-    df_melted.loc[df_melted['Variável'] == 'Estuda e está ocupado', 'Variável'] = 'Estuda e trabalha'
-    df_melted.loc[df_melted['Variável'] == 'Só está ocupado', 'Variável'] = 'Só trabalha'
-    df_melted.loc[df_melted['Variável'] == 'Não estuda e não está ocupado', 'Variável'] = 'Não estuda e não trabalha'
-
-    # seleção das colunas
-    df_export = df_melted[['Região', 'Variável', 'Ano', 'Valor']].copy()
-    df_export.sort_values(by=['Região', 'Variável', 'Ano'], inplace=True)
+    # classificação dos dados
+    data['Pessoas'] = data['Pessoas'].astype(int)
+    data['Percentual'] = data['Percentual'].astype(float)
 
     # conversão em arquivo csv
-    c.to_excel(df_export, sheets_path, 'g13.8.xlsx')
+    c.to_excel(data, sheets_path, 't13.2.xlsx')
 
-except:
-    errors['Gráfico 13.8'] = traceback.format_exc()
-
-
-
+except Exception as e:
+    errors['Tabela 13.2'] = traceback.format_exc()
 
 
 
