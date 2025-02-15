@@ -676,72 +676,120 @@ errors = {}
 #     errors['Tabela 13.1'] = traceback.format_exc()
 
 
-# Gráfico 13.7
+# # Gráfico 13.7
+# try:
+#     # download dos dados
+#     data = sidrapy.get_table(
+#         table_code='4097',
+#         territorial_level='3',ibge_territorial_code='28',
+#         variable='4108',
+#         classifications={'11913': '31722,31723,31725,31726,31727,31731,96170,96171'},
+#         period="all"
+#     )
+
+#     # remoção da linha 0, dados para serem usados como rótulos das colunas
+#     data.drop(0, axis='index', inplace=True)
+
+#     # seleção das colunas e linhas de interesse e tratamentos básicos
+#     df = data[['D1N', 'D3N', 'D4N', 'D2N', 'V']].copy()
+#     df.columns = ['Região', 'Variável', 'Classe', 'Ano', 'Valor']
+#     df['Trimestre'] = df['Ano'].apply(lambda x: x[0]).astype(int)
+#     df['Ano'] = df['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
+#     df['Valor'] = df['Valor'].replace('...', 0).astype(float)  # valores nulos são definidos por '...'
+#     df = df[df['Ano'] >= 2019].copy()
+
+#     # agrupamento das variáveis
+#     df_formal = df[df['Classe'].str.contains('com carteira de trabalho')].copy()
+#     df_informal = df[df['Classe'].str.contains('sem carteira de trabalho')].copy()
+#     df_others = df[
+#         (~df['Classe'].str.contains('sem carteira de trabalho')) &
+#         (~df['Classe'].str.contains('com carteira de trabalho'))
+#     ].copy()
+
+#     df_formal['Classe'] = 'Setor privado com carteira'
+#     df_informal['Classe'] = 'Setor privado sem carteira'
+#     df_others.loc[df_others['Classe'] == 'Empregado no setor público', 'Classe'] = 'Setor público'
+
+#     df_formal_grouped = df_formal.groupby(['Região', 'Variável', 'Classe', 'Trimestre', 'Ano'])['Valor'].sum().reset_index()
+#     df_informal_grouped = df_informal.groupby(['Região', 'Variável', 'Classe', 'Trimestre', 'Ano'])['Valor'].sum().reset_index()
+
+#     df_concat = pd.concat([df_formal_grouped, df_informal_grouped, df_others], ignore_index=True)
+#     df_concat.sort_values(by=['Região', 'Classe', 'Ano', 'Trimestre'], inplace=True)
+
+#     # concatenação do trimestre
+#     tri = {
+#         1: '01',
+#         2: '04',
+#         3: '07',
+#         4: '10'
+#     }
+
+#     df_concat['Month'] = df_concat['Trimestre'].map(tri)
+#     df_concat['Trimestre'] = '01/' + df_concat['Month'] + '/' + df_concat['Ano'].astype(str)
+
+#     # seleção das colunas
+#     df_export = df_concat[['Região', 'Classe', 'Trimestre', 'Valor']].copy()
+#     df_export.rename(columns={'Classe': 'Variável'}, inplace=True)
+#     df_export['Valor'] = df_export['Valor'].round(2)
+#     # df_export.sort_values(by=['Região', 'Variável', 'Trimestre'], inplace=True)
+
+
+#     # conversão em arquivo csv
+#     c.to_excel(df_export, sheets_path, 'g13.7.xlsx')
+
+# except Exception as e:
+#     errors['Gráfico 13.7'] = traceback.format_exc()
+
+
+# Gráfico 13.8
 try:
-    # looping de requisições para cada tabela da figura
-    
-    data = sidrapy.get_table(
-        table_code='4097',
-        territorial_level='3',ibge_territorial_code='28',
-        variable='4108',
-        classifications={'11913': '31722,31723,31725,31726,31727,31731,96170,96171'},
-        period="all"
-    )
+    # projeção da taxa
+    url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
+    response = c.open_url(url)
+    df = pd.DataFrame(response.json())
 
-    # remoção da linha 0, dados para serem usados como rótulos das colunas
-    data.drop(0, axis='index', inplace=True)
+    df = df.loc[df['name'].str.startswith('Sintese_de_Indicadores_Sociais_2'),
+                ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
 
-    # seleção das colunas e linhas de interesse e tratamentos básicos
-    df = data[['D1N', 'D3N', 'D4N', 'D2N', 'V']].copy()
-    df.columns = ['Região', 'Variável', 'Classe', 'Ano', 'Valor']
-    df['Trimestre'] = df['Ano'].apply(lambda x: x[0]).astype(int)
-    df['Ano'] = df['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
-    df['Valor'] = df['Valor'].replace('...', 0).astype(float)  # valores nulos são definidos por '...'
-    df = df[df['Ano'] >= 2019].copy()
+    url_to_get = df['path'][0].split('/')[-1]
+    response = c.open_url(url + '/' + url_to_get + '/Tabelas/xls')
+    df = pd.DataFrame(response.json())
+    url_to_get_pib = df.loc[df['name'].str.startswith('1_'), 'url'].values[0]
 
-    # agrupamento das variáveis
-    df_formal = df[df['Classe'].str.contains('com carteira de trabalho')].copy()
-    df_informal = df[df['Classe'].str.contains('sem carteira de trabalho')].copy()
-    df_others = df[
-        (~df['Classe'].str.contains('sem carteira de trabalho')) &
-        (~df['Classe'].str.contains('com carteira de trabalho'))
-    ].copy()
+    file = c.open_url(url_to_get_pib)
 
-    df_formal['Classe'] = 'Setor privado com carteira'
-    df_informal['Classe'] = 'Setor privado sem carteira'
-    df_others.loc[df_others['Classe'] == 'Empregado no setor público', 'Classe'] = 'Setor público'
+    # importação dos indicadores
+    df = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 1.42', skiprows=6)
 
-    df_formal_grouped = df_formal.groupby(['Região', 'Variável', 'Classe', 'Trimestre', 'Ano'])['Valor'].sum().reset_index()
-    df_informal_grouped = df_informal.groupby(['Região', 'Variável', 'Classe', 'Trimestre', 'Ano'])['Valor'].sum().reset_index()
+    dfs = []
+    for tb in df.keys():
+        if '(CV)' not in tb:
+            df_tb = df[tb].iloc[:, [0, 6, 7, 8, 9]]  # cópia de cada aba da planilha
+            df_tb = df_tb[df_tb['Unnamed: 0'] == 'Sergipe'].copy()
+            df_tb.dropna(how='all', inplace=True)
+            df_tb.columns = ['Região'] + [col[:-2] for col in df_tb.columns if col != 'Unnamed: 0']
+            df_tb['Ano'] = tb
 
-    df_concat = pd.concat([df_formal_grouped, df_informal_grouped, df_others], ignore_index=True)
-    df_concat.sort_values(by=['Região', 'Classe', 'Ano', 'Trimestre'], inplace=True)
+            dfs.append(df_tb)
 
-    # concatenação do trimestre
-    tri = {
-        1: '01',
-        2: '04',
-        3: '07',
-        4: '10'
-    }
+    df_concat = pd.concat(dfs, ignore_index=True)
 
-    df_concat['Month'] = df_concat['Trimestre'].map(tri)
-    df_concat['Trimestre'] = '01/' + df_concat['Month'] + '/' + df_concat['Ano'].astype(str)
+    # melting das colunas
+    df_melted = pd.melt(df_concat, id_vars=['Região', 'Ano'], var_name='Variável', value_name='Valor')
+    df_melted['Ano'] = '31/12/' + df_melted['Ano']
+    df_melted.loc[df_melted['Variável'] == 'Estuda e está ocupado', 'Variável'] = 'Estuda e trabalha'
+    df_melted.loc[df_melted['Variável'] == 'Só está ocupado', 'Variável'] = 'Só trabalha'
+    df_melted.loc[df_melted['Variável'] == 'Não estuda e não está ocupado', 'Variável'] = 'Não estuda e não trabalha'
 
     # seleção das colunas
-    df_export = df_concat[['Região', 'Classe', 'Trimestre', 'Valor']].copy()
-    df_export.rename(columns={'Classe': 'Variável'}, inplace=True)
-    df_export['Valor'] = df_export['Valor'].round(2)
-    # df_export.sort_values(by=['Região', 'Variável', 'Trimestre'], inplace=True)
-
+    df_export = df_melted[['Região', 'Variável', 'Ano', 'Valor']].copy()
+    df_export.sort_values(by=['Região', 'Variável', 'Ano'], inplace=True)
 
     # conversão em arquivo csv
-    c.to_excel(df_export, sheets_path, 'g13.7.xlsx')
+    c.to_excel(df_export, sheets_path, 'g13.8.xlsx')
 
-except Exception as e:
-    errors['Gráfico 13.7'] = traceback.format_exc()
-
-
+except:
+    errors['Gráfico 13.8'] = traceback.format_exc()
 
 
 
@@ -749,32 +797,6 @@ except Exception as e:
 
 
 
-# # Planilha de Indicadores Sociais
-# try:
-#     # projeção da taxa
-#     url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
-#     response = c.open_url(url)
-#     df = pd.DataFrame(response.json())
-
-#     df = df.loc[df['name'].str.startswith('Sintese_de_Indicadores_Sociais_2'),
-#                 ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
-
-#     url_to_get = df['path'][0].split('/')[-1]
-#     response = c.open_url(url + '/' + url_to_get + '/Tabelas/xls')
-#     df = pd.DataFrame(response.json())
-#     url_to_get_pib = df.loc[df['name'].str.startswith('2_'), 'url'].values[0]
-
-#     file = c.open_url(url_to_get_pib)
-# except:
-#     errors['Planilha de Indicadores Sociais'] = traceback.format_exc()
-
-
-# # Gráfico 16.4
-# try:
-#     # importação dos indicadores
-#     df = c.open_file(file_path=file.content, ext='zip', excel_name='', skiprows=6, sheet_name='4) INDICADORES')
-# except:
-#     errors['Gráfico 16.4'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
