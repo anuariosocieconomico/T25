@@ -24,6 +24,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
+from selenium.webdriver.support.ui import Select
 
 
 # ************************
@@ -46,6 +47,8 @@ load_dotenv()
 repo_path = 'anuariosocieconomico/T25'
 git_token = os.environ.get('GIT_TOKEN')
 source_dir = 'VDE'
+caged_login = os.environ.get('CAGED_LOGIN')
+caged_password = os.environ.get('CAGED_PASSWORD')
 
 # estados do nordeste
 ne_states = ['Alagoas', 'Bahia', 'Ceará', 'Maranhão', 'Paraíba',
@@ -151,6 +154,18 @@ def to_file(dir_path, name, content):
 class Google:
 
     def __init__(self, visible=False, rep=None):
+        """
+        Inicializa a instância do navegador Chrome com opções configuráveis.
+
+        Args:
+            visible (bool, optional): Se False, executa o navegador em modo headless.
+                Padrão: False.
+            rep (str, optional): Diretório para downloads. Se None, usa o diretório padrão.
+        
+        Notas:
+            As opções '--disable-dev-shm-usage', '--no-sandbox' e '--remote-debugging-port=9222'
+            são incluídas para compatibilidade com alguns ambientes. Podem ser removidas se causarem conflitos.
+        """
         self.rep_path = rep
         self.options = webdriver.ChromeOptions()
         self.prefs = {'download.default_directory': self.rep_path}
@@ -166,10 +181,25 @@ class Google:
         self.browser = webdriver.Chrome(options=self.options)
 
     def get(self, url):
+        """
+        Navega para a URL especificada e aguarda 2 segundos implícitos.
+
+        Args:
+            url (str): URL para navegação.
+        """
         self.browser.get(url)
         self.browser.implicitly_wait(2)
 
     def click(self, xpath):
+        """
+        Clique em um ou múltiplos elementos identificados por XPath.
+
+        Args:
+            xpath (Union[str, list]): XPath do elemento ou lista de XPaths.
+
+        Raises:
+            NoSuchElementException: Se o elemento não for encontrado.
+        """
         if isinstance(xpath, str):
             button = self.browser.find_element(By.XPATH, xpath)
             ActionChains(self.browser).move_to_element(button).click(button).perform()
@@ -181,11 +211,34 @@ class Google:
                 self.browser.implicitly_wait(2)
 
     def shift_click(self, xpath):
+        """
+        Clique com a tecla SHIFT pressionada (útil para abrir links em nova janela).
+
+        Args:
+            xpath (str): XPath do elemento.
+
+        Raises:
+            NoSuchElementException: Se o elemento não for encontrado.
+        """
         button = self.browser.find_element(By.XPATH, xpath)
         ActionChains(self.browser).key_down(Keys.SHIFT).click(button).key_up(Keys.SHIFT).perform()
         self.browser.implicitly_wait(2)
 
     def periods(self, table_tag, table_tag_id, periods_tag, all_periods=True, prefix=None):
+        """
+        Seleciona períodos em uma tabela HTML (comum em interfaces de seleção de datas).
+
+        Args:
+            table_tag (str): Tag HTML da tabela (ex: 'table').
+            table_tag_id (str): ID da tabela.
+            periods_tag (str): Tag dos elementos de período (ex: 'option').
+            all_periods (bool, optional): Se True, seleciona o primeiro e último período.
+                Se False, usa 'prefix' para filtrar. Padrão: True.
+            prefix (str, optional): Prefixo de texto para filtrar períodos (ex: 'Dez/2023').
+
+        Raises:
+            ElementNotInteractableException: Se o período não puder ser clicado.
+        """
         html = self.browser.page_source
         soup = BeautifulSoup(html, 'html.parser')
         table = soup.find(table_tag, id=table_tag_id)
@@ -232,10 +285,20 @@ class Google:
                     self.browser.implicitly_wait(1)
 
     def change_window(self):
+        """Muda o foco para a última janela aberta."""
         windows = self.browser.window_handles
         self.browser.switch_to.window(windows[-1])
 
     def download(self, xpath):
+        """
+        Aciona o download clicando em um elemento e aguarda até 5 minutos pela ação.
+
+        Args:
+            xpath (str): XPath do botão de download.
+
+        Raises:
+            TimeoutException: Se o elemento não aparecer em 5 minutos.
+        """
         button = WebDriverWait(self.browser, 300).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
@@ -244,13 +307,78 @@ class Google:
         sleep(3)
 
     def wait(self, xpath):
+        """
+        Aguarda até 10 minutos pela presença de um elemento.
+
+        Args:
+            xpath (str): XPath do elemento esperado.
+
+        Raises:
+            TimeoutException: Se o elemento não aparecer no tempo especificado.
+        """
         WebDriverWait(self.browser, 600).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
         self.browser.implicitly_wait(3)
 
     def random_click(self):
+        """Clique em uma posição aleatória (5px,5px) para desfocar elementos."""
         ActionChains(self.browser).move_by_offset(5, 5).click().perform()
+
+    def switch_iframe(self, iframe_id_name):
+        """
+        Alterna o foco para o iframe especificado.
+
+        Args:
+            iframe_id (str): ID ou name do iframe para o qual deseja-se mudar o foco.
+        """
+        self.browser.switch_to.frame(iframe_id_name)
+
+    def switch_to_default_content(self):
+        """
+        Alterna o foco para o conteúdo padrão da página, se tiver mudado o foco para um iframe.
+        Essa ação é necessária sempre que um iframe for selecionado.
+        """
+        self.browser.switch_to.default_content()
+
+    def select(self, element, value):
+        """
+        Seleciona um valor em um elemento de select.
+
+        Args:
+            element (WebElement): Elemento de select que terá o valor selecionado. Deve ser selecionado a partir da função get_tag e o elemento deve ser da tag select.
+            value (str): Valor (value) a ser selecionado.
+
+        Returns:
+            None
+        """
+        select = Select(element)
+        try:
+            select.deselect_all()
+        except:
+            pass
+        select.select_by_value(value)
+
+    def select_with_shift(self, element, first_value, last_value, exdedent):
+        """
+        Seleciona um range de valores em um elemento de select.
+
+        Args:
+            element (WebElement): Elemento de select que terá o valor selecionado. Deve ser selecionado a partir da função get_tag e o elemento deve ser da tag select.
+            first_value (WebElement): Primeiro valor a ser selecionado. Dever ser selecionado a partir da função get_tag.
+            last_value (WebElement): Último valor a ser selecionado. Dever ser selecionado a partir da função get_tag.
+
+        Returns:
+            None
+        """
+        actions = ActionChains(self.browser)
+        select = Select(element)
+        select.deselect_all()
+
+        actions.click(first_value).perform()
+
+        actions.move_to_element(exdedent).perform()
+        actions.key_down(Keys.SHIFT).click(last_value).key_up(Keys.SHIFT).perform()
 
     # def get_file(self):
     #     f = os.listdir(self.temp_dir)[0]
@@ -258,10 +386,20 @@ class Google:
     #     return d, f
 
     def get_tag(self, xpath):
+        """
+        Retorna um elemento web com base no XPath.
+
+        Args:
+            xpath (str): XPath do elemento.
+
+        Returns:
+            WebElement: Elemento encontrado.
+        """
         tag = self.browser.find_element(By.XPATH, xpath)
         return tag
 
     def quit(self):
+        """Fecha o navegador e aguarda 2 segundos."""
         self.browser.quit()
         sleep(2)
 
