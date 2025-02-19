@@ -11,7 +11,11 @@ from datetime import datetime
 from time import sleep
 
 
-# este script deve ser configurada para ser executado mensalmente
+'''
+Este script deve ser configurado para ser executado mensalmente
+As figuras g13.9a, g13.9b, g13.10 e t13.3 não foram programadas por conta do site estar fora do ar
+'''
+
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
 dbs_path = tempfile.mkdtemp()
@@ -792,47 +796,130 @@ errors = {}
 #     errors['Gráfico 13.8'] = traceback.format_exc()
 
 
-# Tabela 13.2
+# # Tabela 13.2
+# try:
+#     data = sidrapy.get_table(
+#         table_code='5434',
+#         territorial_level='3', ibge_territorial_code='28',
+#         variable='4090,4108',
+#         classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
+#         period="all"
+#     )
+
+#     # remoção da linha 0, dados para serem usados como rótulos das colunas
+#     # não foram usados porque variam de acordo com a tabela
+#     # seleção das colunas de interesse
+#     data.drop(0, axis='index', inplace=True)
+#     data = data[['MN', 'D1N', 'D2N', 'D3N', 'D4N', 'V']]
+
+#     # separação de valores; valores inteiros e percentuais estão armazenados na mesma coluna
+#     data_ab = data.loc[data['MN'] == 'Mil pessoas']
+#     data_per = data.loc[data['MN'] == '%']
+#     data = data_ab.iloc[:, 1:]
+#     data['Percentual'] = data_per.loc[:, 'V'].to_list()
+
+#     # renomeação das colunas
+#     # filtragem de dados referentes ao 4º trimestre de cada ano
+#     data.columns = ['Região', 'Trimestre', 'Classe', 'Variável', 'Pessoas', 'Percentual']
+#     data = data.loc[data['Trimestre'].str.startswith('4º trimestre')].copy()
+#     data['Trimestre'] = data['Trimestre'].apply(lambda x: '31/10/' + x[-4:])
+#     data = data[['Região', 'Variável', 'Trimestre', 'Pessoas', 'Percentual']]
+
+#     # classificação dos dados
+#     data['Pessoas'] = data['Pessoas'].astype(int)
+#     data['Percentual'] = data['Percentual'].astype(float)
+
+#     # conversão em arquivo csv
+#     c.to_excel(data, sheets_path, 't13.2.xlsx')
+
+# except Exception as e:
+#     errors['Tabela 13.2'] = traceback.format_exc()
+
+
+# gráfico 13.9
+url = 'http://bi.mte.gov.br/bgcaged/login.php'
+caged_login = c.caged_login
+caged_password = c.caged_password
+
+# tenta baixar o arquivo conforme os comandos anteriores; caso haja alguma atualização no site, registra-se o erro
 try:
-    data = sidrapy.get_table(
-        table_code='5434',
-        territorial_level='3', ibge_territorial_code='28',
-        variable='4090,4108',
-        classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
-        period="all"
-    )
+    driver = c.Google(visible=True, rep=dbs_path)  # instância do objeto driver do Selenium
+    driver.get(url)  # acessa a página
 
-    # remoção da linha 0, dados para serem usados como rótulos das colunas
-    # não foram usados porque variam de acordo com a tabela
-    # seleção das colunas de interesse
-    data.drop(0, axis='index', inplace=True)
-    data = data[['MN', 'D1N', 'D2N', 'D3N', 'D4N', 'V']]
+    # preenche o formulário de acesso
+    login_form = driver.get_tag('/html/body/center/div/div[3]/form/div/input[1]')
+    login_form.send_keys(caged_login)
 
-    # separação de valores; valores inteiros e percentuais estão armazenados na mesma coluna
-    data_ab = data.loc[data['MN'] == 'Mil pessoas']
-    data_per = data.loc[data['MN'] == '%']
-    data = data_ab.iloc[:, 1:]
-    data['Percentual'] = data_per.loc[:, 'V'].to_list()
+    password_form = driver.get_tag('/html/body/center/div/div[3]/form/div/input[2]')
+    password_form.send_keys(caged_password)
 
-    # renomeação das colunas
-    # filtragem de dados referentes ao 4º trimestre de cada ano
-    data.columns = ['Região', 'Trimestre', 'Classe', 'Variável', 'Pessoas', 'Percentual']
-    data = data.loc[data['Trimestre'].str.startswith('4º trimestre')].copy()
-    data['Trimestre'] = data['Trimestre'].apply(lambda x: '31/10/' + x[-4:])
-    data = data[['Região', 'Variável', 'Trimestre', 'Pessoas', 'Percentual']]
+    # clica no botão de login
+    driver.click('/html/body/center/div/div[3]/form/div/input[3]')
 
-    # classificação dos dados
-    data['Pessoas'] = data['Pessoas'].astype(int)
-    data['Percentual'] = data['Percentual'].astype(float)
+    # configurações da tabela
+    driver.click([
+        # Opção CAGED do menu lateral esquerdo
+        '/html/body/table/tbody/tr/td/table/tbody/tr[2]/td/font/table/tbody/tr/td[1]/table/tbody/tr/td/font/table/tbody/tr/td/div/table/tbody/tr[1]/td/a',
+        # Opção CAGED estatístico do menu central
+        '/html/body/table/tbody/tr/td/table/tbody/tr[2]/td/font/table/tbody/tr/td[2]/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td/div[1]',
+        # Opção tabelas do menu central
+        '/html/body/table/tbody/tr/td/table/tbody/tr[2]/td/font/table/tbody/tr/td[2]/table/tbody/tr[1]/td/table/tbody/tr[2]/td/table/tbody/tr/td/div[2]/table/tbody/tr[2]/td/ul/li/font/a',
+    ])
 
-    # conversão em arquivo csv
-    c.to_excel(data, sheets_path, 't13.2.xlsx')
+    # altera para o iframe "lista", que armazena os elementos do menu lateral esquerdo, e abre o menu Estrutura
+    driver.switch_iframe('lista')
+    driver.click('/html/body/div[2]/center/table/tbody/tr[2]/td/table/tbody/tr[2]/td')
 
+    # volta para o contexto inicial
+    driver.switch_to_default_content()
+
+    # altera para o iframe "principal", que armazena os elementos do menu central, para seleção das opções da tabela
+    driver.switch_iframe('principal')
+
+    # seleciona as opções de linha da tabela
+    options = driver.get_tag('/html/body/form[2]/center/table[1]/tbody/tr[1]/td/select[1]')
+    driver.select(options, 'UF')
+
+    # seleciona as opções de coluna da tabela
+    options = driver.get_tag('/html/body/form[2]/center/table[1]/tbody/tr[2]/td/select[1]')
+    driver.select(options, 'Ano Declarado')
+
+    # seleciona as opções de conteúdo da tabela
+    options = driver.get_tag('/html/body/form[2]/center/table[1]/tbody/tr[6]/td/select')
+    driver.select(options, 'Saldo Mov')
+
+    # volta para o contexto inicial e abre o menu Seleções aceleradoras
+    driver.switch_to_default_content()
+    driver.switch_iframe('lista')
+    driver.click('/html/body/div[2]/center/table/tbody/tr[2]/td/table/tbody/tr[1]/td')
+    driver.switch_to_default_content()
+
+    # seleciona os períodos de interesse
+    driver.switch_iframe('principal')
+    options = driver.get_tag('/html/body/form[2]/center/form[1]/center/table/tbody/tr[3]/td/select')
+    first_option = driver.get_tag('/html/body/form[2]/center/form[1]/center/table/tbody/tr[3]/td/select/option[1]')
+    last_option = driver.get_tag('/html/body/form[2]/center/form[1]/center/table/tbody/tr[3]/td/select/option[96]')
+    excedent = driver.get_tag('/html/body/form[2]/center/form[1]/center/table/tbody/tr[3]/td/select/option[97]')  # ano a mais do necessário para evitar erro de visibildidade
+    # last_option = driver.get_tag('/html/body/form[2]/center/form[1]/center/table/tbody/tr[3]/td/select/option[12]')
+    # excedent = driver.get_tag('/html/body/form[2]/center/form[1]/center/table/tbody/tr[3]/td/select/option[13]')
+    driver.select_with_shift(options, first_option, last_option, excedent)
+    driver.switch_to_default_content()
+
+    # abre a tabelas
+    driver.switch_iframe('iFrm')
+    driver.click('/html/body/table/tbody/tr/td[2]/a[2]')
+    driver.switch_to_default_content()
+
+    # altera para o iframe "botoes", que armazena os elementos do menu horizontal, para download da tabela
+    driver.switch_iframe('botoes')
+    driver.click("/html[1]/body[1]/span[@id='xbotoes']/table[1]/tbody[1]/tr[1]/td[2]/span[@id='botoesnaoimpressao']/img[13]")
+    sleep(3)
+    print('Download da base de dados CAGED concluído!')
+
+    driver.quit()
+# registro do erro em caso de atualizações
 except Exception as e:
-    errors['Tabela 13.2'] = traceback.format_exc()
-
-
-
+    errors[url + ' (CAGED OLD)'] = traceback.format_exc()
 
 
 
