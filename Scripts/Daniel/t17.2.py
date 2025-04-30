@@ -48,7 +48,7 @@ try:
         )
         url = url_element.get_attribute('href')
         driver.get(url)
-        time.sleep(3)
+        time.sleep(6)
 
         driver.quit()
 
