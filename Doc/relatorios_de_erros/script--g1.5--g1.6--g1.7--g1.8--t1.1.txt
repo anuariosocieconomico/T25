@@ -1,3 +1,0 @@
-{
-    "https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais (PIB)": "Traceback (most recent call last):\n  File \"c:\\Users\\Daniel\\Documents\\GitHub\\T25\\Scripts\\Daniel\\g1.5--g1.6--g1.7--g1.8--t1.1.py\", line 41, in <module>\n    url_to_get_pib = df.loc[df['name'].str.startswith('PIB_Otica_Renda'), 'url'].values[0]\nIndexError: index 0 is out of bounds for axis 0 with size 0\n"
-}

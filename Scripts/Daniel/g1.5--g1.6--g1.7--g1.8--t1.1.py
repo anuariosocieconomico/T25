@@ -21,7 +21,7 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
-# url
+# url da base contas regionais
 url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais'
 
 # download do arquivo pib pela ótica da renda
@@ -30,15 +30,37 @@ try:
     df = pd.DataFrame(response.json())
 
     # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    df = df.loc[(df['name'].str.startswith('2')) &
-                (df['name'].str.len() == 4),
-                ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
+    df = df.loc[
+        (df['name'].str.startswith('2')) &
+        (df['name'].str.len() == 4),
+        ['name', 'path']
+    ]
+    df['name'] = df['name'].astype(int)
+    df.sort_values(by='name', ascending=False, inplace=True)
+    df.reset_index(drop=True, inplace=True)
 
     # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    url_to_get = df['path'][0][-5:] + '/xls'
-    response = c.open_url(url + url_to_get)
+    last_year = df['name'][0]
+    url_to_get = url + '/' + str(last_year) + '/xls'
+    response = c.open_url(url_to_get)
     df = pd.DataFrame(response.json())
-    url_to_get_pib = df.loc[df['name'].str.startswith('PIB_Otica_Renda'), 'url'].values[0]
+
+    while True:
+        try:
+            url_to_get_pib = df.loc[
+                (df['name'].str.startswith('PIB_Otica_Renda')) &
+                (df['name'].str.endswith('.xls')),
+                'url'
+            ].values[0]
+            break
+        except:
+            last_year -= 1
+            url_to_get = url + '/' + str(last_year) + '/xls'
+            response = c.open_url(url_to_get)
+            df = pd.DataFrame(response.json())
+            if last_year == 0:
+                errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
+                raise Exception('Arquivo não encontrado em anos anteriores')
 
     # downloading e organização do arquivo pib pela ótica da renda
     file = c.open_url(url_to_get_pib)
@@ -52,16 +74,37 @@ try:
     df = pd.DataFrame(response.json())
 
     # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    df = df.loc[(df['name'].str.startswith('2')) &
-                (df['name'].str.len() == 4),
-                ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
+    df = df.loc[
+        (df['name'].str.startswith('2')) &
+        (df['name'].str.len() == 4),
+        ['name', 'path']
+    ]
+    df['name'] = df['name'].astype(int)
+    df.sort_values(by='name', ascending=False, inplace=True)
+    df.reset_index(drop=True, inplace=True)
 
     # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    url_to_get = df['path'][0][-5:] + '/xls'
-    response = c.open_url(url + url_to_get)
+    last_year = df['name'][0]
+    url_to_get = url + '/' + str(last_year) + '/xls'
+    response = c.open_url(url_to_get)
     df = pd.DataFrame(response.json())
-    url_to_get_esp = df.loc[(df['name'].str.startswith('Especiais_2010')) &
-                            (df['name'].str.endswith('.zip')), 'url'].values[0]
+
+    while True:
+        try:
+            url_to_get_esp = df.loc[
+                (df['name'].str.startswith('Especiais_2010')) &
+                (df['name'].str.endswith('.zip')),
+                'url'
+            ].values[0]
+            break
+        except:
+            last_year -= 1
+            url_to_get_esp = url + '/' + str(last_year) + '/xls'
+            response = c.open_url(url_to_get_esp)
+            df = pd.DataFrame(response.json())
+            if last_year == 0:
+                errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
+                raise Exception('Arquivo não encontrado em anos anteriores')
 
     # downloading e organização do arquivo: especiais 2010
     file = c.open_url(url_to_get_esp)
@@ -206,35 +249,6 @@ try:
 
         df_sectors = pd.concat(clean_dfs, ignore_index=True)
 
-    #     # reordenação da variável ano para o eixo y
-    #     df_melted = pd.melt(df_tb, id_vars='Atividade', value_vars=list(df_tb.columns[1:]),
-    #                         var_name='Ano', value_name='Valor')
-
-    #     # classificação dos dados por setor econômico
-
-    #     '''
-    #     Originalmente, os dados referentes ao setor e às atividades estão armazenados na mesma coluna.
-    #     A cada ocorrência do valor 'Agropecuária', por exemplo, será coletado o seu índice,
-    #     ponto de início da seleção dos valores.
-    #     O índice, então, é somado à quantia de atividades deste setor (neste caso 3) mais 1,
-    #     ponto de término da seleção dos valores.
-    #     A mesma operação é realizada para os outros dois setores econômicos.
-    #     '''
-
-    #     df_melted['Setor'] = ''
-
-    #     vars = ['Agropecuária', 'Indústria', 'Serviços']
-    #     vars_order = df_melted.loc[df_melted['Atividade'].isin(vars), 'Atividade']
-
-    #     agro_index = df_melted.loc[df_melted['Atividade'] == 'Agropecuária'].index
-    #     ind_index = df_melted.loc[df_melted['Atividade'] == 'Indústria'].index
-    #     serv_index = df_melted.loc[df_melted['Atividade'] == 'Serviços'].index
-
-    #     for agro, ind, serv in zip(agro_index, ind_index, serv_index):
-    #         df_melted.iloc[agro:agro + 4, -1] = 'Agropecuária'
-    #         df_melted.iloc[ind:ind + 5, -1] = 'Indústria'
-    #         df_melted.iloc[serv:serv + 12, -1] = 'Serviços'
-
         # adição da variável região
         df_sectors['Região'] = 'Brasil' if tb.endswith('7.1') else (
             'Nordeste' if tb.endswith('7.10') else 'Sergipe')
@@ -269,4 +283,3 @@ if errors:
 
 # remove os arquivos baixados
 shutil.rmtree(dbs_path)
-
