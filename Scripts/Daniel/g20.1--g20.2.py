@@ -28,6 +28,11 @@ try:
     driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
     driver.get(url)  # acessa a página
 
+    if driver.get_tag('/html/body/center[1]/h1').text == '404 Not Found':
+        driver.quit()
+        errors[url + ' (IDHM)'] = 'Página não carregada'
+        raise Exception('Página não carregada')
+
     driver.wait('/html/body/div[3]/div[2]/div[1]/fieldset/div/div/p[1]/div[1]/span/div/button')
     time.sleep(2)
     driver.random_click()
