@@ -400,8 +400,9 @@ class Google:
 
     def quit(self):
         """Fecha o navegador e aguarda 2 segundos."""
-        self.browser.quit()
         sleep(2)
+        self.browser.quit()
+        sleep(5)
 
 
 def convert_type(dataframe, column, dtype):
