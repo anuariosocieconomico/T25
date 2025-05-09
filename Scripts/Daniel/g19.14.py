@@ -73,10 +73,11 @@ try:
                 dfs.append(df)
                 print(f'{k} ano {y} baixado com sucesso!')
             else:
-                if k not in faileds:
-                    faileds[k] = [y]
-                else:
-                    faileds[k].append(y)
+                if y != endY:  # se o erro com falha for igual ao ano atual, não há erro e sim ausência de dados para o ano em exercício
+                    if k not in faileds:
+                        faileds[k] = [y]
+                    else:
+                        faileds[k].append(y)
 
     df_state = pd.concat(dfs, ignore_index=True)  # df com todos os anos de determinado estado
     c.to_csv(df_state, dbs_path, 'siconfi-database.csv')
