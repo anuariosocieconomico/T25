@@ -6,6 +6,7 @@ import json
 import traceback
 import tempfile
 import shutil
+import sidrapy
 
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
@@ -112,6 +113,31 @@ try:
 except Exception as e:
     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
 
+# dados da população
+try:
+    dfs = []
+    for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
+        data = sidrapy.get_table(
+            table_code='6579',
+            territorial_level=reg[0], ibge_territorial_code=reg[1],
+            variable='all', period='all'
+        )
+        data.drop(0, axis='index', inplace=True)
+
+        dfs.append(data)
+
+    df = pd.concat(dfs, ignore_index=True)
+    df = df[['D1N', 'D2N', 'V']]
+    mapping = {
+        'D1N': 'Região',
+        'D2N': 'Ano',
+        'V': 'População'
+    }
+    df.rename(columns=mapping, inplace=True)
+    c.to_excel(df, dbs_path, 'ibge_populacao.xlsx')
+
+except Exception as e:
+    errors[url] = traceback.format_exc()
 
 # ************************
 # PLANILHA
@@ -323,6 +349,7 @@ try:
         else:
             df_diff_top6.rename(columns={'Diff': f'Variação (%) {max_year}/{min_year}'}, inplace=True)  # senão, define ao lado
 
+        df_diff_top6['UF'] = df_diff_top6['UF'].map(c.mapping_states_abbreviation)
         dfs.append(df_diff_top6)
         columns.extend(df_diff_top6.columns)
 
@@ -382,6 +409,146 @@ try:
 
 except Exception as e:
     errors['Gráfico 1.2'] = traceback.format_exc()
+
+# g1.3
+try:
+    
+    data = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab01.xls', skiprows=3)
+    deflator = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab03.xls', skiprows=3)
+    population = c.open_file(dbs_path, 'ibge_populacao.xlsx', 'xls', sheet_name='Sheet1')
+
+    # tratamentos das bases de dados
+    # pib
+    df_data = data[list(data.keys())[0]].copy()
+    df_data.rename(columns={'Unnamed: 0': 'UF'}, inplace=True)
+    df_data['UF'] = df_data['UF'].str.strip()
+    df_data = df_data.query('~UF.str.startswith("Fonte")')
+    df_data = df_data.melt(
+        id_vars='UF', value_vars=list(df_data.columns[1:]),
+        var_name='Ano', value_name='Valor'
+    )
+
+    # deflator
+    df_deflator = deflator[list(deflator.keys())[0]].copy()
+    df_deflator.rename(columns={'Unnamed: 0': 'UF'}, inplace=True)
+    df_deflator['UF'] = df_deflator['UF'].str.strip()
+    df_deflator = df_deflator.query('~UF.str.startswith("Fonte")').copy()
+
+    population.rename(columns={'Região': 'UF'}, inplace=True)
+
+    # variação do PIB
+    df_diff = df_deflator.melt(
+        id_vars='UF', value_vars=list(df_deflator.columns[1:]),
+        var_name='Ano', value_name='Valor'
+    )
+
+    diff_list = []
+    for var in df_diff.UF.unique():
+        df_var = df_diff.query('UF == @var').copy()
+        df_var.sort_values(by='Ano', ascending=False, inplace=True)
+        df_var.reset_index(drop=True, inplace=True)
+        # diff() calcula a diferença entre os anos; shift(1) busca o valor do ano anterior
+        df_var['Diff'] = df_var['Valor'].shift(1) - df_var['Valor']
+        df_var['Diff %'] = df_var['Diff'] / df_var['Valor']
+        df_var['Index'] = None
+        
+        for i in range(len(df_var)):
+            if i == 0:
+                df_var.iloc[i, -1] = 100.00
+            else:
+                df_var.iloc[i, -1] = df_var.iloc[i - 1, -1] / (1 + df_var.iloc[i, -2])
+        
+        diff_list.append(df_var[['UF', 'Ano', 'Index']])
+
+    # merge do index deflator com a base de dados e merge com a população
+    df_final = df_data.merge(pd.concat(diff_list), on=['UF', 'Ano'], how='left', validate='1:1')
+    df_final = df_final.merge(population, on=['UF', 'Ano'], how='left', validate='1:1')
+    df_final.sort_values(by=['UF', 'Ano'], ascending=[True, True], inplace=True)
+
+    # preenchimento dos dados de população
+    # para os estados que não possuem dados de população,
+    # o valor é preenchido com o valor do ano segunte ou o valor do ano anterior
+    dfs = []
+    for var in df_final.UF.unique():
+        df_var = df_final.query('UF == @var').copy()
+        df_var['Pop'] = df_var['População'].ffill().bfill()
+        dfs.append(df_var[['UF', 'Ano', 'Pop']])
+
+    df_final = df_final.merge(pd.concat(dfs), on=['UF', 'Ano'], how='left', validate='1:1')
+
+    df_final['PIB'] = (df_final['Valor'] / df_final['Index']) * 100  # calcula o PIB deflacionado
+    df_final['PIB/População'] = (df_final['PIB'] * 1_000_000) / df_final['Pop']
+    df_final['Rank'] = None
+
+    # rank do PIB per capita
+    to_exclude = ['Norte', 'Centro-Oeste', 'Sul', 'Sudeste', 'Nordeste', 'Brasil']  # estados/regi~es que devem ser excluídos do rank
+    df_rank_last_year = df_final.query('Ano == @df_final.Ano.max() and UF not in @to_exclude').copy()
+    df_rank_last_year['Rank'] = df_rank_last_year.groupby('Ano')['PIB/População'].rank(method='first', ascending=False)
+    df_rank_last_year.sort_values(by='Rank', ascending=True, inplace=True)
+    df_rank_last_year = df_rank_last_year[['UF', 'PIB/População', 'Rank']]
+    df_rank_last_year.rename(columns={'PIB/População': f'PIB {df_final.Ano.max()} Deflacionado'}, inplace=True)
+
+    # tratamento para ranqueament e seleção de regões
+    df_aux = df_final.query('Ano == @df_final.Ano.max() and UF in ["Brasil", "Nordeste", "Sergipe"]').copy()
+    df_aux.rename(columns={'PIB/População': f'PIB {df_final.Ano.max()} Deflacionado'}, inplace=True)
+    df_aux = df_aux[['UF', f'PIB {df_final.Ano.max()} Deflacionado', 'Rank']]
+
+    # top 6 estados
+    if df_rank_last_year.query('UF == "Sergipe"')['Rank'].values[0] <= 6:  # se sergipe estiver nos 6 primeiros
+        df_rank_last_year_top6 = pd.concat([
+            df_rank_last_year.query('Rank <= 6'),
+            df_aux.query('UF in ["Brasil", "Nordeste"]')
+        ])
+    else:
+        df_rank_last_year_top6 = pd.concat([
+            df_rank_last_year.query('Rank <= 6 or UF == "Sergipe"'),
+            df_aux.query('UF in ["Brasil", "Nordeste"]')
+        ])
+
+    df_rank_last_year_top6['UF'] = df_rank_last_year_top6['UF'].map(c.mapping_states_abbreviation)
+
+    # rank da variação do PIB per capita
+    to_exclude = ['Norte', 'Centro-Oeste', 'Sul', 'Sudeste']  # regiões que devem ser excluídos do rank
+    df_rank_diff = df_final.query('Ano in [@df_final.Ano.max(), @df_final.Ano.min()] and UF not in @to_exclude').copy()
+    df_rank_diff = df_rank_diff.pivot(index='UF', columns='Ano', values='PIB/População')
+    df_rank_diff.reset_index(inplace=True)
+    df_rank_diff['Diff'] = (df_rank_diff[df_final.Ano.max()] - df_rank_diff[df_final.Ano.min()]) / df_rank_diff[df_final.Ano.min()]
+    df_rank_diff['Rank'] = None
+
+    df_states = df_rank_diff.query('UF not in ["Brasil", "Nordeste"]').copy()
+    df_states['Rank'] = df_states['Diff'].rank(method='first', ascending=False)
+    df_states.sort_values(by='Rank', ascending=True, inplace=True)
+    df_states = df_states[['UF', 'Diff', 'Rank']]
+    df_states.rename(columns={'Diff': f'Variação (%) {df_final.Ano.max()}/{df_final.Ano.min()}'}, inplace=True)
+
+    df_aux = df_rank_diff.query('UF in ["Brasil", "Nordeste", "Sergipe"]').copy()
+    df_aux.rename(columns={'Diff': f'Variação (%) {df_final.Ano.max()}/{df_final.Ano.min()}'}, inplace=True)
+    df_aux = df_aux[['UF', f'Variação (%) {df_final.Ano.max()}/{df_final.Ano.min()}', 'Rank']]
+
+    if df_states.query('UF == "Sergipe"')['Rank'].values[0] <= 6:  # se sergipe estiver nos 6 primeiros
+        df_all_top6 = pd.concat([
+            df_states.query('Rank <= 6'),
+            df_aux.query('UF in ["Brasil", "Nordeste"]')
+        ])
+    else:
+        df_all_top6 = pd.concat([
+            df_states.query('Rank <= 6 or UF == "Sergipe"'),
+            df_aux.query('UF in ["Brasil", "Nordeste"]')
+        ])
+
+    df_all_top6['UF'] = df_all_top6['UF'].map(c.mapping_states_abbreviation)
+
+    # transformação do dataframes em listas de tuplas para unir cada tuplca como uma linha única no novo dataframe
+    tuple1 = list(df_rank_last_year_top6.itertuples(index=False, name=None))
+    tuple2 = list(df_all_top6.itertuples(index=False, name=None))
+    tuple_final = [a + b for a, b in zip(tuple1, tuple2)]
+
+    df_final = pd.DataFrame(tuple_final, columns=columns)
+
+    df_final.to_excel(os.path.join(sheets_path, 'g1.3.xlsx'), index=False, sheet_name='g1.3')
+
+except Exception as e:
+    errors['Gráfico 1.3'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
