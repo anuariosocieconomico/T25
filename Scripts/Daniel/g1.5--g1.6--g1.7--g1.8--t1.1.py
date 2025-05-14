@@ -543,6 +543,7 @@ try:
     tuple2 = list(df_all_top6.itertuples(index=False, name=None))
     tuple_final = [a + b for a, b in zip(tuple1, tuple2)]
 
+    columns = df_rank_last_year_top6.columns.tolist() + df_all_top6.columns.tolist()
     df_final = pd.DataFrame(tuple_final, columns=columns)
 
     df_final.to_excel(os.path.join(sheets_path, 'g1.3.xlsx'), index=False, sheet_name='g1.3')
