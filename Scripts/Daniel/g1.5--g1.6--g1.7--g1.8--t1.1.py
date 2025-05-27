@@ -552,6 +552,85 @@ except Exception as e:
     errors['Gráfico 1.3'] = traceback.format_exc()
 
 
+# g1.4
+try:
+    data = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab01.xls', skiprows=3)
+    deflator = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab03.xls', skiprows=3)
+    population = c.open_file(dbs_path, 'ibge_populacao.xlsx', 'xls', sheet_name='Sheet1')
+
+    # tratamentos das bases de dados
+    # pib
+    df_data = data[list(data.keys())[0]].copy()
+    df_data.rename(columns={'Unnamed: 0': 'UF'}, inplace=True)
+    df_data['UF'] = df_data['UF'].str.strip()
+    df_data = df_data.query('~UF.str.startswith("Fonte")')
+    df_data = df_data.melt(
+        id_vars='UF', value_vars=list(df_data.columns[1:]),
+        var_name='Ano', value_name='Valor'
+    )
+
+    # deflator
+    df_deflator = deflator[list(deflator.keys())[0]].copy()
+    df_deflator.rename(columns={'Unnamed: 0': 'UF'}, inplace=True)
+    df_deflator['UF'] = df_deflator['UF'].str.strip()
+    df_deflator = df_deflator.query('~UF.str.startswith("Fonte")').copy()
+
+    population.rename(columns={'Região': 'UF'}, inplace=True)
+
+    # variação do PIB
+    df_diff = df_deflator.melt(
+        id_vars='UF', value_vars=list(df_deflator.columns[1:]),
+        var_name='Ano', value_name='Valor'
+    )
+
+    diff_list = []
+    for var in df_diff.UF.unique():
+        df_var = df_diff.query('UF == @var').copy()
+        df_var.sort_values(by='Ano', ascending=False, inplace=True)
+        df_var.reset_index(drop=True, inplace=True)
+        # diff() calcula a diferença entre os anos; shift(1) busca o valor do ano anterior
+        df_var['Diff'] = df_var['Valor'].shift(1) - df_var['Valor']
+        df_var['Diff %'] = df_var['Diff'] / df_var['Valor']
+        df_var['Index'] = None
+        
+        for i in range(len(df_var)):
+            if i == 0:
+                df_var.iloc[i, -1] = 100.00
+            else:
+                df_var.iloc[i, -1] = df_var.iloc[i - 1, -1] / (1 + df_var.iloc[i, -2])
+        
+        diff_list.append(df_var[['UF', 'Ano', 'Index']])
+
+    # merge do index deflator com a base de dados e merge com a população
+    df_final = df_data.merge(pd.concat(diff_list), on=['UF', 'Ano'], how='left', validate='1:1')
+    df_final = df_final.merge(population, on=['UF', 'Ano'], how='left', validate='1:1')
+    df_final.sort_values(by=['UF', 'Ano'], ascending=[True, True], inplace=True)
+
+    # preenchimento dos dados de população
+    # para os estados que não possuem dados de população,
+    # o valor é preenchido com o valor do ano segunte ou o valor do ano anterior
+    dfs = []
+    for var in df_final.UF.unique():
+        df_var = df_final.query('UF == @var').copy()
+        df_var['Pop'] = df_var['População'].ffill().bfill()
+        dfs.append(df_var[['UF', 'Ano', 'Pop']])
+
+    df_final = df_final.merge(pd.concat(dfs), on=['UF', 'Ano'], how='left', validate='1:1')
+
+    df_final['PIB'] = (df_final['Valor'] / df_final['Index']) * 100  # calcula o PIB deflacionado
+    df_final['PIB/População'] = (df_final['PIB'] * 1_000_000) / df_final['Pop']
+
+    # estruturação do dataframe para o gráfico
+    df_export = df_final[['UF', 'Ano', 'PIB/População']].query('UF in ["Brasil", "Nordeste", "Sergipe"]')
+    df_export['Ano'] = df_export['Ano'].astype(int)
+    df_export['UF'] = df_export['UF'].map({'Brasil': 'BR Deflacionado', 'Nordeste': 'NE Deflacionado', 'Sergipe': 'SE Deflacionado'})
+    df_export = df_export.pivot(index='Ano', columns='UF', values='PIB/População').reset_index()
+
+    df_export.to_excel(os.path.join(sheets_path, 'g1.4.xlsx'), index=False, sheet_name='g1.4')
+
+except Exception as e:
+    errors['Gráfico 1.4'] = traceback.format_exc()
+
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
 # se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
