@@ -146,128 +146,238 @@ try:
 except Exception as e:
     errors['IPEA IPA DI'] = traceback.format_exc()
 
-# ************************
-# PLANILHA
-# ************************
+# # ************************
+# # PLANILHA
+# # ************************
 
-# gráfico 2.1
-try:
-    data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.2', skiprows=1)
-    columns = data[data[data.columns[0]] == 'ANO'].values[0]  # extrai os nomes das colunas armazenados em linhas
-    columns = [col.strip().replace('\n', ' ') for col in columns]  # remove espaços em branco e quebras de linha
-    # COLUNAS = [
-    #   'ANO', 'VALOR DO ANO ANTERIOR (1 000 000 R$)', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR (1 000 000 R$)',
-    #   'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE (1 000 000 R$)'
-    # ]
+# # gráfico 2.1
+# try:
+#     data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.2', skiprows=1)
+#     columns = data[data[data.columns[0]] == 'ANO'].values[0]  # extrai os nomes das colunas armazenados em linhas
+#     columns = [col.strip().replace('\n', ' ') for col in columns]  # remove espaços em branco e quebras de linha
+#     # COLUNAS = [
+#     #   'ANO', 'VALOR DO ANO ANTERIOR (1 000 000 R$)', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR (1 000 000 R$)',
+#     #   'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE (1 000 000 R$)'
+#     # ]
 
-    # extrai os índices das tabelas que contêm os dados de interesse
-    # numa mesma aba, há três tabelas dispostas verticalmente
-    tables_indexes = data[
-        data[data.columns[0]].str.contains("Valor Bruto da Produção") |
-        data[data.columns[0]].str.contains("Consumo intermediário") |
-        data[data.columns[0]].str.contains("Valor Adicionado Bruto")
-    ].index.tolist()
+#     # extrai os índices das tabelas que contêm os dados de interesse
+#     # numa mesma aba, há três tabelas dispostas verticalmente
+#     tables_indexes = data[
+#         data[data.columns[0]].str.contains("Valor Bruto da Produção") |
+#         data[data.columns[0]].str.contains("Consumo intermediário") |
+#         data[data.columns[0]].str.contains("Valor Adicionado Bruto")
+#     ].index.tolist()
 
-    dfs = []
-    for i, index in enumerate(tables_indexes):
-        if i < 2:
-            df = data.iloc[index:tables_indexes[i + 1]].copy()  # se for até a segunda tabela, extrai as linhas dentro do intervalo
-        else:
-            df = data.iloc[index:].copy()  # se for a última tabela, extrai as linhas até o final da aba
+#     dfs = []
+#     for i, index in enumerate(tables_indexes):
+#         if i < 2:
+#             df = data.iloc[index:tables_indexes[i + 1]].copy()  # se for até a segunda tabela, extrai as linhas dentro do intervalo
+#         else:
+#             df = data.iloc[index:].copy()  # se for a última tabela, extrai as linhas até o final da aba
 
-        df.columns = columns
-        df.reset_index(drop=True, inplace=True)
-        var = df.iloc[0, 0]  # extrai a atividade econômica
-        df[columns[0]] = df[columns[0]].astype(str).str.strip()  # transforma a coluna de anos em string e remove espaços em branco
-        df = df.loc[(df[columns[0]].str.startswith('20')) & (df[columns[0]].str.len() == 4)].copy()  # mantém apenas as linhas de interesse
+#         df.columns = columns
+#         df.reset_index(drop=True, inplace=True)
+#         var = df.iloc[0, 0]  # extrai a atividade econômica
+#         df[columns[0]] = df[columns[0]].astype(str).str.strip()  # transforma a coluna de anos em string e remove espaços em branco
+#         df = df.loc[(df[columns[0]].str.startswith('20')) & (df[columns[0]].str.len() == 4)].copy()  # mantém apenas as linhas de interesse
 
-        # converte os valores das colunas para o tipo adequado
-        for ii, col in enumerate(df.columns):
-            if ii == 0:
-                df[col] = df[col].astype(int)
-            else:
-                df[col] = df[col].astype(float)
+#         # converte os valores das colunas para o tipo adequado
+#         for ii, col in enumerate(df.columns):
+#             if ii == 0:
+#                 df[col] = df[col].astype(int)
+#             else:
+#                 df[col] = df[col].astype(float)
 
-        # adiciona a atividade econômica como coluna
-        df['Atividade'] = (
-            'Valor bruto da produção' if var.startswith('Valor Bruto da Produção') else
-            'Consumo intermediário' if var.startswith('Consumo intermediário') else
-            'Valor adicionado bruto'
-        )
+#         # adiciona a atividade econômica como coluna
+#         df['Atividade'] = (
+#             'Valor bruto da produção' if var.startswith('Valor Bruto da Produção') else
+#             'Consumo intermediário' if var.startswith('Consumo intermediário') else
+#             'Valor adicionado bruto'
+#         )
 
-        # deflação dos valores
-        df.sort_values(by=columns[0], ascending=False, inplace=True)
-        df.reset_index(drop=True, inplace=True)
-        df['Index'] = 100.00
+#         # deflação dos valores
+#         df.sort_values(by=columns[0], ascending=False, inplace=True)
+#         df.reset_index(drop=True, inplace=True)
+#         df['Index'] = 100.00
 
-        for row in range(1, len(df)):
-            df.loc[row, 'Index'] = df.loc[row - 1, 'Index'] / df.loc[row - 1, columns[-2]]
+#         for row in range(1, len(df)):
+#             df.loc[row, 'Index'] = df.loc[row - 1, 'Index'] / df.loc[row - 1, columns[-2]]
 
-        df['Value'] = (df[columns[-1]] / df['Index']) * 100
+#         df['Value'] = (df[columns[-1]] / df['Index']) * 100
 
-        dfs.append(df)
+#         dfs.append(df)
 
-    df_concat = pd.concat(dfs, ignore_index=True)
-    df_pivoted = df_concat.pivot_table(
-        index=columns[0], columns='Atividade', values='Value'
-    ).reset_index()
-    df_pivoted = df_pivoted[[columns[0], 'Valor bruto da produção', 'Consumo intermediário', 'Valor adicionado bruto']]
-    df_pivoted.rename(columns={columns[0]: 'Ano'}, inplace=True)
-    df_pivoted['Ano'] = df_pivoted['Ano'].astype(int)
+#     df_concat = pd.concat(dfs, ignore_index=True)
+#     df_pivoted = df_concat.pivot_table(
+#         index=columns[0], columns='Atividade', values='Value'
+#     ).reset_index()
+#     df_pivoted = df_pivoted[[columns[0], 'Valor bruto da produção', 'Consumo intermediário', 'Valor adicionado bruto']]
+#     df_pivoted.rename(columns={columns[0]: 'Ano'}, inplace=True)
+#     df_pivoted['Ano'] = df_pivoted['Ano'].astype(int)
 
-    df_pivoted.to_excel(os.path.join(sheets_path, 'g2.1.xlsx'), index=False, sheet_name='g2.1')
+#     df_pivoted.to_excel(os.path.join(sheets_path, 'g2.1.xlsx'), index=False, sheet_name='g2.1')
 
-except Exception as e:
-    errors['Gráfico 2.1'] = traceback.format_exc()
+# except Exception as e:
+#     errors['Gráfico 2.1'] = traceback.format_exc()
 
-# gráfico 2.2
-try:
-    data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.2', skiprows=1)
-    columns = data[data[data.columns[0]] == 'ANO'].values[0]  # extrai os nomes das colunas armazenados em linhas
-    columns = [col.strip().replace('\n', ' ') for col in columns]  # remove espaços em branco e quebras de linha
-    # COLUNAS = [
-    #   'ANO', 'VALOR DO ANO ANTERIOR (1 000 000 R$)', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR (1 000 000 R$)',
-    #   'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE (1 000 000 R$)'
-    # ]
+# # gráfico 2.2
+# try:
+#     data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.2', skiprows=1)
+#     columns = data[data[data.columns[0]] == 'ANO'].values[0]  # extrai os nomes das colunas armazenados em linhas
+#     columns = [col.strip().replace('\n', ' ') for col in columns]  # remove espaços em branco e quebras de linha
+#     # COLUNAS = [
+#     #   'ANO', 'VALOR DO ANO ANTERIOR (1 000 000 R$)', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR (1 000 000 R$)',
+#     #   'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE (1 000 000 R$)'
+#     # ]
 
-    # extrai os índices das tabelas que contêm os dados de interesse
-    # numa mesma aba, há três tabelas dispostas verticalmente
-    tables_indexes = data[
-        data[data.columns[0]].str.contains("Valor Adicionado Bruto", na=False)
-    ].index.tolist()
+#     # extrai os índices das tabelas que contêm os dados de interesse
+#     # numa mesma aba, há três tabelas dispostas verticalmente
+#     tables_indexes = data[
+#         data[data.columns[0]].str.contains("Valor Adicionado Bruto", na=False)
+#     ].index.tolist()
 
-    df = data.iloc[tables_indexes[0]:].copy()
+#     df = data.iloc[tables_indexes[0]:].copy()
 
-    df.columns = columns
-    df.reset_index(drop=True, inplace=True)
-    var = df.iloc[0, 0]  # extrai a atividade econômica
-    df[columns[0]] = df[columns[0]].astype(str).str.strip()  # transforma a coluna de anos em string e remove espaços em branco
-    df = df.loc[(df[columns[0]].str.startswith('20')) & (df[columns[0]].str.len() == 4)].copy()  # mantém apenas as linhas de interesse
+#     df.columns = columns
+#     df.reset_index(drop=True, inplace=True)
+#     var = df.iloc[0, 0]  # extrai a atividade econômica
+#     df[columns[0]] = df[columns[0]].astype(str).str.strip()  # transforma a coluna de anos em string e remove espaços em branco
+#     df = df.loc[(df[columns[0]].str.startswith('20')) & (df[columns[0]].str.len() == 4)].copy()  # mantém apenas as linhas de interesse
 
-    # converte os valores das colunas para o tipo adequado
-    for ii, col in enumerate(df.columns):
-        if ii == 0:
-            df[col] = df[col].astype(int)
-        else:
-            df[col] = df[col].astype(float)
+#     # converte os valores das colunas para o tipo adequado
+#     for ii, col in enumerate(df.columns):
+#         if ii == 0:
+#             df[col] = df[col].astype(int)
+#         else:
+#             df[col] = df[col].astype(float)
 
-    # deflação dos valores
-    df.sort_values(by=columns[0], ascending=True, inplace=True)
-    df.reset_index(drop=True, inplace=True)
+#     # deflação dos valores
+#     df.sort_values(by=columns[0], ascending=True, inplace=True)
+#     df.reset_index(drop=True, inplace=True)
 
-    df['Variação'] = (df[columns[2]] - 1) * 100
+#     df['Variação'] = (df[columns[2]] - 1) * 100
 
-    df_final = df[[columns[0], 'Variação']].copy()
-    df_final.rename(columns={columns[0]: 'Ano'}, inplace=True)
-    df_final['Ano'] = df_final['Ano'].astype(int)
-    df_final.dropna(inplace=True)
+#     df_final = df[[columns[0], 'Variação']].copy()
+#     df_final.rename(columns={columns[0]: 'Ano'}, inplace=True)
+#     df_final['Ano'] = df_final['Ano'].astype(int)
+#     df_final.dropna(inplace=True)
 
-    df_final.to_excel(os.path.join(sheets_path, 'g2.2.xlsx'), index=False, sheet_name='g2.2')
+#     df_final.to_excel(os.path.join(sheets_path, 'g2.2.xlsx'), index=False, sheet_name='g2.2')
 
-except Exception as e:
-    errors['Gráfico 2.2'] = traceback.format_exc()
+# except Exception as e:
+#     errors['Gráfico 2.2'] = traceback.format_exc()
 
-# gráfico 2.3
+# # gráfico 2.3
+# try:
+#     data = c.open_file(dbs_path, 'sidra_tables.xlsx', 'xls', sheet_name='Sheet1')
+#     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
+#     min_year = data['Ano'].min()  # ano mínimo da tabela
+#     max_year = data['Ano'].max()  # ano máximo da tabela
+
+#     # tratamento do deflator
+#     deflator = data_deflator.query('YEAR >= @min_year and YEAR <= @max_year').copy()
+#     deflator.sort_values(by='YEAR', ascending=False, inplace=True)
+#     deflator.reset_index(drop=True, inplace=True)
+#     deflator.rename(columns={'VALUE (-)': 'VALUE'}, inplace=True)
+#     deflator['Diff'] = None
+#     deflator['Index'] = 100.00
+#     for row in range(1, len(deflator)):
+#         deflator.loc[row, 'Diff'] = (deflator.loc[row - 1, 'VALUE'] - deflator.loc[row, 'VALUE']) / deflator.loc[row, 'VALUE']  # variação percentual
+#         deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / (1 + deflator.loc[row, 'Diff'])  # índice de preços
+
+#     # tratamento da tabela
+#     df = data.query('Tabela == 1612').copy()
+#     df['Check'] = df.groupby(['Variável', 'Produto'])['Valor'].transform('sum')  # verifica se não há dados para todos os anos da variável por produto
+#     df = df.loc[df['Check'] > 0].copy()  # mantém apenas as linhas com dados para pelo menos um ano
+
+#     df['Mean'] = df.groupby(['Variável', 'Produto'])['Valor'].transform('mean')  # valor médio por produto e variável (considerando todos os anos)
+#     df['Rank'] = df.groupby('Variável')['Mean'].rank(method='dense', ascending=False)  # ranking das maiores médias; dense para aumentar o ranking no mesmo grupo
+#     top6 = df.loc[
+#         (df['Rank'] <= 6) &
+#         (df['Variável'].str.lower().str.contains('rendimento médio', na=False))
+#     ].copy()  # seleciona o top 6 produtos com maior rendimento médio anual
+#     products = top6['Produto'].unique()  # extrai os produtos
+
+#     # filtra os dados para os produtos selecionados, mantendo apenas as variáveis que não são rendimento médio
+#     df_filtered = df.loc[
+#         (df['Produto'].isin(products)) &
+#         (~df['Variável'].str.lower().str.contains('rendimento médio', na=False))
+#     ].copy()
+
+#     # dispõe as variáveis em colunas
+#     df_pivoted = df_filtered.pivot_table(
+#         index=['Ano', 'Produto'], columns='Variável', values='Valor'
+#     ).reset_index()
+#     df_pivoted.sort_values(by=['Ano', 'Produto'], ascending=[False, True], inplace=True)
+
+#     # join com o deflator
+#     df_joined = pd.merge(
+#         df_pivoted, deflator[['YEAR', 'Index']],
+#         left_on='Ano', right_on='YEAR', how='left', validate='m:1'
+#     )
+#     df_joined.drop(columns=['YEAR'], inplace=True)  # remove a coluna YEAR, pois já está em Ano
+#     cols = df_joined.columns.tolist()
+#     df_joined['Valor Ajustado'] = (df_joined[cols[-2]] / df_joined[cols[-1]]) * 100  # deflação dos valores
+
+#     # calcula a variação percentual das variáveis em relação ao ano anterior
+#     cols = df_joined.columns.tolist()
+#     cols = cols[:3] + [cols[-1]]  # ['Ano', 'Produto', 'Quantidade produzida', 'Valor Ajustado']
+#     df_last_year = df_joined.query('Ano in [@max_year, @max_year - 1]')[cols].copy()
+#     df_last_year.sort_values(by=['Produto', 'Ano'], ascending=[True, False], inplace=True)
+#     df_last_year.reset_index(drop=True, inplace=True)
+
+#     # Para cada produto, atribui o valor anterior (menor ano) de 'Quantidade produzida' em uma nova coluna
+#     LY_cols = df_last_year.columns.tolist()  # ['Ano', 'Produto', 'Quantidade produzida', 'Valor Ajustado']
+#     df_last_year['QTD_LY'] = df_last_year.groupby('Produto')[LY_cols[-2]].transform(
+#         lambda x: x.loc[df_last_year.loc[x.index, 'Ano'].idxmin()]
+#     )
+#     # Para cada produto, atribui o valor anterior (menor ano) de 'Valor Ajustado' em uma nova coluna
+#     df_last_year['VAL_LY'] = df_last_year.groupby('Produto')[LY_cols[-1]].transform(
+#         lambda x: x.loc[df_last_year.loc[x.index, 'Ano'].idxmin()]
+#     )
+
+#     # mantém apenas uma linha por produto
+#     df_last_year = df_last_year.query('Ano == @max_year').copy()
+#     df_last_year['QTD_Variation'] = (df_last_year[LY_cols[-2]] - df_last_year['QTD_LY']) / df_last_year['QTD_LY'] * 100
+#     df_last_year['VAL_Variation'] = (df_last_year[LY_cols[-1]] - df_last_year['VAL_LY']) / df_last_year['VAL_LY'] * 100
+
+#     # ajuste final
+#     df_last_year = df_last_year[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
+#     df_last_year.rename(columns={'QTD_Variation': f'Quantidade {max_year}/{max_year - 1}', 'VAL_Variation': f'Valor {max_year}/{max_year - 1}'}, inplace=True)
+
+#     # calcula a variação percentual das variáveis em relação a toda a série histórica
+#     df_all_years = df_joined.query('Ano in [@max_year, @min_year]')[cols].copy()
+#     df_all_years.sort_values(by=['Produto', 'Ano'], ascending=[True, False], inplace=True)
+#     df_all_years.reset_index(drop=True, inplace=True)
+
+#     # Para cada produto, atribui o valor anterior (menor ano) de 'Quantidade produzida' em uma nova coluna
+#     LY_cols = df_all_years.columns.tolist()  # ['Ano', 'Produto', 'Quantidade produzida', 'Valor Ajustado']
+#     df_all_years['QTD_LY'] = df_all_years.groupby('Produto')[LY_cols[-2]].transform(
+#         lambda x: x.loc[df_all_years.loc[x.index, 'Ano'].idxmin()]
+#     )
+#     # Para cada produto, atribui o valor anterior (menor ano) de 'Valor Ajustado' em uma nova coluna
+#     df_all_years['VAL_LY'] = df_all_years.groupby('Produto')[LY_cols[-1]].transform(
+#         lambda x: x.loc[df_all_years.loc[x.index, 'Ano'].idxmin()]
+#     )
+
+#     # mantém apenas uma linha por produto
+#     df_all_years = df_all_years.query('Ano == @max_year').copy()
+#     df_all_years['QTD_Variation'] = (df_all_years[LY_cols[-2]] - df_all_years['QTD_LY']) / df_all_years['QTD_LY'] * 100
+#     df_all_years['VAL_Variation'] = (df_all_years[LY_cols[-1]] - df_all_years['VAL_LY']) / df_all_years['VAL_LY'] * 100
+
+#     # ajuste final
+#     df_all_years = df_all_years[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
+#     df_all_years.rename(columns={'QTD_Variation': f'Quantidade {max_year}/{min_year}', 'VAL_Variation': f'Valor {max_year}/{min_year}'}, inplace=True)
+
+#     # join das duas tabelas
+#     df_merged = pd.merge(df_all_years, df_last_year, how='left', on='Produto', validate='1:1')
+#     df_merged.to_excel(os.path.join(sheets_path, 'g2.3.xlsx'), index=False, sheet_name='g2.3')
+
+# except Exception as e:
+#     errors['Gráfico 2.3'] = traceback.format_exc()
+
+
+# gráfico 2.4
 try:
     data = c.open_file(dbs_path, 'sidra_tables.xlsx', 'xls', sheet_name='Sheet1')
     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
@@ -286,7 +396,7 @@ try:
         deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / (1 + deflator.loc[row, 'Diff'])  # índice de preços
 
     # tratamento da tabela
-    df = data.query('Tabela == 1612').copy()
+    df = data.query('Tabela == 1613').copy()
     df['Check'] = df.groupby(['Variável', 'Produto'])['Valor'].transform('sum')  # verifica se não há dados para todos os anos da variável por produto
     df = df.loc[df['Check'] > 0].copy()  # mantém apenas as linhas com dados para pelo menos um ano
 
@@ -343,7 +453,7 @@ try:
 
     # ajuste final
     df_last_year = df_last_year[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
-    df_last_year.rename(columns={'QTD_Variation': f'Quantidade {max_year}/{max_year - 1}', 'VAL_Variation': f'Valor {max_year}/{max_year - 1}'}, inplace=True)
+    df_last_year.rename(columns={'QTD_Variation': 'Quantidade último ano', 'VAL_Variation': 'Valor último ano'}, inplace=True)
 
     # calcula a variação percentual das variáveis em relação a toda a série histórica
     df_all_years = df_joined.query('Ano in [@max_year, @min_year]')[cols].copy()
@@ -367,14 +477,15 @@ try:
 
     # ajuste final
     df_all_years = df_all_years[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
-    df_all_years.rename(columns={'QTD_Variation': f'Quantidade {max_year}/{min_year}', 'VAL_Variation': f'Valor {max_year}/{min_year}'}, inplace=True)
+    df_all_years.rename(columns={'QTD_Variation': 'Quantidade último ano/primeiro', 'VAL_Variation': 'Valor último ano/primeiro'}, inplace=True)
 
     # join das duas tabelas
-    df_merged = pd.merge(df_all_years, df_last_year, how='left', on='Produto', validate='1:1')
-    df_merged.to_excel(os.path.join(sheets_path, 'g2.3.xlsx'), index=False, sheet_name='g2.3')
+    df_merged = pd.merge(df_last_year, df_all_years, how='left', on='Produto', validate='1:1')
+    df_merged = df_merged[[LY_cols[1], 'Quantidade último ano', 'Quantidade último ano/primeiro', 'Valor último ano', 'Valor último ano/primeiro']]
+    df_merged.to_excel(os.path.join(sheets_path, 'g2.4.xlsx'), index=False, sheet_name='g2.4')
 
 except Exception as e:
-    errors['Gráfico 2.3'] = traceback.format_exc()
+    errors['Gráfico 2.4'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
