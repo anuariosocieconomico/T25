@@ -523,7 +523,51 @@ except Exception as e:
 #     errors['Gráfico 2.4'] = traceback.format_exc()
 
 
-# gráfico 2.5
+# # gráfico 2.5
+# try:
+#     data = c.open_file(dbs_path, 'sidra_tables_g2.5--g2.6.xlsx', 'xls', sheet_name='Sheet1')
+#     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
+#     min_year = data['Ano'].min()  # ano mínimo da tabela
+#     max_year = data['Ano'].max()  # ano máximo da tabela
+
+#     # tratamento do deflator
+#     deflator = data_deflator.query('YEAR >= @min_year and YEAR <= @max_year').copy()
+#     deflator.sort_values(by='YEAR', ascending=False, inplace=True)
+#     deflator.reset_index(drop=True, inplace=True)
+#     deflator.rename(columns={'VALUE (-)': 'VALUE'}, inplace=True)
+#     deflator['Diff'] = None
+#     deflator['Index'] = 100.00
+#     for row in range(1, len(deflator)):
+#         deflator.loc[row, 'Diff'] = (deflator.loc[row - 1, 'VALUE'] - deflator.loc[row, 'VALUE']) / deflator.loc[row, 'VALUE']  # variação percentual
+#         deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / (1 + deflator.loc[row, 'Diff'])  # índice de preços
+
+#     # tratamento da tabela
+#     df = data.query('Tabela == 1612').copy()  # filtro da tabela
+#     deflator.rename(columns={'YEAR': 'Ano'}, inplace=True)  # renomeção para join
+#     df = df.merge(deflator[['Ano', 'Index']], how='left', on='Ano', validate='m:1')
+#     df_pivoted = df.pivot(index=['Região', 'Ano', 'Produto', 'Index'], columns='Variável', values='Valor').reset_index()
+#     cols = df_pivoted.columns.tolist()  # ['Região', 'Ano', 'Produto', 'Index', 'Quantidade produzida', 'Valor da produção']
+#     # razação entre valor deflacionado ((df_pivoted[cols[-1]] / df_pivoted[cols[-3]]) * 100) e quantidade produzida (df_pivoted[cols[-2]])
+#     df_pivoted['R$/Q'] = ((df_pivoted[cols[-1]] / df_pivoted[cols[-3]]) * 100) / df_pivoted[cols[-2]]
+#     df_rank = df_pivoted.query('`Região` == "Sergipe"').copy()  # filtro da região para seleção dos produtos
+#     df_rank['Mean'] = df_rank.groupby(['Produto'])['R$/Q'].transform('mean')  # valor médio por produto
+#     df_rank['Rank'] = df_rank['Mean'].rank(method='dense', ascending=False)  # ranking das maiores médias; dense para aumentar o ranking no mesmo grupo
+
+#     df_se = df_rank.query('Rank <= 6').copy()  # seleciona o top 6 produtos com maior rendimento médio anual
+#     products = df_se['Produto'].unique()  # extrai os produtos
+#     df_filtered = df_pivoted.loc[df_pivoted['Produto'].isin(products)].copy()  # filtra os dados para os produtos selecionados
+#     df_final = df_filtered[['Ano', 'Região', 'Produto', 'R$/Q']].copy()  # mantém apenas as colunas de interesse
+#     df_final['Ano'] = df_final['Ano'].astype(int)  # converte a coluna Ano para int
+
+#     df_final.sort_values(by=['Ano', 'Região', 'Produto'], ascending=[False, True, True], inplace=True)  # ordena os dados
+#     df_final.reset_index(drop=True, inplace=True)  # reseta o índice
+#     df_final.to_excel(os.path.join(sheets_path, 'g2.5.xlsx'), index=False, sheet_name='g2.5')  # salva o resultado em Excel
+
+# except Exception as e:
+#     errors['Gráfico 2.5'] = traceback.format_exc()
+
+
+# gráfico 2.6
 try:
     data = c.open_file(dbs_path, 'sidra_tables_g2.5--g2.6.xlsx', 'xls', sheet_name='Sheet1')
     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
@@ -542,7 +586,7 @@ try:
         deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / (1 + deflator.loc[row, 'Diff'])  # índice de preços
 
     # tratamento da tabela
-    df = data.query('Tabela == 1612').copy()  # filtro da tabela
+    df = data.query('Tabela == 1613').copy()  # filtro da tabela
     deflator.rename(columns={'YEAR': 'Ano'}, inplace=True)  # renomeção para join
     df = df.merge(deflator[['Ano', 'Index']], how='left', on='Ano', validate='m:1')
     df_pivoted = df.pivot(index=['Região', 'Ano', 'Produto', 'Index'], columns='Variável', values='Valor').reset_index()
@@ -561,11 +605,10 @@ try:
 
     df_final.sort_values(by=['Ano', 'Região', 'Produto'], ascending=[False, True, True], inplace=True)  # ordena os dados
     df_final.reset_index(drop=True, inplace=True)  # reseta o índice
-    df_final.to_excel(os.path.join(sheets_path, 'g2.5.xlsx'), index=False, sheet_name='g2.5')  # salva o resultado em Excel
+    df_final.to_excel(os.path.join(sheets_path, 'g2.6.xlsx'), index=False, sheet_name='g2.6')  # salva o resultado em Excel
 
 except Exception as e:
-    errors['Gráfico 2.5'] = traceback.format_exc()
-
+    errors['Gráfico 2.6'] = traceback.format_exc()
 
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
