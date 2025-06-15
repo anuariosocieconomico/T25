@@ -23,31 +23,47 @@ errors = {}
 # ************************
 # DOWNLOAD DA BASE DE DADOS
 # ************************
-try:
-    year = datetime.now().year
-    while True:
-        # url da base contas regionais
-        url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
-        response = c.open_url(url)
+
+# # contas da produção
+# try:
+#     year = datetime.now().year
+#     while True:
+#         # url da base contas regionais
+#         url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
+#         response = c.open_url(url)
         
-        if response.status_code == 200:
-            content = pd.DataFrame(response.json())
-            link = content.query(
-                'name.str.lower().str.startswith("conta_da_producao_2010") and name.str.lower().str.endswith(".zip")'
-            )['url'].values[0]
-            if link:
-                response = c.open_url(link)
-                c.to_file(dbs_path, 'ibge_conta_producao.zip', response.content)
-                break
-        else:
-            if year > 2020:
-                year -= 1
-            else:
-                break
+#         if response.status_code == 200:
+#             content = pd.DataFrame(response.json())
+#             link = content.query(
+#                 'name.str.lower().str.startswith("conta_da_producao_2010") and name.str.lower().str.endswith(".zip")'
+#             )['url'].values[0]
+#             if link:
+#                 response = c.open_url(link)
+#                 c.to_file(dbs_path, 'ibge_conta_producao.zip', response.content)
+#                 break
+#         else:
+#             if year > 2020:
+#                 year -= 1
+#             else:
+#                 break
 
+# except Exception as e:
+#     errors[url + ' (Conta da Produção)'] = traceback.format_exc()
+
+
+# sidra 3939
+url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/28/v/all/p/all/c79/2670,2672,2677,32793,32794,32796?formato=json'
+try:
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D3N', 'D1N', 'D4N', 'V'].copy()]
+    df.columns = ['Ano', 'Região', 'Variável', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+
+    c.to_excel(df, dbs_path, 'sidra_3939.xlsx')
 except Exception as e:
-    errors[url + ' (Conta da Produção)'] = traceback.format_exc()
-
+    errors['Sidra 3939'] = traceback.format_exc()
 
 # # ************************
 # # PLANILHA
@@ -114,51 +130,80 @@ except Exception as e:
 #     errors['Gráfico 3.1'] = traceback.format_exc()
 
 
-# gráfico 3.2
+# # gráfico 3.2
+# try:
+#     data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.3', skiprows=1)
+#     indexes = data[data[data.columns[0]] == 'ANO'].index.tolist()  # extrai os índices das linhas que contêm os anos
+#     variables = data.iloc[[i - 3 for i in indexes], 0].to_list()  # extrai as variáveis correspondentes a cada ano
+#     # valores previsto: ['Valor Bruto da Produção 2010-2022', 'Consumo intermediário 2010-2022', 'Valor Adicionado Bruto 2010-2022']
+
+#     # tratamento dos dados
+#     dfs = []
+#     for i in range(len(indexes)):
+#         if i < 2:
+#             df = data.iloc[indexes[i]:indexes[i + 1]].copy()
+#         else:
+#             df = data.iloc[indexes[i]:].copy()
+
+#         columns = df.iloc[0].to_list()  # define a primeira linha como cabeçalho
+#         cols = [col.split('\n')[0].strip() if '\n' in col else col.strip() for col in columns]  # remove quebras de linha
+#         df.columns = cols  # renomeia as colunas
+#         # valores previstos: ['ANO', 'VALOR DO ANO ANTERIOR', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR', 'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE']
+
+#         df[cols[0]] = df[cols[0]].astype(str)  # converte a primeira coluna para string
+#         df_filtered = df[
+#             (df[cols[0]].str.startswith('20')) & (df[cols[0]].str.len() == 4)
+#         ].copy()
+
+#         df_filtered[cols[0]] = df_filtered[cols[0]].astype(int)  # converte a primeira coluna para inteiro
+#         df_filtered[cols[1:]] = df_filtered[cols[1:]].astype(float)  # converte a segunda coluna para float
+#         df_filtered['Variável'] = variables[i]  # adiciona a variável correspondente
+
+#         dfs.append(df_filtered)
+
+#     df_concat = pd.concat(dfs, ignore_index=True)
+#     df_concat = df_concat.query('`Variável`.str.lower().str.contains("valor adicionado bruto")', engine='python').copy()
+#     df_concat['Valor Ajustado'] = (df_concat[cols[2]] - 1) * 100 # cria a coluna de valor ajustado
+
+#     df_final = df_concat[[cols[0], 'Valor Ajustado']].copy()
+#     df_final.rename(columns={cols[0]: 'Ano'}, inplace=True)  # renomeia a coluna de ano
+#     df_final.rename(columns={'Valor Ajustado': 'Valor bruto adicionado'}, inplace=True)
+#     df_final.sort_values(by='Ano', ascending=True, inplace=True)  # ordena pelo ano
+#     df_final.dropna(subset=['Valor bruto adicionado'], inplace=True)  # remove linhas com valores ajustados nulos
+
+#     df_final.to_excel(os.path.join(sheets_path, 'g3.2.xlsx'), index=False, sheet_name='g3.2')
+
+# except Exception as e:
+#     errors['Gráfico 3.2'] = traceback.format_exc()
+
+
+# gráfico 3.3
 try:
-    data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.3', skiprows=1)
-    indexes = data[data[data.columns[0]] == 'ANO'].index.tolist()  # extrai os índices das linhas que contêm os anos
-    variables = data.iloc[[i - 3 for i in indexes], 0].to_list()  # extrai as variáveis correspondentes a cada ano
-    # valores previsto: ['Valor Bruto da Produção 2010-2022', 'Consumo intermediário 2010-2022', 'Valor Adicionado Bruto 2010-2022']
+    data = c.open_file(dbs_path, 'sidra_3939.xlsx', 'xls', sheet_name='Sheet1')
+    data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+    data = data.query('Ano >= 2010').copy()  # filtra os dados para considerar apenas anos a partir de 2010
+    years = (data['Ano'].min(), data['Ano'].max())
 
-    # tratamento dos dados
-    dfs = []
-    for i in range(len(indexes)):
-        if i < 2:
-            df = data.iloc[indexes[i]:indexes[i + 1]].copy()
-        else:
-            df = data.iloc[indexes[i]:].copy()
+    # Para cada grupo de Região e Variável, pega o valor do ano anterior
+    data['Valor Anterior'] = data.groupby(['Região', 'Variável'])['Valor'].shift(1)
+    data['Valor Inicial'] = data.groupby(['Região', 'Variável'])['Valor'].transform('first')  # pega o valor do primeiro ano do grupo
+    data['Variação Anual'] = ((data['Valor'] / data['Valor Anterior']) - 1) * 100  # calcula a variação anual
+    data['Variação Acumulada'] = ((data['Valor'] / data['Valor Inicial']) - 1) * 100  # calcula a variação acumulada
 
-        columns = df.iloc[0].to_list()  # define a primeira linha como cabeçalho
-        cols = [col.split('\n')[0].strip() if '\n' in col else col.strip() for col in columns]  # remove quebras de linha
-        df.columns = cols  # renomeia as colunas
-        # valores previstos: ['ANO', 'VALOR DO ANO ANTERIOR', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR', 'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE']
+    # organização da tabela
+    df = data[['Ano', 'Região', 'Variável', 'Variação Anual', 'Variação Acumulada']].query('Ano == @data.Ano.max()').copy()
+    df_melted = df.melt(id_vars=['Ano', 'Região', 'Variável'], value_vars=['Variação Anual', 'Variação Acumulada'], var_name='Tipo de Variação', value_name='Valor')
+    df_pivoted = df_melted.pivot(index=['Tipo de Variação', 'Variável'], columns='Região', values='Valor').reset_index()
 
-        df[cols[0]] = df[cols[0]].astype(str)  # converte a primeira coluna para string
-        df_filtered = df[
-            (df[cols[0]].str.startswith('20')) & (df[cols[0]].str.len() == 4)
-        ].copy()
+    # tratamento final
+    df_final = df_pivoted.copy()
+    df_final.rename(columns={'Tipo de Variação': 'Período', 'Variável': 'Rebanho'}, inplace=True)
+    df_final['Período'] = df_final['Período'].apply(lambda x: f'{years[1]}/{years[1] - 1}' if 'Anual' in x else f'{years[1]}/{years[0]}')  # formata o período
 
-        df_filtered[cols[0]] = df_filtered[cols[0]].astype(int)  # converte a primeira coluna para inteiro
-        df_filtered[cols[1:]] = df_filtered[cols[1:]].astype(float)  # converte a segunda coluna para float
-        df_filtered['Variável'] = variables[i]  # adiciona a variável correspondente
-
-        dfs.append(df_filtered)
-
-    df_concat = pd.concat(dfs, ignore_index=True)
-    df_concat = df_concat.query('`Variável`.str.lower().str.contains("valor adicionado bruto")', engine='python').copy()
-    df_concat['Valor Ajustado'] = (df_concat[cols[2]] - 1) * 100 # cria a coluna de valor ajustado
-
-    df_final = df_concat[[cols[0], 'Valor Ajustado']].copy()
-    df_final.rename(columns={cols[0]: 'Ano'}, inplace=True)  # renomeia a coluna de ano
-    df_final.rename(columns={'Valor Ajustado': 'Valor bruto adicionado'}, inplace=True)
-    df_final.sort_values(by='Ano', ascending=True, inplace=True)  # ordena pelo ano
-    df_final.dropna(subset=['Valor bruto adicionado'], inplace=True)  # remove linhas com valores ajustados nulos
-
-    df_final.to_excel(os.path.join(sheets_path, 'g3.2.xlsx'), index=False, sheet_name='g3.2')
+    df_final.to_excel(os.path.join(sheets_path, 'g3.3.xlsx'), index=False, sheet_name='g3.3')
 
 except Exception as e:
-    errors['Gráfico 3.2'] = traceback.format_exc()
+    errors['Gráfico 3.3'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
