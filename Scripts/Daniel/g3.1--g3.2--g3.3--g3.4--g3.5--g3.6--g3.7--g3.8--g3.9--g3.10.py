@@ -51,19 +51,34 @@ errors = {}
 #     errors[url + ' (Conta da Produção)'] = traceback.format_exc()
 
 
-# sidra 3939
-url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/28/v/all/p/all/c79/2670,2672,2677,32793,32794,32796?formato=json'
+# # sidra 3939
+# url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/28/v/all/p/all/c79/2670,2672,2677,32793,32794,32796?formato=json'
+# try:
+#     data = c.open_url(url)
+#     df = pd.DataFrame(data.json())
+#     df = df[['D3N', 'D1N', 'D4N', 'V'].copy()]
+#     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
+#     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+#     df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+
+#     c.to_excel(df, dbs_path, 'sidra_3939.xlsx')
+# except Exception as e:
+#     errors['Sidra 3939'] = traceback.format_exc()
+
+
+# sidra 74
+url = 'https://apisidra.ibge.gov.br/values/t/74/n1/all/n2/2/n3/28/v/106/p/all/c80/2682,2685,2687?formato=json'
 try:
     data = c.open_url(url)
     df = pd.DataFrame(data.json())
-    df = df[['D3N', 'D1N', 'D4N', 'V'].copy()]
-    df.columns = ['Ano', 'Região', 'Variável', 'Valor']
+    df = df[['D3N', 'D1N', 'D4N', 'MN', 'V'].copy()]
+    df.columns = ['Ano', 'Região', 'Variável', 'Unidade', 'Valor']
     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
     df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
 
-    c.to_excel(df, dbs_path, 'sidra_3939.xlsx')
+    c.to_excel(df, dbs_path, 'sidra_74.xlsx')
 except Exception as e:
-    errors['Sidra 3939'] = traceback.format_exc()
+    errors['Sidra 74'] = traceback.format_exc()
 
 # # ************************
 # # PLANILHA
@@ -177,33 +192,51 @@ except Exception as e:
 #     errors['Gráfico 3.2'] = traceback.format_exc()
 
 
-# gráfico 3.3
+# # gráfico 3.3
+# try:
+#     data = c.open_file(dbs_path, 'sidra_3939.xlsx', 'xls', sheet_name='Sheet1')
+#     data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+#     data = data.query('Ano >= 2010').copy()  # filtra os dados para considerar apenas anos a partir de 2010
+#     years = (data['Ano'].min(), data['Ano'].max())
+
+#     # Para cada grupo de Região e Variável, pega o valor do ano anterior
+#     data['Valor Anterior'] = data.groupby(['Região', 'Variável'])['Valor'].shift(1)
+#     data['Valor Inicial'] = data.groupby(['Região', 'Variável'])['Valor'].transform('first')  # pega o valor do primeiro ano do grupo
+#     data['Variação Anual'] = ((data['Valor'] / data['Valor Anterior']) - 1) * 100  # calcula a variação anual
+#     data['Variação Acumulada'] = ((data['Valor'] / data['Valor Inicial']) - 1) * 100  # calcula a variação acumulada
+
+#     # organização da tabela
+#     df = data[['Ano', 'Região', 'Variável', 'Variação Anual', 'Variação Acumulada']].query('Ano == @data.Ano.max()').copy()
+#     df_melted = df.melt(id_vars=['Ano', 'Região', 'Variável'], value_vars=['Variação Anual', 'Variação Acumulada'], var_name='Tipo de Variação', value_name='Valor')
+#     df_pivoted = df_melted.pivot(index=['Tipo de Variação', 'Variável'], columns='Região', values='Valor').reset_index()
+
+#     # tratamento final
+#     df_final = df_pivoted.copy()
+#     df_final.rename(columns={'Tipo de Variação': 'Período', 'Variável': 'Rebanho'}, inplace=True)
+#     df_final['Período'] = df_final['Período'].apply(lambda x: f'{years[1]}/{years[1] - 1}' if 'Anual' in x else f'{years[1]}/{years[0]}')  # formata o período
+
+#     df_final.to_excel(os.path.join(sheets_path, 'g3.3.xlsx'), index=False, sheet_name='g3.3')
+
+# except Exception as e:
+#     errors['Gráfico 3.3'] = traceback.format_exc()
+
+
+# gráfico 3.4
 try:
-    data = c.open_file(dbs_path, 'sidra_3939.xlsx', 'xls', sheet_name='Sheet1')
+    data = c.open_file(dbs_path, 'sidra_74.xlsx', 'xls', sheet_name='Sheet1')
     data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
     data = data.query('Ano >= 2010').copy()  # filtra os dados para considerar apenas anos a partir de 2010
-    years = (data['Ano'].min(), data['Ano'].max())
-
-    # Para cada grupo de Região e Variável, pega o valor do ano anterior
-    data['Valor Anterior'] = data.groupby(['Região', 'Variável'])['Valor'].shift(1)
-    data['Valor Inicial'] = data.groupby(['Região', 'Variável'])['Valor'].transform('first')  # pega o valor do primeiro ano do grupo
-    data['Variação Anual'] = ((data['Valor'] / data['Valor Anterior']) - 1) * 100  # calcula a variação anual
-    data['Variação Acumulada'] = ((data['Valor'] / data['Valor Inicial']) - 1) * 100  # calcula a variação acumulada
-
-    # organização da tabela
-    df = data[['Ano', 'Região', 'Variável', 'Variação Anual', 'Variação Acumulada']].query('Ano == @data.Ano.max()').copy()
-    df_melted = df.melt(id_vars=['Ano', 'Região', 'Variável'], value_vars=['Variação Anual', 'Variação Acumulada'], var_name='Tipo de Variação', value_name='Valor')
-    df_pivoted = df_melted.pivot(index=['Tipo de Variação', 'Variável'], columns='Região', values='Valor').reset_index()
+    data['Variável'] = data['Variável'] + ' (' + data['Unidade'] + ')'
+    data.drop(columns=['Unidade'], inplace=True)  # remove a coluna de unidade
 
     # tratamento final
-    df_final = df_pivoted.copy()
-    df_final.rename(columns={'Tipo de Variação': 'Período', 'Variável': 'Rebanho'}, inplace=True)
-    df_final['Período'] = df_final['Período'].apply(lambda x: f'{years[1]}/{years[1] - 1}' if 'Anual' in x else f'{years[1]}/{years[0]}')  # formata o período
+    df_final = data.copy()
+    df_final = df_final.pivot(index=['Ano', 'Região'], columns='Variável', values='Valor').reset_index()
 
-    df_final.to_excel(os.path.join(sheets_path, 'g3.3.xlsx'), index=False, sheet_name='g3.3')
+    df_final.to_excel(os.path.join(sheets_path, 'g3.4.xlsx'), index=False, sheet_name='g3.4')
 
 except Exception as e:
-    errors['Gráfico 3.3'] = traceback.format_exc()
+    errors['Gráfico 3.4'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
