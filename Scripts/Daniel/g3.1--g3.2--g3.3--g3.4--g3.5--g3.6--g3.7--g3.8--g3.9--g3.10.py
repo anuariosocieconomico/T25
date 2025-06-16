@@ -56,7 +56,7 @@ errors = {}
 # try:
 #     data = c.open_url(url)
 #     df = pd.DataFrame(data.json())
-#     df = df[['D3N', 'D1N', 'D4N', 'V'].copy()]
+#     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
 #     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
 #     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
 #     df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
@@ -66,19 +66,56 @@ errors = {}
 #     errors['Sidra 3939'] = traceback.format_exc()
 
 
-# sidra 74
-url = 'https://apisidra.ibge.gov.br/values/t/74/n1/all/n2/2/n3/28/v/106/p/all/c80/2682,2685,2687?formato=json'
+# # sidra 74
+# url = 'https://apisidra.ibge.gov.br/values/t/74/n1/all/n2/2/n3/28/v/106/p/all/c80/2682,2685,2687?formato=json'
+# try:
+#     data = c.open_url(url)
+#     df = pd.DataFrame(data.json())
+#     df = df[['D3N', 'D1N', 'D4N', 'MN', 'V']].copy()
+#     df.columns = ['Ano', 'Região', 'Variável', 'Unidade', 'Valor']
+#     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+#     df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+
+#     c.to_excel(df, dbs_path, 'sidra_74.xlsx')
+# except Exception as e:
+#     errors['Sidra 74'] = traceback.format_exc()
+
+
+# sidra 1092
+url = 'https://apisidra.ibge.gov.br/values/t/1092/n1/all/n3/all/v/284,1000284/p/all/c12716/115236/c18/992/c12529/118225/d/v1000284%202?formato=json'
 try:
     data = c.open_url(url)
     df = pd.DataFrame(data.json())
-    df = df[['D3N', 'D1N', 'D4N', 'MN', 'V'].copy()]
-    df.columns = ['Ano', 'Região', 'Variável', 'Unidade', 'Valor']
+    df = df[['D3N', 'D1N', 'D2N', 'V']].copy()
+    df.columns = ['Ano', 'Região', 'Variável', 'Valor']
     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
-    df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+    df['Trimestre'] = df['Ano'].apply(lambda x: int(x[0]))  # extrai o trimestre da coluna Ano
+    df['Ano'] = df['Ano'].str.split(' ').str[-1].astype(int)  # extrai o ano da coluna Ano
+    df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
+    df['Valor'] = df['Valor'].fillna(0)  # substitui valores nulos por 0
+    df['Valor'] = df['Valor'].astype(int)
 
-    c.to_excel(df, dbs_path, 'sidra_74.xlsx')
+    c.to_excel(df, dbs_path, 'sidra_1092.xlsx')
 except Exception as e:
-    errors['Sidra 74'] = traceback.format_exc()
+    errors['Sidra 1092'] = traceback.format_exc()
+
+
+# sidra 3939-2
+url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/11,12,13,14,15,16,21,22,23,24,17,25,26,27,28,29,31,32,33,35,41,42,43,51,52,50/v/all/p/all/c79/2670,32794,32796?formato=json'
+try:
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
+    df.columns = ['Ano', 'Região', 'Variável', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
+    df['Valor'] = df['Valor'].fillna(0)  # substitui valores nulos por 0
+    df['Valor'] = df['Valor'].astype(int)
+
+    c.to_excel(df, dbs_path, 'sidra_3939-2.xlsx')
+except Exception as e:
+    errors['Sidra 3939-2'] = traceback.format_exc()
+
 
 # # ************************
 # # PLANILHA
@@ -221,22 +258,94 @@ except Exception as e:
 #     errors['Gráfico 3.3'] = traceback.format_exc()
 
 
-# gráfico 3.4
+# # gráfico 3.4
+# try:
+#     data = c.open_file(dbs_path, 'sidra_74.xlsx', 'xls', sheet_name='Sheet1')
+#     data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+#     data = data.query('Ano >= 2010').copy()  # filtra os dados para considerar apenas anos a partir de 2010
+#     data['Variável'] = data['Variável'] + ' (' + data['Unidade'] + ')'
+#     data.drop(columns=['Unidade'], inplace=True)  # remove a coluna de unidade
+
+#     # tratamento final
+#     df_final = data.copy()
+#     df_final = df_final.pivot(index=['Ano', 'Região'], columns='Variável', values='Valor').reset_index()
+
+#     df_final.to_excel(os.path.join(sheets_path, 'g3.4.xlsx'), index=False, sheet_name='g3.4')
+
+# except Exception as e:
+#     errors['Gráfico 3.4'] = traceback.format_exc()
+
+
+# gráfico 3.5
 try:
-    data = c.open_file(dbs_path, 'sidra_74.xlsx', 'xls', sheet_name='Sheet1')
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
-    data = data.query('Ano >= 2010').copy()  # filtra os dados para considerar apenas anos a partir de 2010
-    data['Variável'] = data['Variável'] + ' (' + data['Unidade'] + ')'
-    data.drop(columns=['Unidade'], inplace=True)  # remove a coluna de unidade
+    data = c.open_file(dbs_path, 'sidra_1092.xlsx', 'xls', sheet_name='Sheet1').query(
+        'Variável.str.lower() == "animais abatidos" &' \
+        'Ano >= 2010', engine='python'
+    )
+    data_aux = c.open_file(dbs_path, 'sidra_3939-2.xlsx', 'xls', sheet_name='Sheet1').query(
+        'Variável.str.lower().str.contains("bovino") &' \
+        'Ano >= 2010', engine='python'
+    )
 
-    # tratamento final
-    df_final = data.copy()
-    df_final = df_final.pivot(index=['Ano', 'Região'], columns='Variável', values='Valor').reset_index()
+    # tratamento dos dados principais
+    df_anual = data.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados por Ano, Região e Variável
+    df_ne = df_anual.query('Região in @c.ne_states').copy()  # filtra os dados para as regiões do Nordeste
+    assert len(df_ne['Região'].unique()) == 9, 'Número de regiões do Nordeste diferente do esperado.'
+    df_ne['Região'] = 'Nordeste'  # renomeia as regiões do Nordeste para 'Nordeste'
+    df_ne = df_ne.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados do Nordeste por Ano e Variável
+    df_merged = pd.concat([df_anual, df_ne], ignore_index=True)  # concatena os dados anuais com os do Nordeste
 
-    df_final.to_excel(os.path.join(sheets_path, 'g3.4.xlsx'), index=False, sheet_name='g3.4')
+    # união com os dados auxiliares
+    df_right = data_aux[['Ano', 'Região', 'Valor']].copy()  # seleciona as colunas necessárias dos dados auxiliares
+    df_right.rename(columns={'Valor': 'Valor Auxiliar'}, inplace=True)  # renomeia a coluna de valor auxiliar
+    df_joined = pd.merge(df_merged, df_right, on=['Ano', 'Região'], how='left', validate='1:1')  # une os dados principais com os auxiliares
+
+    # cálculos
+    df_joined.sort_values(['Região', 'Ano'], inplace=True)
+    df_joined['Valor Anterior'] = df_joined.groupby('Região')['Valor'].shift(1)  # pega o valor do ano anterior
+    df_joined['Valor Inicial'] = df_joined.groupby('Região')['Valor'].transform('first')  # pega o valor do primeiro ano do grupo
+    df_joined['Valor Auxiliar'] = df_joined['Valor Auxiliar'].ffill().bfill() # preenche valores nulos na coluna de valor auxiliar
+
+    df_joined['Razão'] = (df_joined['Valor'] / df_joined['Valor Auxiliar']) * 100  # calcula a razão entre o valor e o valor auxiliar
+    df_joined['Razão Média'] = df_joined.groupby('Região')['Razão'].transform('mean')  # calcula a média da razão por região
+    df_joined['Variação Acumulada'] = ((df_joined['Valor'] / df_joined['Valor Inicial']) - 1) * 100  # calcula a variação acumulada
+
+    # exportação das tabelas
+    # top 6 regiões com maior razão
+    df_top_razao = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
+    df_top_razao['Razão 2'] = df_top_razao['Razão']
+    df_top_razao['Razão 2'].loc[df_top_razao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_top_razao['Ranking'] = df_top_razao['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
+    df_top_razao['Ranking'].loc[df_top_razao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera o ranking para Brasil e Nordeste
+    df_top_razao = df_top_razao[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
+    df_top_razao.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
+    df_top_razao.rename(columns={'Razão': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão
+    df_top_razao.to_excel(os.path.join(sheets_path, 'g3.5a.xlsx'), index=False, sheet_name=f'g3.5a {df_joined["Ano"].max()}')
+
+    # top 6 regiões com maior média da razão
+    df_top_razao_media = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
+    df_top_razao_media['Razão 2'] = df_top_razao_media['Razão Média']
+    df_top_razao_media['Razão 2'].loc[df_top_razao_media['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_top_razao_media['Ranking'] = df_top_razao_media['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão média
+    df_top_razao_media['Ranking'].loc[df_top_razao_media['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera o ranking para Brasil e Nordeste
+    df_top_razao_media = df_top_razao_media[['Região', 'Razão Média', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
+    df_top_razao_media.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
+    df_top_razao_media.rename(columns={'Razão Média': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão média
+    df_top_razao_media.to_excel(os.path.join(sheets_path, 'g3.5b.xlsx'), index=False, sheet_name=f'g3.5b Média({df_joined["Ano"].min()}-{df_joined["Ano"].max()})')
+
+    # top 6 regiões com maior variação acumulada
+    df_top_variacao = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
+    df_top_variacao['Variação Acumulada 2'] = df_top_variacao['Variação Acumulada']
+    df_top_variacao['Variação Acumulada 2'].loc[df_top_variacao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_top_variacao['Ranking'] = df_top_variacao['Variação Acumulada 2'].rank(method='first', ascending=False)  # cria o ranking da razão
+    df_top_variacao['Ranking'].loc[df_top_variacao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera o ranking para Brasil e Nordeste
+    df_top_variacao = df_top_variacao[['Região', 'Variação Acumulada', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
+    df_top_variacao.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
+    df_top_variacao.rename(columns={'Variação Acumulada': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão
+    df_top_variacao.to_excel(os.path.join(sheets_path, 'g3.5c.xlsx'), index=False, sheet_name=f'g3.5c Aumento({df_joined["Ano"].min()}-{df_joined["Ano"].max()})')
 
 except Exception as e:
-    errors['Gráfico 3.4'] = traceback.format_exc()
+    errors['Gráfico 3.5'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
