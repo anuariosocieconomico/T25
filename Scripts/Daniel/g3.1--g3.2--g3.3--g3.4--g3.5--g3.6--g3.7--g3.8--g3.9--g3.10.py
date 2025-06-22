@@ -301,10 +301,10 @@ try:
     df_joined = pd.merge(df_merged, df_right, on=['Ano', 'Região'], how='left', validate='1:1')  # une os dados principais com os auxiliares
 
     # cálculos
+    df_joined.drop(df_joined[df_joined['Valor Auxiliar'].isna()].index, inplace=True)  # remove linhas onde o valor auxiliar é zero
     df_joined.sort_values(['Região', 'Ano'], inplace=True)
     df_joined['Valor Anterior'] = df_joined.groupby('Região')['Valor'].shift(1)  # pega o valor do ano anterior
     df_joined['Valor Inicial'] = df_joined.groupby('Região')['Valor'].transform('first')  # pega o valor do primeiro ano do grupo
-    df_joined['Valor Auxiliar'] = df_joined['Valor Auxiliar'].ffill().bfill() # preenche valores nulos na coluna de valor auxiliar
 
     df_joined['Razão'] = (df_joined['Valor'] / df_joined['Valor Auxiliar']) * 100  # calcula a razão entre o valor e o valor auxiliar
     df_joined['Razão Média'] = df_joined.groupby('Região')['Razão'].transform('mean')  # calcula a média da razão por região
