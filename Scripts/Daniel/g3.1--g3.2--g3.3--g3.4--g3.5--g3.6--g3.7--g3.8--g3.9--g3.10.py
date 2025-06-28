@@ -448,9 +448,82 @@ except Exception as e:
 #     errors['Gráfico 3.8'] = traceback.format_exc()
 
 
-# gráfico 3.9
+# # gráfico 3.9
+# try:
+#     data = c.open_file(dbs_path, 'sidra_3940.xlsx', 'xls', sheet_name='Sheet1')
+#     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
+#     min_year = data['Ano'].min()  # ano mínimo da tabela
+#     max_year = data['Ano'].max()  # ano máximo da tabela
+
+#     # tratamento do deflator
+#     deflator = data_deflator.query('YEAR >= @min_year and YEAR <= @max_year').copy()
+#     deflator.sort_values(by='YEAR', ascending=False, inplace=True)
+#     deflator.reset_index(drop=True, inplace=True)
+#     deflator.rename(columns={'VALUE (-)': 'VALUE'}, inplace=True)
+#     deflator['Diff'] = None
+#     deflator['Index'] = 100.00
+#     for row in range(1, len(deflator)):
+#         deflator.loc[row, 'Diff'] = (deflator.loc[row - 1, 'VALUE'] - deflator.loc[row, 'VALUE']) / deflator.loc[row, 'VALUE']  # variação percentual
+#         deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / (1 + deflator.loc[row, 'Diff'])  # índice de preços
+
+#     # tratamento dos dados principais
+#     df_grouped = data.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados por Ano, Região e Produto
+#     df_pivoted = df_grouped.pivot(index=['Ano', 'Região'], columns='Variável', values='Valor').reset_index(drop=False)  # pivota os dados para ter as regiões e variáveis como colunas
+#     cols = df_pivoted.columns.tolist()  # extrai os nomes das colunas
+
+#     # join com o deflator
+#     df_joined = pd.merge(
+#         df_pivoted, deflator[['YEAR', 'Index']],
+#         left_on='Ano', right_on='YEAR', how='left', validate='m:1'
+#     )
+#     df_joined.drop(columns=['YEAR'], inplace=True)  # remove a coluna YEAR, pois já está em Ano
+
+#     # cálculos
+#     df_joined['Valor Ajustado'] = (df_joined[cols[-1]] / df_joined['Index']) * 100.00  # calcula o valor ajustado
+#     df_joined['Razão'] = (df_joined['Valor Ajustado'] * 1000) / df_joined[cols[-2]]  # calcula a razão entre o valor ajustado e o valor auxiliar
+
+#     # maiores razões do último ano
+#     df_last_year = df_joined.query('Ano == @max_year').copy()
+#     df_last_year['Razão 2'] = df_last_year['Razão']
+#     df_last_year['Razão 2'].loc[df_last_year['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+#     df_last_year['Ranking'] = df_last_year['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
+#     df_last_year.sort_values(by='Ranking', ascending=True, inplace=True)
+#     df_last_year = df_last_year[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
+#     df_last_year.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
+
+#     df_last_year.to_excel(os.path.join(sheets_path, 'g3.9a.xlsx'), index=False, sheet_name=f'g3.11a {max_year}')
+
+#     # maiores razões da série histórica
+#     df_all = df_joined.groupby('Região', as_index=False)['Razão'].mean()  # calcula a média da razão por região e variável
+#     df_all['Razão 2'] = df_all['Razão']
+#     df_all['Razão 2'].loc[df_all['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+#     df_all['Ranking'] = df_all['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
+#     df_all.sort_values(by='Ranking', ascending=True, inplace=True)
+#     df_all = df_all[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
+#     df_all.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
+
+#     df_all.to_excel(os.path.join(sheets_path, 'g3.9b.xlsx'), index=False, sheet_name=f'g3.11b média {min_year}-{max_year}')
+
+#     # maiores variações de toda a série histórica
+#     df_diff = df_joined.query('Ano in [@max_year, @min_year]').copy()
+#     df_diff = df_diff.pivot(index='Região', columns='Ano', values='Razão').reset_index(drop=False)  # pivota os dados para ter as regiões como linhas e anos como colunas
+#     df_diff['Razão'] = (df_diff[max_year] - df_diff[min_year]) / df_diff[min_year] * 100  # calcula a variação percentual da razão
+#     df_diff['Razão 2'] = df_diff['Razão']
+#     df_diff['Razão 2'].loc[df_diff['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+#     df_diff['Ranking'] = df_diff['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
+#     df_diff.sort_values(by='Ranking', ascending=True, inplace=True)
+#     df_diff = df_diff[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
+#     df_diff.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
+
+#     df_diff.to_excel(os.path.join(sheets_path, 'g3.9c.xlsx'), index=False, sheet_name=f'g3.11c variação {max_year}-{min_year}')
+
+# except Exception as e:
+#     errors['Gráfico 3.9'] = traceback.format_exc()
+
+
+# gráfico 3.10
 try:
-    data = c.open_file(dbs_path, 'sidra_3940.xlsx', 'xls', sheet_name='Sheet1')
+    data = c.open_file(dbs_path, 'sidra_3940.xlsx', 'xls', sheet_name='Sheet1').query('`Região` in ["Brasil", "Nordeste", "Sergipe"]', engine='python')
     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
     min_year = data['Ano'].min()  # ano mínimo da tabela
     max_year = data['Ano'].max()  # ano máximo da tabela
@@ -481,44 +554,12 @@ try:
     # cálculos
     df_joined['Valor Ajustado'] = (df_joined[cols[-1]] / df_joined['Index']) * 100.00  # calcula o valor ajustado
     df_joined['Razão'] = (df_joined['Valor Ajustado'] * 1000) / df_joined[cols[-2]]  # calcula a razão entre o valor ajustado e o valor auxiliar
+    df_pivoted = df_joined.pivot(index='Ano', columns='Região', values='Razão').reset_index(drop=False)  # pivota os dados para ter as regiões como colunas
 
-    # maiores razões do último ano
-    df_last_year = df_joined.query('Ano == @max_year').copy()
-    df_last_year['Razão 2'] = df_last_year['Razão']
-    df_last_year['Razão 2'].loc[df_last_year['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
-    df_last_year['Ranking'] = df_last_year['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
-    df_last_year.sort_values(by='Ranking', ascending=True, inplace=True)
-    df_last_year = df_last_year[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
-    df_last_year.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
-
-    df_last_year.to_excel(os.path.join(sheets_path, 'g3.9a.xlsx'), index=False, sheet_name=f'g3.11a {max_year}')
-
-    # maiores razões da série histórica
-    df_all = df_joined.groupby('Região', as_index=False)['Razão'].mean()  # calcula a média da razão por região e variável
-    df_all['Razão 2'] = df_all['Razão']
-    df_all['Razão 2'].loc[df_all['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
-    df_all['Ranking'] = df_all['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
-    df_all.sort_values(by='Ranking', ascending=True, inplace=True)
-    df_all = df_all[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
-    df_all.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
-
-    df_all.to_excel(os.path.join(sheets_path, 'g3.9b.xlsx'), index=False, sheet_name=f'g3.11b média {min_year}-{max_year}')
-
-    # maiores variações de toda a série histórica
-    df_diff = df_joined.query('Ano in [@max_year, @min_year]').copy()
-    df_diff = df_diff.pivot(index='Região', columns='Ano', values='Razão').reset_index(drop=False)  # pivota os dados para ter as regiões como linhas e anos como colunas
-    df_diff['Razão'] = (df_diff[max_year] - df_diff[min_year]) / df_diff[min_year] * 100  # calcula a variação percentual da razão
-    df_diff['Razão 2'] = df_diff['Razão']
-    df_diff['Razão 2'].loc[df_diff['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
-    df_diff['Ranking'] = df_diff['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
-    df_diff.sort_values(by='Ranking', ascending=True, inplace=True)
-    df_diff = df_diff[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
-    df_diff.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
-
-    df_diff.to_excel(os.path.join(sheets_path, 'g3.9c.xlsx'), index=False, sheet_name=f'g3.11c variação {max_year}-{min_year}')
+    df_pivoted.to_excel(os.path.join(sheets_path, 'g3.10.xlsx'), index=False, sheet_name='g3.12')
 
 except Exception as e:
-    errors['Gráfico 3.9'] = traceback.format_exc()
+    errors['Gráfico 3.10'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
