@@ -391,20 +391,36 @@ except Exception as e:
 #     errors['Gráfico 3.6'] = traceback.format_exc()
 
 
-# gráfico 3.7
+# # gráfico 3.7
+# try:
+#     data = c.open_file(dbs_path, 'sidra_3939-2.xlsx', 'xls', sheet_name='Sheet1').query(
+#         'Variável.str.lower().str.contains("suíno") &' \
+#         'Ano >= 2010 &' \
+#         'Região in ["Brasil", "Nordeste", "Sergipe"]', engine='python'
+#     )
+
+#     df = data.pivot(index='Ano', columns='Região', values='Valor').reset_index(drop=False)
+
+#     df.to_excel(os.path.join(sheets_path, 'g3.7.xlsx'), index=False, sheet_name=f'g3.7')
+
+# except Exception as e:
+#     errors['Gráfico 3.7'] = traceback.format_exc()
+
+
+# gráfico 3.8
 try:
     data = c.open_file(dbs_path, 'sidra_3939-2.xlsx', 'xls', sheet_name='Sheet1').query(
-        'Variável.str.lower().str.contains("suíno") &' \
+        'Variável.str.lower().str.contains("galináceos") &' \
         'Ano >= 2010 &' \
         'Região in ["Brasil", "Nordeste", "Sergipe"]', engine='python'
     )
 
     df = data.pivot(index='Ano', columns='Região', values='Valor').reset_index(drop=False)
 
-    df.to_excel(os.path.join(sheets_path, 'g3.7.xlsx'), index=False, sheet_name=f'g3.7')
+    df.to_excel(os.path.join(sheets_path, 'g3.8.xlsx'), index=False, sheet_name=f'g3.8')
 
 except Exception as e:
-    errors['Gráfico 3.7'] = traceback.format_exc()
+    errors['Gráfico 3.8'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
