@@ -348,47 +348,63 @@ except Exception as e:
 #     errors['Gráfico 3.5'] = traceback.format_exc()
 
 
-# gráfico 3.6
+# # gráfico 3.6
+# try:
+#     data = c.open_file(dbs_path, 'sidra_1092.xlsx', 'xls', sheet_name='Sheet1').query(
+#         'Variável.str.lower() == "animais abatidos" &' \
+#         'Ano >= 2010', engine='python'
+#     )
+#     data_aux = c.open_file(dbs_path, 'sidra_3939-2.xlsx', 'xls', sheet_name='Sheet1').query(
+#         'Variável.str.lower().str.contains("bovino") &' \
+#         'Ano >= 2010', engine='python'
+#     )
+
+#     # tratamento dos dados principais
+#     df_anual = data.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados por Ano, Região e Variável
+#     df_ne = df_anual.query('Região in @c.ne_states').copy()  # filtra os dados para as regiões do Nordeste
+#     assert len(df_ne['Região'].unique()) == 9, 'Número de regiões do Nordeste diferente do esperado.'
+#     df_ne['Região'] = 'Nordeste'  # renomeia as regiões do Nordeste para 'Nordeste'
+#     df_ne = df_ne.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados do Nordeste por Ano e Variável
+#     df_merged = pd.concat([df_anual, df_ne], ignore_index=True)  # concatena os dados anuais com os do Nordeste
+
+#     # união com os dados auxiliares
+#     df_right = data_aux[['Ano', 'Região', 'Valor']].copy()  # seleciona as colunas necessárias dos dados auxiliares
+#     df_right.rename(columns={'Valor': 'Valor Auxiliar'}, inplace=True)  # renomeia a coluna de valor auxiliar
+#     df_joined = pd.merge(df_merged, df_right, on=['Ano', 'Região'], how='left', validate='1:1')  # une os dados principais com os auxiliares
+
+#     # cálculos
+#     df_joined.drop(df_joined[df_joined['Valor Auxiliar'].isna()].index, inplace=True)  # remove linhas onde o valor auxiliar é zero
+#     df_joined.sort_values(['Região', 'Ano'], inplace=True)
+#     df_joined['Razão'] = (df_joined['Valor'] / df_joined['Valor Auxiliar']) * 100  # calcula a razão entre o valor e o valor auxiliar
+    
+#     df_final = df_joined.query('`Região`.isin(["Brasil", "Nordeste", "Sergipe"])', engine='python').copy()
+#     assert len(df_final['Região'].unique()) == 3, 'Número de regiões do Nordeste diferente do esperado.'
+#     df_final = pd.pivot(
+#         df_final[['Ano', 'Região', 'Razão']],
+#         index='Ano', columns='Região', values='Razão'
+#     ).reset_index(drop=False)
+
+    
+#     df_final.to_excel(os.path.join(sheets_path, 'g3.6.xlsx'), index=False, sheet_name=f'g3.6')
+
+# except Exception as e:
+#     errors['Gráfico 3.6'] = traceback.format_exc()
+
+
+# gráfico 3.7
 try:
-    data = c.open_file(dbs_path, 'sidra_1092.xlsx', 'xls', sheet_name='Sheet1').query(
-        'Variável.str.lower() == "animais abatidos" &' \
-        'Ano >= 2010', engine='python'
-    )
-    data_aux = c.open_file(dbs_path, 'sidra_3939-2.xlsx', 'xls', sheet_name='Sheet1').query(
-        'Variável.str.lower().str.contains("bovino") &' \
-        'Ano >= 2010', engine='python'
+    data = c.open_file(dbs_path, 'sidra_3939-2.xlsx', 'xls', sheet_name='Sheet1').query(
+        'Variável.str.lower().str.contains("suíno") &' \
+        'Ano >= 2010 &' \
+        'Região in ["Brasil", "Nordeste", "Sergipe"]', engine='python'
     )
 
-    # tratamento dos dados principais
-    df_anual = data.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados por Ano, Região e Variável
-    df_ne = df_anual.query('Região in @c.ne_states').copy()  # filtra os dados para as regiões do Nordeste
-    assert len(df_ne['Região'].unique()) == 9, 'Número de regiões do Nordeste diferente do esperado.'
-    df_ne['Região'] = 'Nordeste'  # renomeia as regiões do Nordeste para 'Nordeste'
-    df_ne = df_ne.groupby(['Ano', 'Região', 'Variável'], as_index=False)['Valor'].sum()  # agrupa os dados do Nordeste por Ano e Variável
-    df_merged = pd.concat([df_anual, df_ne], ignore_index=True)  # concatena os dados anuais com os do Nordeste
+    df = data.pivot(index='Ano', columns='Região', values='Valor').reset_index(drop=False)
 
-    # união com os dados auxiliares
-    df_right = data_aux[['Ano', 'Região', 'Valor']].copy()  # seleciona as colunas necessárias dos dados auxiliares
-    df_right.rename(columns={'Valor': 'Valor Auxiliar'}, inplace=True)  # renomeia a coluna de valor auxiliar
-    df_joined = pd.merge(df_merged, df_right, on=['Ano', 'Região'], how='left', validate='1:1')  # une os dados principais com os auxiliares
-
-    # cálculos
-    df_joined.drop(df_joined[df_joined['Valor Auxiliar'].isna()].index, inplace=True)  # remove linhas onde o valor auxiliar é zero
-    df_joined.sort_values(['Região', 'Ano'], inplace=True)
-    df_joined['Razão'] = (df_joined['Valor'] / df_joined['Valor Auxiliar']) * 100  # calcula a razão entre o valor e o valor auxiliar
-    
-    df_final = df_joined.query('`Região`.isin(["Brasil", "Nordeste", "Sergipe"])', engine='python').copy()
-    assert len(df_final['Região'].unique()) == 3, 'Número de regiões do Nordeste diferente do esperado.'
-    df_final = pd.pivot(
-        df_final[['Ano', 'Região', 'Razão']],
-        index='Ano', columns='Região', values='Razão'
-    ).reset_index(drop=False)
-
-    
-    df_final.to_excel(os.path.join(sheets_path, 'g3.6.xlsx'), index=False, sheet_name=f'g3.6')
+    df.to_excel(os.path.join(sheets_path, 'g3.7.xlsx'), index=False, sheet_name=f'g3.7')
 
 except Exception as e:
-    errors['Gráfico 3.6'] = traceback.format_exc()
+    errors['Gráfico 3.7'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
