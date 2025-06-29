@@ -57,39 +57,56 @@ except Exception as e:
 # PLANILHA
 # ************************
 
-# gráfico 4.1
+# # gráfico 4.1
+# try:
+#     data = c.open_file(dbs_path, 'sidra_5603.xlsx', 'xls', sheet_name='Sheet1').query(
+#         '(`Variável`.str.lower().str.contains("valor bruto da produção") |' \
+#         '`Variável`.str.lower().str.contains("custos das operações") |' \
+#         '`Variável`.str.lower().str.contains("valor da transformação")) &' \
+#         'Ano >= 2010', engine='python'
+#     )
+#     deflator = c.open_file(dbs_path, 'ipeadata_ipp.xlsx', 'xls', sheet_name='Sheet1')
+#     min_year = data['Ano'].min()  # ano mínimo da tabela
+#     max_year = data['Ano'].max()  # ano máximo da tabela
+
+#     # tratamento do deflator
+#     deflator = deflator.query(f'Ano >= {min_year} and Ano <= {max_year}')  # filtra os anos
+#     deflator.reset_index(drop=True, inplace=True)  # reseta o índice
+#     deflator['Diff'] = None
+#     deflator['Index'] = 100.00
+#     for row in range(1, len(deflator)):
+#         deflator.loc[row, 'Diff'] = deflator.loc[row - 1, 'Deflator IPP'] / deflator.loc[row, 'Deflator IPP']  # variação percentual
+#         deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / deflator.loc[row, 'Diff']  # índice de preços
+
+#     # join das tabelas
+#     df = pd.merge(data, deflator[['Ano', 'Index']], on='Ano', how='left', validate='m:1')
+#     df.sort_values(by=['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena pela região, variável e ano
+#     df['Valor corrigido'] = (df['Valor'] / df['Index']) * 100  # valor corrigido
+#     df['Variação anual'] = df.groupby(['Região', 'Variável'])['Valor corrigido'].pct_change() * 100  # variação anual
+#     df.rename(columns={'Index': 'Índice'}, inplace=True)
+#     df = df[['Região', 'Variável', 'Ano', 'Valor', 'Valor corrigido', 'Variação anual', 'Índice']].copy()  # reordena as colunas
+
+#     c.to_excel(df, sheets_path, 'g4.1.xlsx')
+
+# except Exception as e:
+#     errors['Gráfico 4.1'] = traceback.format_exc()
+
+
+# gráfico 4.2
 try:
     data = c.open_file(dbs_path, 'sidra_5603.xlsx', 'xls', sheet_name='Sheet1').query(
-        '(`Variável`.str.lower().str.contains("valor bruto da produção") |' \
-        '`Variável`.str.lower().str.contains("custos das operações") |' \
-        '`Variável`.str.lower().str.contains("valor da transformação")) &' \
+        '(`Variável`.str.lower().str.contains("número de unidades locais") |' \
+        '`Variável`.str.lower().str.contains("pessoal ocupado")) &' \
         'Ano >= 2010', engine='python'
     )
-    deflator = c.open_file(dbs_path, 'ipeadata_ipp.xlsx', 'xls', sheet_name='Sheet1')
-    min_year = data['Ano'].min()  # ano mínimo da tabela
-    max_year = data['Ano'].max()  # ano máximo da tabela
+    
+    df = data.pivot(index=['Região', 'Ano'], columns='Variável', values='Valor').reset_index(drop=False)  # cria a tabela dinâmica
+    df['Ano'] = '01/01/' + df['Ano'].astype(str)  # formata a coluna de ano
 
-    # tratamento do deflator
-    deflator = deflator.query(f'Ano >= {min_year} and Ano <= {max_year}')  # filtra os anos
-    deflator.reset_index(drop=True, inplace=True)  # reseta o índice
-    deflator['Diff'] = None
-    deflator['Index'] = 100.00
-    for row in range(1, len(deflator)):
-        deflator.loc[row, 'Diff'] = deflator.loc[row - 1, 'Deflator IPP'] / deflator.loc[row, 'Deflator IPP']  # variação percentual
-        deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / deflator.loc[row, 'Diff']  # índice de preços
-
-    # join das tabelas
-    df = pd.merge(data, deflator[['Ano', 'Index']], on='Ano', how='left', validate='m:1')
-    df.sort_values(by=['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena pela região, variável e ano
-    df['Valor corrigido'] = (df['Valor'] / df['Index']) * 100  # valor corrigido
-    df['Variação anual'] = df.groupby(['Região', 'Variável'])['Valor corrigido'].pct_change() * 100  # variação anual
-    df.rename(columns={'Index': 'Índice'}, inplace=True)
-    df = df[['Região', 'Variável', 'Ano', 'Valor', 'Valor corrigido', 'Variação anual', 'Índice']].copy()  # reordena as colunas
-
-    c.to_excel(df, sheets_path, 'g4.1.xlsx')
+    c.to_excel(df, sheets_path, 'g4.2.xlsx')
 
 except Exception as e:
-    errors['Gráfico 4.1'] = traceback.format_exc()
+    errors['Gráfico 4.2'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
