@@ -1,0 +1,103 @@
+import functions as c
+import os
+import pandas as pd
+import numpy as np
+import json
+import traceback
+import tempfile
+import shutil
+import sidrapy
+import ipeadatapy
+from datetime import datetime
+
+
+# obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
+dbs_path = tempfile.mkdtemp()
+sheets_path = c.sheets_dir
+errors_path = c.errors_dir
+
+# inicializa o dicionário para armazenar informações sobre possíveis erros durante a execução
+errors = {}
+
+
+# ************************
+# DOWNLOAD DA BASE DE DADOS
+# ************************
+
+
+# sidra 5603
+url = 'https://apisidra.ibge.gov.br/values/t/5603/n3/28/v/631,706,808,810,811/p/all?formato=json'
+try:
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D3N', 'D1N', 'D2N', 'V']].copy()
+    df.columns = ['Ano', 'Região', 'Variável', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+
+    c.to_excel(df, dbs_path, 'sidra_5603.xlsx')
+except Exception as e:
+    errors['Sidra 5603'] = traceback.format_exc()
+
+
+# deflator IPEA IPP
+try:
+    data = ipeadatapy.timeseries('IPP12_IPPC12')
+    df = data.loc[data['MONTH'] == 12, ['YEAR', 'VALUE (-)']].copy()  # seleciona as colunas de ano e deflator
+    df.sort_values(by='YEAR', ascending=False, inplace=True)  # ordena pelo ano
+    df.reset_index(drop=True, inplace=True)  # reseta o índice
+    df.rename(columns={'YEAR': 'Ano', 'VALUE (-)': 'Deflator IPP'}, inplace=True)
+
+    c.to_excel(df, dbs_path, 'ipeadata_ipp.xlsx')
+except Exception as e:
+    errors['IPEA IPP'] = traceback.format_exc()
+
+
+# ************************
+# PLANILHA
+# ************************
+
+# gráfico 4.1
+try:
+    data = c.open_file(dbs_path, 'sidra_5603.xlsx', 'xls', sheet_name='Sheet1').query(
+        '(`Variável`.str.lower().str.contains("valor bruto da produção") |' \
+        '`Variável`.str.lower().str.contains("custos das operações") |' \
+        '`Variável`.str.lower().str.contains("valor da transformação")) &' \
+        'Ano >= 2010', engine='python'
+    )
+    deflator = c.open_file(dbs_path, 'ipeadata_ipp.xlsx', 'xls', sheet_name='Sheet1')
+    min_year = data['Ano'].min()  # ano mínimo da tabela
+    max_year = data['Ano'].max()  # ano máximo da tabela
+
+    # tratamento do deflator
+    deflator = deflator.query(f'Ano >= {min_year} and Ano <= {max_year}')  # filtra os anos
+    deflator.reset_index(drop=True, inplace=True)  # reseta o índice
+    deflator['Diff'] = None
+    deflator['Index'] = 100.00
+    for row in range(1, len(deflator)):
+        deflator.loc[row, 'Diff'] = deflator.loc[row - 1, 'Deflator IPP'] / deflator.loc[row, 'Deflator IPP']  # variação percentual
+        deflator.loc[row, 'Index'] = deflator.loc[row - 1, 'Index'] / deflator.loc[row, 'Diff']  # índice de preços
+
+    # join das tabelas
+    df = pd.merge(data, deflator[['Ano', 'Index']], on='Ano', how='left', validate='m:1')
+    df.sort_values(by=['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena pela região, variável e ano
+    df['Valor corrigido'] = (df['Valor'] / df['Index']) * 100  # valor corrigido
+    df['Variação anual'] = df.groupby(['Região', 'Variável'])['Valor corrigido'].pct_change() * 100  # variação anual
+    df.rename(columns={'Index': 'Índice'}, inplace=True)
+    df = df[['Região', 'Variável', 'Ano', 'Valor', 'Valor corrigido', 'Variação anual', 'Índice']].copy()  # reordena as colunas
+
+    c.to_excel(df, sheets_path, 'g4.1.xlsx')
+
+except Exception as e:
+    errors['Gráfico 4.1'] = traceback.format_exc()
+
+
+# geração do arquivo de erro caso ocorra algum
+# se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
+# se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
+if errors:
+    with open(os.path.join(errors_path, 'script--g4.1--g4.2--t4.1.txt'), 'w', encoding='utf-8') as f:
+        f.write(json.dumps(errors, indent=4, ensure_ascii=False))
+
+# remove os arquivos baixados
+shutil.rmtree(dbs_path)
