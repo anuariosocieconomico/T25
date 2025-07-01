@@ -134,7 +134,62 @@ except Exception as e:
 #     errors['Gráfico 5.1'] = traceback.format_exc()
 
 
-# gráfico 5.2
+# # gráfico 5.2
+# try:
+#     dbs = []
+#     for sheet in [('Tabela9', 'Tabela9.8', 'NE'), ('Tabela17', 'Tabela17.8', 'SE'), ('Tabela33', 'Tabela33.8', 'BR')]:
+#         data = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name=sheet[0], sheet_name=sheet[1], skiprows=1)
+#         indexes = data[data[data.columns[0]] == 'ANO'].index.tolist()  # extrai os índices das linhas que contêm os anos
+#         variables = data.iloc[[i - 3 for i in indexes], 0].to_list()  # extrai as variáveis correspondentes a cada ano
+#         # valores previsto: ['Valor Bruto da Produção 2010-2022', 'Consumo intermediário 2010-2022', 'Valor Adicionado Bruto 2010-2022']
+
+#         # tratamento dos dados
+#         dfs = []
+#         for i in range(len(indexes)):
+#             if i < 2:
+#                 df = data.iloc[indexes[i]:indexes[i + 1]].copy()
+#             else:
+#                 df = data.iloc[indexes[i]:].copy()
+
+#             columns = df.iloc[0].to_list()  # define a primeira linha como cabeçalho
+#             cols = [col.split('\n')[0].strip() if '\n' in col else col.strip() for col in columns]  # remove quebras de linha
+#             df.columns = cols  # renomeia as colunas
+#             # valores previstos: ['ANO', 'VALOR DO ANO ANTERIOR', 'ÍNDICE DE VOLUME', 'VALOR A PREÇOS DO ANO ANTERIOR', 'ÍNDICE DE PREÇO', 'VALOR A PREÇO CORRENTE']
+
+#             df[cols[0]] = df[cols[0]].astype(str)  # converte a primeira coluna para string
+#             df_filtered = df[
+#                 (df[cols[0]].str.startswith('20')) & (df[cols[0]].str.len() == 4)
+#             ].copy()
+
+#             df_filtered[cols[0]] = df_filtered[cols[0]].astype(int)  # converte a primeira coluna para inteiro
+#             df_filtered[cols[1:]] = df_filtered[cols[1:]].astype(float)  # converte a segunda coluna para float
+#             df_filtered['Variável'] = variables[i]  # adiciona a variável correspondente
+#             df_filtered['Região'] = sheet[2]  # adiciona a região correspondente
+
+#             dfs.append(df_filtered)
+
+#         df_concat = pd.concat(dfs, ignore_index=True)
+#         dbs.append(df_concat.query("Variável.str.lower().str.strip().str.contains('valor bruto da produção')").copy())  # exclui o valor adicionado bruto, que será tratado separadamente
+
+#     df_concat_final = pd.concat(dbs, ignore_index=True)
+#     df_final = df_concat_final.loc[df_concat_final['Região'] != 'SE', [cols[0], cols[-1], 'Região']].merge(
+#         df_concat_final.loc[df_concat_final['Região'] == 'SE', [cols[0], cols[-1]]], how='left', on=cols[0], validate='m:1'
+#     )
+#     # ['ANO', 'VALOR A PREÇO CORRENTE_x', 'Região', 'VALOR A PREÇO CORRENTE_y']
+#     cols2 = df_final.columns.tolist()  # atualiza as colunas
+#     df_final['Razão'] = np.where(df_final[cols2[1]] != 0, (df_final[cols2[-1]] / df_final[cols2[1]]) * 100, np.nan)  # calcula a razão entre os valores
+#     df_final['Região'] = df_final['Região'].map({'NE': 'Se/Ne', 'BR': 'Se/Br (direita)'})  # renomeia as regiões
+#     df_final.rename(columns={cols2[0]: 'Ano'}, inplace=True)  # renomeia as colunas
+#     df_final = df_final.pivot(index='Ano', columns='Região', values='Razão').reset_index()  # pivota a tabela
+#     df_final['Ano'] = df_final['Ano'].astype(int)  # converte a coluna de ano para inteiro
+
+#     df_final.to_excel(os.path.join(sheets_path, 'g5.2.xlsx'), index=False, sheet_name='g5.2')
+
+# except Exception as e:
+#     errors['Gráfico 5.2'] = traceback.format_exc()
+
+
+# gráfico 5.3
 try:
     dbs = []
     for sheet in [('Tabela9', 'Tabela9.8', 'NE'), ('Tabela17', 'Tabela17.8', 'SE'), ('Tabela33', 'Tabela33.8', 'BR')]:
@@ -169,7 +224,7 @@ try:
             dfs.append(df_filtered)
 
         df_concat = pd.concat(dfs, ignore_index=True)
-        dbs.append(df_concat.query("Variável.str.lower().str.strip().str.contains('valor bruto da produção')").copy())  # exclui o valor adicionado bruto, que será tratado separadamente
+        dbs.append(df_concat.query("Variável.str.lower().str.strip().str.contains('valor adicionado bruto')").copy())  # exclui o valor adicionado bruto, que será tratado separadamente
 
     df_concat_final = pd.concat(dbs, ignore_index=True)
     df_final = df_concat_final.loc[df_concat_final['Região'] != 'SE', [cols[0], cols[-1], 'Região']].merge(
@@ -183,10 +238,10 @@ try:
     df_final = df_final.pivot(index='Ano', columns='Região', values='Razão').reset_index()  # pivota a tabela
     df_final['Ano'] = df_final['Ano'].astype(int)  # converte a coluna de ano para inteiro
 
-    df_final.to_excel(os.path.join(sheets_path, 'g5.2.xlsx'), index=False, sheet_name='g5.2')
+    df_final.to_excel(os.path.join(sheets_path, 'g5.3.xlsx'), index=False, sheet_name='g5.3')
 
 except Exception as e:
-    errors['Gráfico 5.2'] = traceback.format_exc()
+    errors['Gráfico 5.3'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
