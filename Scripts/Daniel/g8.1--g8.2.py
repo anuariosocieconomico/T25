@@ -136,7 +136,69 @@ except Exception as e:
 #     errors['Gráfico 8.2'] = traceback.format_exc()
 
 
-# g8.3
+# # g8.3
+# try:
+#     df_petroleo = c.open_file(dbs_path, 'anp_producao_petroleo.csv', 'csv', sep=';')
+#     df_gas = c.open_file(dbs_path, 'anp_producao_gas.csv', 'csv', sep=';')
+#     df_lgn = c.open_file(dbs_path, 'anp_producao_lgn.csv', 'csv', sep=';')
+#     # Insere a coluna 'LOCALIZAÇÃO' na posição desejada (por exemplo, após a coluna 'PRODUTO'), para união dos dfs
+#     insert_at = df_lgn.columns.get_loc(df_lgn.columns[-2]) + 1
+#     df_lgn.insert(insert_at, 'LOCALIZAÇÃO', 'NÃO SE APLICA')
+    
+#     max_year = max(df_petroleo['ANO'].max(), df_gas['ANO'].max(), df_lgn['ANO'].max())
+#     min_year = min(df_petroleo['ANO'].min(), df_gas['ANO'].min(), df_lgn['ANO'].min())
+#     df_union = pd.concat([df_petroleo, df_gas, df_lgn], ignore_index=True).query('ANO in [@min_year, @max_year - 1, @max_year]')
+#     # ['ANO', 'MÊS', 'GRANDE REGIÃO', 'UNIDADE DA FEDERAÇÃO', 'PRODUTO', 'LOCALIZAÇÃO', 'PRODUÇÃO']
+#     cols = df_petroleo.columns.tolist()
+#     del cols[1]  # remove 'MÊS' para agrupo por ANO
+#     del cols[-2]  # remove 'LOCALIZAÇÃO' para agrupo por ANO
+#     # ['ANO', 'GRANDE REGIÃO', 'UNIDADE DA FEDERAÇÃO', 'PRODUTO', 'PRODUÇÃO']
+    
+#     # df com todos os estados
+#     df = df_union.groupby(cols[:-1])[cols[-1]].sum().reset_index()
+
+#     # df com dados agrupados, formando o Brasil
+#     df_br = df.copy()
+#     df_br[cols[2]] = 'BR'
+#     df_br[cols[1]] = 'BRASIL'
+#     df_br = df_br.groupby(cols[:-1])[cols[-1]].sum().reset_index()
+
+#     # df com dados agrupados, formando o Nordeste
+#     df_ne = df.loc[df[cols[1]].str.lower().str.contains('nordeste')].copy()
+#     df_ne[cols[2]] = 'NE'
+#     df_ne = df_ne.groupby(cols[:-1])[cols[-1]].sum().reset_index()
+
+#     # df com dados de Sergipe
+#     df_se = df.loc[df[cols[2]] == 'SERGIPE'].copy()
+#     df_se[cols[2]] = 'SE'
+
+#     df_concat = pd.concat([df_br, df_ne, df_se], ignore_index=True)
+#     df_concat['min_year'] = df_concat.groupby([cols[2], cols[-2]])[cols[-1]].transform('first')
+#     df_concat['last_year'] = df_concat.groupby([cols[2], cols[-2]])[cols[-1]].shift(1)
+
+#     df_final = df_concat.loc[df_concat['ANO'] == max_year].copy()
+#     df_final[f'{max_year}-{max_year - 1}'] = ((df_final[cols[-1]] / df_final['last_year']) - 1) * 100
+#     df_final[f'{max_year}/{min_year}'] = ((df_final[cols[-1]] / df_final['min_year']) - 1) * 100
+#     final_cols = df_final.columns.tolist()
+    
+#     # tratamento da coluna 'PRODUTO'
+#     df_final[cols[-2]] = df_final[cols[-2]].map({
+#         'PETRÓLEO': 'Petróleo',
+#         'GÁS NATURAL': 'Gás',
+#         'LGN': 'LGN'
+#     })
+#     df_final[cols[-2]] = df_final[cols[-2]] + '-' + df_final[cols[2]]
+#     df_final.rename(columns={cols[-2]: 'Produto'}, inplace=True)
+#     df_final.sort_values(by='Produto', inplace=True)
+#     df_final = df_final[['Produto'] + final_cols[-2:]]
+
+#     df_final.to_excel(os.path.join(sheets_path, 'g8.3.xlsx'), index=False, sheet_name='g8.3')
+
+# except Exception as e:
+#     errors['Gráfico 8.3'] = traceback.format_exc()
+
+
+# g8.4
 try:
     df_petroleo = c.open_file(dbs_path, 'anp_producao_petroleo.csv', 'csv', sep=';')
     df_gas = c.open_file(dbs_path, 'anp_producao_gas.csv', 'csv', sep=';')
@@ -147,7 +209,7 @@ try:
     
     max_year = max(df_petroleo['ANO'].max(), df_gas['ANO'].max(), df_lgn['ANO'].max())
     min_year = min(df_petroleo['ANO'].min(), df_gas['ANO'].min(), df_lgn['ANO'].min())
-    df_union = pd.concat([df_petroleo, df_gas, df_lgn], ignore_index=True).query('ANO in [@min_year, @max_year - 1, @max_year]')
+    df_union = pd.concat([df_petroleo, df_gas, df_lgn], ignore_index=True)
     # ['ANO', 'MÊS', 'GRANDE REGIÃO', 'UNIDADE DA FEDERAÇÃO', 'PRODUTO', 'LOCALIZAÇÃO', 'PRODUÇÃO']
     cols = df_petroleo.columns.tolist()
     del cols[1]  # remove 'MÊS' para agrupo por ANO
@@ -169,33 +231,29 @@ try:
     df_ne = df_ne.groupby(cols[:-1])[cols[-1]].sum().reset_index()
 
     # df com dados de Sergipe
-    df_se = df.loc[df[cols[2]] == 'SERGIPE'].copy()
+    df_se = df.loc[df[cols[2]] == 'SERGIPE', [cols[0], cols[-2], cols[-1]]].copy()
     df_se[cols[2]] = 'SE'
 
-    df_concat = pd.concat([df_br, df_ne, df_se], ignore_index=True)
-    df_concat['min_year'] = df_concat.groupby([cols[2], cols[-2]])[cols[-1]].transform('first')
-    df_concat['last_year'] = df_concat.groupby([cols[2], cols[-2]])[cols[-1]].shift(1)
-
-    df_final = df_concat.loc[df_concat['ANO'] == max_year].copy()
-    df_final[f'{max_year}-{max_year - 1}'] = ((df_final[cols[-1]] / df_final['last_year']) - 1) * 100
-    df_final[f'{max_year}/{min_year}'] = ((df_final[cols[-1]] / df_final['min_year']) - 1) * 100
-    final_cols = df_final.columns.tolist()
+    df_concat = pd.concat([df_br, df_ne], ignore_index=True)
+    df_joined = df_concat.merge(df_se, on=[cols[0], cols[-2]], how='left', suffixes=('', '_SE'), validate='m:1')
+    df_joined['Razão'] = (df_joined[f'{cols[-1]}_SE'] / df_joined[cols[-1]]) * 100
     
     # tratamento da coluna 'PRODUTO'
-    df_final[cols[-2]] = df_final[cols[-2]].map({
+    df_joined[cols[-2]] = df_joined[cols[-2]].map({
         'PETRÓLEO': 'Petróleo',
         'GÁS NATURAL': 'Gás',
         'LGN': 'LGN'
     })
-    df_final[cols[-2]] = df_final[cols[-2]] + '-' + df_final[cols[2]]
-    df_final.rename(columns={cols[-2]: 'Produto'}, inplace=True)
-    df_final.sort_values(by='Produto', inplace=True)
-    df_final = df_final[['Produto'] + final_cols[-2:]]
+    df_joined[cols[-2]] = df_joined[cols[-2]] + '-SE/' + df_joined[cols[2]]
 
-    df_final.to_excel(os.path.join(sheets_path, 'g8.3.xlsx'), index=False, sheet_name='g8.3')
+    df_pivoted = df_joined.pivot(index=cols[0], columns=cols[-2], values='Razão').reset_index()
+    df_final = df_pivoted[[cols[0]] + ['Petróleo-SE/BR', 'Gás-SE/BR', 'LGN-SE/BR', 'Petróleo-SE/NE', 'Gás-SE/NE', 'LGN-SE/NE']].copy()
+    df_final.rename(columns={cols[0]: 'Ano'}, inplace=True)
+
+    df_final.to_excel(os.path.join(sheets_path, 'g8.4.xlsx'), index=False, sheet_name='g8.4')
 
 except Exception as e:
-    errors['Gráfico 8.3'] = traceback.format_exc()
+    errors['Gráfico 8.4'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
