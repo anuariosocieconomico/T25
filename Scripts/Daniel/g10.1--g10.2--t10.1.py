@@ -46,10 +46,36 @@ except Exception as e:
 # PLANILHA
 # ************************
 
-# gráfico 10.1
+# # gráfico 10.1
+# try:
+#     data = c.open_file(dbs_path, 'sidra_5906.xlsx', 'xls', sheet_name='Sheet1').query(
+#         '`Mês` == "dezembro" and `Variável`.str.contains("receita nominal")', engine='python'
+#     )  # filtra os dados para o mês de dezembro e para as variáveis que contêm "receita nominal"
+#     data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+    
+#     # tratamento dos dados principais
+#     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
+#     assert df_ne['Região'].nunique() == 9, "Número de estados do NE diferente de 9"
+#     df_ne['Região'] = 'Nordeste'  # renomeia a região para Nordeste
+#     df_ne = df_ne.groupby(['Ano', 'Região', 'Variável'], as_index=False).agg({'Valor': 'mean'})  # agrupa por Ano e Variável, somando os valores
+
+#     df = data.loc[data['Região'].isin(['Brasil', 'Sergipe']), ['Ano', 'Região', 'Variável', 'Valor']].copy()  # seleciona as colunas relevantes
+#     df = pd.concat([df, df_ne], ignore_index=True)  # concatena os dados originais com os do Nordeste
+#     df['Variação'] = df.groupby(['Região', 'Variável'])['Valor'].pct_change() * 100  # calcula a variação percentual
+
+#     df_pivot = pd.pivot(df, index='Ano', columns='Região', values='Variação').reset_index()
+#     df_pivot.dropna(subset=['Brasil', 'Nordeste', 'Sergipe'], inplace=True)  # remove linhas onde Brasil ou Sergipe são NaN
+
+#     df_pivot.to_excel(os.path.join(sheets_path, 'g10.1.xlsx'), index=False, sheet_name='g10.1')
+
+# except Exception as e:
+#     errors['Gráfico 10.1'] = traceback.format_exc()
+
+
+# gráfico 10.2
 try:
     data = c.open_file(dbs_path, 'sidra_5906.xlsx', 'xls', sheet_name='Sheet1').query(
-        '`Mês` == "dezembro" and `Variável`.str.contains("receita nominal")', engine='python'
+        '`Mês` == "dezembro" and `Variável`.str.contains("volume de serviços")', engine='python'
     )  # filtra os dados para o mês de dezembro e para as variáveis que contêm "receita nominal"
     data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
     
@@ -66,10 +92,10 @@ try:
     df_pivot = pd.pivot(df, index='Ano', columns='Região', values='Variação').reset_index()
     df_pivot.dropna(subset=['Brasil', 'Nordeste', 'Sergipe'], inplace=True)  # remove linhas onde Brasil ou Sergipe são NaN
 
-    df_pivot.to_excel(os.path.join(sheets_path, 'g10.1.xlsx'), index=False, sheet_name='g10.1')
+    df_pivot.to_excel(os.path.join(sheets_path, 'g10.2.xlsx'), index=False, sheet_name='g10.2')
 
 except Exception as e:
-    errors['Gráfico 10.1'] = traceback.format_exc()
+    errors['Gráfico 10.2'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
