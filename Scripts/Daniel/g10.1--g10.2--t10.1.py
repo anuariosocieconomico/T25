@@ -42,32 +42,29 @@ errors = {}
 #     errors['Sidra 5906'] = traceback.format_exc()
 
 
-# comércio e serviços
+# sidra 2715 (IBGE - Pesquisa Anual de Serviços (PAS))
+url = 'https://apisidra.ibge.gov.br/values/t/2715/n1/all/v/672/p/all/c12354/all/c12355/9309,31399,106869,106874,106876,106882,106883,107071?formato=json'
 try:
-    year = datetime.now().year
-    while True:
-        # url da base contas regionais
-        url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Comercio_e_Servicos/Pesquisa_Anual_de_Servicos/pas{year}/xlsx'
-        response = c.open_url(url)
-        
-        if response.status_code == 200:
-            content = pd.DataFrame(response.json())
-            final_year = str(year)
-            link = content.query(
-                'name.str.lower().str.contains(@final_year) and name.str.lower().str.endswith(".zip")'
-            )['url'].values[0]
-            if link:
-                response = c.open_url(link)
-                c.to_file(dbs_path, 'pesquisa_servicos.zip', response.content)
-                break
-        else:
-            if year > 2020:
-                year -= 1
-            else:
-                break
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D3N', 'D4N', 'D5N', 'V']].copy()
+    df.columns = ['Ano', 'Região', 'Variável', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
+    df['Ano'] = df['Ano'].astype(int)  # converte a coluna Ano para inteiro
 
+    c.to_excel(df, dbs_path, 'sidra_2715.xlsx')
 except Exception as e:
-    errors[url + ' (Pesquisa Anual de Servicos)'] = traceback.format_exc()
+    errors['Sidra 2715 (PAS)'] = traceback.format_exc()
+
+
+# deflator IPEA IPCA
+try:
+    data = ipeadatapy.timeseries('PRECOS_IPCAG')
+    data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
+    c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+except Exception as e:
+    errors['IPEA IPCA'] = traceback.format_exc()
 
 
 # ************************
@@ -134,40 +131,83 @@ except Exception as e:
 # JÁ VERIFIQUEI E O SIDRAPI RETORNA OS MESMOS DADOS QUE A PESQUISA ANUAL DE SERVIÇOS (PAS) DO IBGE
 ##########
 
-# gráfico 10.2
+# tabela 10.1
 try:
-    data = c.open_file(dbs_path, 'pesquisa_servicos.zip', 'zip', excel_name='Tabela 81')
+    data = c.open_file(dbs_path, 'sidra_2715.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= 2010', engine='python')  # filtra os dados para o ano de 2012 ou posterior
+    deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1')
+    max_year = data['Ano'].max()
     
-    for tb, reg in [('Tab81a', 'Brasil'), ('Tab81e', 'Nordeste'), ('Tab81i', 'Sergipe')]:
-        df = data[tb].copy()
-        cols = df.columns.tolist()
-        df[cols[0]] = df[cols[0]].str.strip()  # remove espaços em branco do início e fim da primeira coluna
-        
-        if reg in ['Brasil', 'Nordeste']:
-            row = df.loc[df[df.columns[0]] == reg].index
-            df_row = df.iloc[row[0], [0, 1]].copy()  # obtém a linha correspondente à região e a coluna 1
-            df_row['Região'] = reg  # adiciona a coluna Região
+    # tratamento do deflator
+    df_deflator = deflator.query('Ano <= @max_year', engine='python').copy()  # filtra o deflator para o ano mais recente
+    df_deflator.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    df_deflator['Index'] = 100.00
+    df_deflator['Diff'] = None
 
-        else:
-            row_exclude = df.loc[df[df.columns[0]] == 'Bahia'].index
-            df_row = df.iloc[:row_exclude[0], [0, 1]]  # remove linhas correspondentes à Bahia (possuem as mesmas variáveis)
-            rows_keep = df_row[
-                (df_row[df_row.columns[0]].str.contains('Serviços prestados principalmente às famílias')) &
-                (df_row[df_row.columns[0]].str.contains('Serviços de informação e comunicação')) &
-                (df_row[df_row.columns[0]].str.contains('Serviços profissionais, administrativos e complementares')) &
-                (df_row[df_row.columns[0]].str.contains('correio')) &  # há uma quebra de linha na variável, resultando em duas linhas; essa é a que contém o valor
-                (df_row[df_row.columns[0]].str.contains('Atividades imobiliárias')) &
-                (df_row[df_row.columns[0]].str.contains('Serviços de manutenção e reparação')) &
-                (df_row[df_row.columns[0]].str.contains('Outras atividades de serviços'))
-            ].index
-        df_row = df_row.iloc[rows_keep, :].copy()
-        df_row['Região'] = reg
+    for row in range(1, len(df_deflator)):
+        df_deflator.loc[row,'Diff'] = df_deflator.loc[row - 1, 'Valor'] / df_deflator.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
+        df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
 
+    # tratamento dos dados principais
+    df = data.loc[
+        ((data['Região'].isin(['Brasil', 'Região Nordeste'])) & (data['Variável'] == 'Total')) |
+        ((data['Região'] == 'Sergipe') & (
+            data['Variável'].str.contains('Serviços prestados às famílias') |
+            data['Variável'].str.contains('Serviços de informação e comunicação') |
+            data['Variável'].str.contains('Serviços profissionais, administrativos e complementares') |
+            data['Variável'].str.contains('Transportes, serviços auxiliares aos transportes e correio') |
+            data['Variável'].str.contains('Atividades imobiliárias') |
+            data['Variável'].str.contains('Serviços de manutenção e reparação') |
+            data['Variável'].str.contains('Outras atividades de serviços') |
+            data['Variável'].str.startswith('Total')
+            )
+        )
+    , :].copy()  # seleciona as colunas relevantes
 
-    df_pivot.to_excel(os.path.join(sheets_path, 'g10.2.xlsx'), index=False, sheet_name='g10.2')
+    df_merged = pd.merge(df, df_deflator[['Ano', 'Index']], on='Ano', how='left', validate='m:1')  # mescla os dados com o deflator
+    df_merged['Valor'] = (df_merged['Valor'] / df_merged['Index']) * 100  # ajusta os valores com o deflatord
+    df_merged['Valor'] = df_merged['Valor'] / 1000  # converte os valores para milhões
+    df_self_merged = df_merged.merge(
+        df_merged[(df_merged['Região'] == 'Sergipe') & (df_merged['Variável'] == 'Total')][['Ano', 'Variável', 'Valor']],
+        on=['Ano', 'Variável'],
+        how='left',
+        suffixes=('', '_Sergipe'),
+        validate='m:1'
+    )  # mescla os dados com eles mesmos para obter os valores de Sergipe
+
+    df_self_merged['Participação'] = (df_self_merged['Valor_Sergipe'] / df_self_merged['Valor']) * 100  # calcula a participação de Sergipe
+
+    # dataframe de sergipe
+    df_sergipe = df_self_merged.loc[df_self_merged['Região'] == 'Sergipe', ['Ano', 'Variável', 'Valor']].copy()
+
+    # renomeia as variáveis
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Serviços prestados às famílias', case=False, na=False), 'Variável'] = '   Serviços prestados principalmente às famílias'
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Serviços de informação e comunicação', case=False, na=False), 'Variável'] = '   Serviços de informação e comunicação'
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Serviços profissionais, administrativos e complementares', case=False, na=False), 'Variável'] = '   Serviços profissionais, administrativos e complementares'
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Transportes, serviços auxiliares aos transportes e correio', case=False, na=False), 'Variável'] = '   Transportes, serviços auxiliares aos transportes e correio'
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Atividades imobiliárias', case=False, na=False), 'Variável'] = '   Atividades imobiliárias '
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Serviços de manutenção e reparação', case=False, na=False), 'Variável'] = '   Serviços de manutenção e reparação'
+    df_sergipe.loc[df_sergipe['Variável'].str.contains('Outras atividades de serviços', case=False, na=False), 'Variável'] = '   Outras atividades de serviços'
+    df_sergipe.loc[df_sergipe['Variável'].str.startswith('Total', na=False), 'Variável'] = 'Receita bruta de prestação de Serviços'
+
+    df_sergipe['Unidade'] = 'R$ milhões'
+    df_sergipe.rename(columns={'Variável': 'Indicador'}, inplace=True)  # renomeia a coluna Valor para Sergipe
+    df_sergipe = df_sergipe[['Ano', 'Indicador', 'Unidade', 'Valor']].copy()  # seleciona as colunas relevantes
+
+    # dataframe brasil e nordeste
+    df_brasil_ne = df_self_merged.loc[df_self_merged['Região'].isin(['Brasil', 'Região Nordeste']), ['Ano', 'Região', 'Variável', 'Participação']].copy()
+    df_brasil_ne['Unidade'] = '%'
+    df_brasil_ne['Variável'] = 'Participação da receita bruta de Serviços em Sergipe no ' + df_brasil_ne['Região'].str.split(' ').str[-1]
+    df_brasil_ne.rename(columns={'Variável': 'Indicador', 'Participação': 'Valor'}, inplace=True)  # renomeia as colunas
+    df_brasil_ne = df_brasil_ne[['Ano', 'Indicador', 'Unidade', 'Valor']].copy()  # seleciona as colunas relevantes
+
+    df_concat = pd.concat([df_sergipe, df_brasil_ne], ignore_index=True)  # concatena os dataframes de Sergipe e Brasil/Nordeste
+    df_concat.sort_values(['Ano', 'Indicador'], ascending=[True, False], inplace=True)  # ordena os dados por Ano e Indicador
+
+    df_concat.to_excel(os.path.join(sheets_path, 't10.1.xlsx'), index=False, sheet_name='t10.1')
 
 except Exception as e:
-    errors['Gráfico 10.2'] = traceback.format_exc()
+    errors['Tabela 10.1'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
