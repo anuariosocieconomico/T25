@@ -74,13 +74,13 @@ errors = {}
 #     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
 
 
-# # deflator IPEA IPCA
-# try:
-#     data = ipeadatapy.timeseries('PRECOS_IPCAG')
-#     data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
-#     c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
-# except Exception as e:
-#     errors['IPEA IPCA'] = traceback.format_exc()
+# deflator IPEA IPCA
+try:
+    data = ipeadatapy.timeseries('PRECOS_IPCAG')
+    data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
+    c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+except Exception as e:
+    errors['IPEA IPCA'] = traceback.format_exc()
 
 
 # # siconfi RREO anexos 3 e 4
@@ -114,11 +114,14 @@ errors = {}
 # siconfi contas anuais DCA
 try:
     base_year = 2013
+    anexo_13 = 'Anexo%20I-C'
+    anexo_all = 'DCA-Anexo%20I-C'
     current_year = datetime.now().year
 
     dfs_year = []
     for y in range(base_year, current_year + 1):
-        url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//dca?an_exercicio={y}&no_anexo=DCA-Anexo%20I-C&id_ente=28'
+        ax = anexo_13 if y == 2013 else anexo_all
+        url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//dca?an_exercicio={y}&no_anexo={ax}&id_ente=28'
         response = c.open_url(url)
         time.sleep(1)
         if response.status_code == 200 and len(response.json()['items']) > 1:
@@ -193,11 +196,160 @@ except Exception as e:
 #     errors['Gráfico 11.1'] = traceback.format_exc()
 
 
-# gráfico 11.2
+# # gráfico 11.2
+# try:
+#     # tabela siconfi
+#     data_siconfi = c.open_file(dbs_path, 'siconfi_DCA.csv', 'csv')
+    
+#     pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*-\s*)(.*)"
+#     data_siconfi['conta'] = data_siconfi['conta'].apply(
+#         lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
+    
+#     pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*)(.*)"
+#     data_siconfi['conta'] = data_siconfi['conta'].apply(
+#         lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
+
+#     data_siconfi = data_siconfi.loc[
+#         (data_siconfi['conta'] == 'Receitas Correntes') |
+#         (data_siconfi['conta'].str.contains('Receita Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições')) |
+#         (data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados')) |
+#         (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) & ~(
+#             data_siconfi['conta'].str.contains('Outras')) |
+#         (data_siconfi['conta'].str.contains('FUNDEB'))
+#     ]
+
+#     # receita corrente líquida
+#     df_rcl = data_siconfi.loc[
+#         # condicional para filtrar as linhas da receita
+#         ((data_siconfi['conta'].str.contains('Receitas Correntes')) & (data_siconfi['coluna'].str.contains('Receitas'))) |
+#         # condicional para filtrar as linhas das deduções
+#         ((data_siconfi['conta'].str.contains('Receitas Correntes')) & (data_siconfi['coluna'].str.contains('Deduções')))
+#     ]
+#     # renomeia as colunas para facilitar a manipulação e agregação
+#     df_rcl.loc[df_rcl['coluna'].str.contains('Receitas'), 'cod_conta'] = 'Receitas'
+#     df_rcl.loc[df_rcl['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
+#     # agrupa os dados por exercício e código da conta, somando os valores; depois, pivota os dados para ter as contas como colunas
+#     df_rcl = df_rcl.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
+#     df_rcl_pivoted = df_rcl.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
+#     df_rcl_pivoted['RCL'] = df_rcl_pivoted['Receitas'] - df_rcl_pivoted['Deduções']
+
+#     # receita tributária líquida
+#     df_rt = data_siconfi.loc[
+#         # condicional para filtrar as linhas da receita tributária
+#         (
+#             ((data_siconfi['conta'].str.contains('Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) & 
+#             (data_siconfi['coluna'].str.contains('Receitas'))
+#         ) |
+#         # condicional para filtrar as linhas das deduções tributárias
+#         (
+#             ((data_siconfi['conta'].str.contains('Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) &
+#             (data_siconfi['coluna'].str.contains('Deduções'))
+#         )
+#     ]
+#     df_rt.loc[df_rt['coluna'].str.contains('Receitas'), 'cod_conta'] = 'Receitas'
+#     df_rt.loc[df_rt['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
+#     df_rt = df_rt.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
+#     df_rt_pivoted = df_rt.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
+#     df_rt_pivoted['RT'] = df_rt_pivoted['Receitas'] - df_rt_pivoted['Deduções']
+
+#     # FPE líquido
+#     df_fpe = data_siconfi.loc[
+#         # condicional para filtrar as linhas da receita tributária
+#         (
+#             (data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados')) &
+#             (data_siconfi['coluna'].str.contains('Receitas'))
+#         ) |
+#         # condicional para filtrar as linhas das deduções tributárias
+#         (
+#             (data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados')) &
+#             (data_siconfi['coluna'].str.contains('Deduções'))
+#         )
+#     ]
+#     df_fpe.loc[df_fpe['coluna'].str.contains('Receitas'), 'cod_conta'] = 'Receitas'
+#     df_fpe.loc[df_fpe['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
+#     df_fpe = df_fpe.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
+#     df_fpe_pivoted = df_fpe.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
+#     df_fpe_pivoted['FPE'] = df_fpe_pivoted['Receitas'] - df_fpe_pivoted['Deduções']
+
+#     # receita de exploração de recursos naturais
+#     df_rn = data_siconfi.loc[
+#         # condicional para filtrar as linhas da receita tributária
+#         (
+#             (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) &
+#             (data_siconfi['coluna'].str.contains('Receitas'))
+#         ) |
+#         # condicional para filtrar as linhas das deduções tributárias
+#         (
+#             (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) &
+#             (data_siconfi['coluna'].str.contains('Deduções'))
+#         )
+#     ]
+#     df_rn.loc[df_rn['coluna'].str.contains('Receitas'), 'cod_conta'] = 'Receitas'
+#     df_rn.loc[df_rn['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
+#     df_rn = df_rn.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
+#     df_rn_pivoted = df_rn.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
+#     df_rn_pivoted['RN'] = df_rn_pivoted['Receitas'] - df_rn_pivoted['Deduções']
+
+#     # FUNDEB líquido
+#     df_fundeb = data_siconfi.loc[
+#         # condicional para filtrar as linhas da receita tributária
+#         (
+#             (data_siconfi['conta'].str.contains('FUNDEB')) &
+#             (data_siconfi['coluna'].str.contains('Receitas'))
+#         ) |
+#         # condicional para filtrar as linhas das deduções tributárias
+#         (
+#             (data_siconfi['conta'].str.contains('FUNDEB')) &
+#             (data_siconfi['coluna'].str.contains('Deduções'))
+#         )
+#     ]
+#     df_fundeb.loc[df_fundeb['coluna'].str.contains('Receitas'), 'cod_conta'] = 'Receitas'
+#     df_fundeb.loc[df_fundeb['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
+#     df_fundeb = df_fundeb.groupby('exercicio')['valor'].sum().reset_index()
+#     df_fundeb.rename(columns={'valor': 'FUNDEB'}, inplace=True)
+
+#     df_final = df_rcl_pivoted[['exercicio', 'RCL']].merge(
+#         df_rt_pivoted[['exercicio', 'RT']],
+#         on='exercicio',
+#         how='left',
+#         validate='1:1'
+#     ).merge(
+#         df_fpe_pivoted[['exercicio', 'FPE']],
+#         on='exercicio',
+#         how='left',
+#         validate='1:1'
+#     ).merge(
+#         df_rn_pivoted[['exercicio', 'RN']],
+#         on='exercicio',
+#         how='left',
+#         validate='1:1'
+#     ).merge(
+#         df_fundeb,
+#         on='exercicio',
+#         how='left',
+#         validate='1:1'
+#     )
+
+#     df_final['Receitas tributárias'] = (df_final['RT'] / df_final['RCL']) * 100
+#     df_final['FPE'] = (df_final['FPE'] / df_final['RCL']) * 100
+#     df_final['Fundeb'] = (df_final['FUNDEB'] / df_final['RCL']) * 100
+#     df_final['Receita de exploração de RN'] = (df_final['RN'] / df_final['RCL']) * 100
+
+#     df_final.rename(columns={'exercicio': 'Ano'}, inplace=True)
+#     df_final['Ano'] = df_final['Ano'].astype(str)
+#     df_final = df_final[['Ano', 'Receitas tributárias', 'FPE', 'Fundeb', 'Receita de exploração de RN']]
+
+#     c.to_excel(df_final, sheets_path, 'g11.2.xlsx')
+
+# except Exception as e:
+#     errors['Gráfico 11.2'] = traceback.format_exc()
+
+
+# tabela 11.1
 try:
     # tabela siconfi
     data_siconfi = c.open_file(dbs_path, 'siconfi_DCA.csv', 'csv')
-    
+
     pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*-\s*)(.*)"
     data_siconfi['conta'] = data_siconfi['conta'].apply(
         lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
@@ -206,141 +358,130 @@ try:
     data_siconfi['conta'] = data_siconfi['conta'].apply(
         lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
 
-    data_siconfi = data_siconfi.loc[
-        (data_siconfi['conta'] == 'Receitas Correntes') |
-        (data_siconfi['conta'].str.contains('Receita Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições')) |
-        (data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados')) |
-        (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) & ~(
-            data_siconfi['conta'].str.contains('Outras')) |
-        (data_siconfi['conta'].str.contains('FUNDEB'))
-    ]
-
-    # receita corrente líquida
-    df_rcl = data_siconfi.loc[
-        # condicional para filtrar as linhas da receita
-        ((data_siconfi['conta'].str.contains('Receitas Correntes')) & (data_siconfi['coluna'].str.contains('Receitas Brutas Realizadas'))) |
-        # condicional para filtrar as linhas das deduções
-        ((data_siconfi['conta'].str.contains('Receitas Correntes')) & (data_siconfi['coluna'].str.contains('Deduções')))
-    ]
-    # renomeia as colunas para facilitar a manipulação e agregação
-    df_rcl.loc[df_rcl['coluna'].str.contains('Receitas Brutas Realizadas'), 'cod_conta'] = 'Receitas'
-    df_rcl.loc[df_rcl['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
-    # agrupa os dados por exercício e código da conta, somando os valores; depois, pivota os dados para ter as contas como colunas
-    df_rcl = df_rcl.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
-    df_rcl_pivoted = df_rcl.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
-    df_rcl_pivoted['RCL'] = df_rcl_pivoted['Receitas'] - df_rcl_pivoted['Deduções']
-
-    # receita tributária líquida
-    df_rt = data_siconfi.loc[
-        # condicional para filtrar as linhas da receita tributária
+    df_siconfi = data_siconfi.loc[
+        # condicional para filtrar as linhas da conta
         (
-            ((data_siconfi['conta'].str.contains('Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) & 
-            (data_siconfi['coluna'].str.contains('Receitas Brutas Realizadas'))
-        ) |
-        # condicional para filtrar as linhas das deduções tributárias
+            ((data_siconfi['conta'].str.contains('Receita Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) |
+            ((data_siconfi['conta'].str.contains('Imposto sobre Op.')) | (data_siconfi['conta'].str.contains('Imposto sobre Operações'))) |
+            (data_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos')) |
+            ((data_siconfi['conta'] == 'Transferências da União') | (data_siconfi['conta'] == 'Transferências da União e de suas Entidades')) |
+            ((data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados'))) |
+            (data_siconfi['conta'].str.contains('FUNDEB')) |
+            (
+                (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) & 
+                ~(data_siconfi['conta'].str.contains('Outras'))
+            )
+        ) &
+        # condicional para filtrar as linhas da coluna
+        ~(data_siconfi['coluna'].str.contains('Deduções'))
+        , ['exercicio', 'conta', 'coluna', 'valor']
+    ].copy()
+
+    df_siconfi['conta_padronizada'] = ''
+    df_siconfi['coluna_padronizada'] = ''
+
+    # renomeia as contas para padronizar as receitas tributárias
+    df_siconfi.loc[
         (
-            ((data_siconfi['conta'].str.contains('Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) &
-            (data_siconfi['coluna'].str.contains('Deduções'))
+            (df_siconfi['conta'].str.contains('Receita Tributária')) | (df_siconfi['conta'].str.contains('Taxas e Contribuições')) |
+            (df_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos')) |
+            (df_siconfi['conta'].str.contains('Imposto sobre Operações')) | (df_siconfi['conta'].str.contains('Imposto sobre Op.'))
         )
-    ]
-    df_rt.loc[df_rt['coluna'].str.contains('Receitas Brutas Realizadas'), 'cod_conta'] = 'Receitas'
-    df_rt.loc[df_rt['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
-    df_rt = df_rt.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
-    df_rt_pivoted = df_rt.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
-    df_rt_pivoted['RT'] = df_rt_pivoted['Receitas'] - df_rt_pivoted['Deduções']
+        , 'conta_padronizada'
+    ] = 'Receitas Tributárias'
 
-    # FPE líquido
-    df_fpe = data_siconfi.loc[
-        # condicional para filtrar as linhas da receita tributária
+    # renomeia as contas para padronizar as receitas de exploração de recursos naturais
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Transferência')) & (df_siconfi['conta'].str.contains('Recursos Naturais'))
+        , 'conta_padronizada'
+    ] = 'Receitas de Exploração de Recursos Naturais'
+
+    # renomeia as contas para padronizar as transferências federais
+    df_siconfi.loc[
         (
-            (data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados')) &
-            (data_siconfi['coluna'].str.contains('Receitas Brutas Realizadas'))
-        ) |
-        # condicional para filtrar as linhas das deduções tributárias
-        (
-            (data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados')) &
-            (data_siconfi['coluna'].str.contains('Deduções'))
+            (df_siconfi['conta'] == 'Transferências da União') | (df_siconfi['conta'] == 'Transferências da União e de suas Entidades') |
+            (df_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (df_siconfi['conta'].str.contains('Estados')) |
+            (df_siconfi['conta'].str.contains('FUNDEB'))
         )
-    ]
-    df_fpe.loc[df_fpe['coluna'].str.contains('Receitas Brutas Realizadas'), 'cod_conta'] = 'Receitas'
-    df_fpe.loc[df_fpe['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
-    df_fpe = df_fpe.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
-    df_fpe_pivoted = df_fpe.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
-    df_fpe_pivoted['FPE'] = df_fpe_pivoted['Receitas'] - df_fpe_pivoted['Deduções']
+        , 'conta_padronizada'
+    ] = 'Transferências Federais'
 
-    # receita de exploração de recursos naturais
-    df_rn = data_siconfi.loc[
-        # condicional para filtrar as linhas da receita tributária
-        (
-            (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) &
-            (data_siconfi['coluna'].str.contains('Receitas Brutas Realizadas'))
-        ) |
-        # condicional para filtrar as linhas das deduções tributárias
-        (
-            (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) &
-            (data_siconfi['coluna'].str.contains('Deduções'))
-        )
-    ]
-    df_rn.loc[df_rn['coluna'].str.contains('Receitas Brutas Realizadas'), 'cod_conta'] = 'Receitas'
-    df_rn.loc[df_rn['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
-    df_rn = df_rn.groupby(['exercicio', 'cod_conta'])['valor'].sum().reset_index()
-    df_rn_pivoted = df_rn.pivot(index='exercicio', columns='cod_conta', values='valor').reset_index()
-    df_rn_pivoted['RN'] = df_rn_pivoted['Receitas'] - df_rn_pivoted['Deduções']
+    # renomeia as colunas para padronizar as receitas tributárias
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Receita Tributária')) | (df_siconfi['conta'].str.contains('Taxas e Contribuições'))
+        , 'coluna_padronizada'
+    ] = 'Total (1)'
 
-    # FUNDEB líquido
-    df_fundeb = data_siconfi.loc[
-        # condicional para filtrar as linhas da receita tributária
-        (
-            (data_siconfi['conta'].str.contains('FUNDEB')) &
-            (data_siconfi['coluna'].str.contains('Receitas Brutas Realizadas'))
-        ) |
-        # condicional para filtrar as linhas das deduções tributárias
-        (
-            (data_siconfi['conta'].str.contains('FUNDEB')) &
-            (data_siconfi['coluna'].str.contains('Deduções'))
-        )
-    ]
-    df_fundeb.loc[df_fundeb['coluna'].str.contains('Receitas Brutas Realizadas'), 'cod_conta'] = 'Receitas'
-    df_fundeb.loc[df_fundeb['coluna'].str.contains('Deduções'), 'cod_conta'] = 'Deduções'
-    df_fundeb = df_fundeb.groupby('exercicio')['valor'].sum().reset_index()
-    df_fundeb.rename(columns={'valor': 'FUNDEB'}, inplace=True)
+    # renomeia as colunas para padronizar impostos sobre operações
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Imposto sobre Op.')) | (df_siconfi['conta'].str.contains('Imposto sobre Operações'))
+        , 'coluna_padronizada'
+    ] = 'ICMS'
 
-    df_final = df_rcl_pivoted[['exercicio', 'RCL']].merge(
-        df_rt_pivoted[['exercicio', 'RT']],
-        on='exercicio',
+    # renomeia as colunas para padronizar impostos sobre a propriedade de veículos
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos'))
+        , 'coluna_padronizada'
+    ] = 'IPVA'
+
+    # renomeia as colunas para padronizar as transferências federais
+    df_siconfi.loc[
+        (df_siconfi['conta'] == 'Transferências da União') | (df_siconfi['conta'] == 'Transferências da União e de suas Entidades')
+        , 'coluna_padronizada'
+    ] = 'Total (2)'
+
+    # renomeia as colunas para padronizar a participação dos estados no FPE
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (df_siconfi['conta'].str.contains('Estados'))
+        , 'coluna_padronizada'
+    ] = 'Fundo de Participação dos Estados'
+
+    # renomeia as colunas para padronizar o FUNDEB
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('FUNDEB'))
+        , 'coluna_padronizada'
+    ] = 'Fundeb'
+
+    # renomeia as colunas para padronizar as receitas de exploração de recursos naturais
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Transferência')) & (df_siconfi['conta'].str.contains('Recursos Naturais'))
+        , 'coluna_padronizada'
+    ] = 'Total (3)'
+
+    df_siconfi.rename(columns={'exercicio': 'Ano', 'conta_padronizada': 'Receitas', 'coluna_padronizada': 'Tipo', 'valor': 'Valor'}, inplace=True)
+    df_siconfi.sort_values(by=['Receitas', 'Tipo'], ascending=True, inplace=True)  # ordena os dados por Ano
+    min_year = df_siconfi['Ano'].min()
+    max_year = df_siconfi['Ano'].max()
+
+    # tabela de deflator IPCA
+    data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    data_ipca['Index'] = 100.00
+    data_ipca['Diff'] = 0.00
+
+    for row in range(1, len(data_ipca)):
+        data_ipca.loc[row,'Diff'] = data_ipca.loc[row - 1, 'Valor'] / data_ipca.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
+        data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
+
+    # união da tabela siconfi com deflator IPCA
+    df_merged = df_siconfi[['Ano', 'Receitas', 'Tipo', 'Valor']].merge(
+        data_ipca[['Ano', 'Index']],
+        on='Ano',
         how='left',
-        validate='1:1'
-    ).merge(
-        df_fpe_pivoted[['exercicio', 'FPE']],
-        on='exercicio',
-        how='left',
-        validate='1:1'
-    ).merge(
-        df_rn_pivoted[['exercicio', 'RN']],
-        on='exercicio',
-        how='left',
-        validate='1:1'
-    ).merge(
-        df_fundeb,
-        on='exercicio',
-        how='left',
-        validate='1:1'
+        validate='m:1'
     )
+    df_merged['Valor Deflacionado'] = (df_merged['Valor'] / df_merged['Index']) * 100  # deflaciona os valores
+    df_merged['Variação'] = (df_merged.groupby(['Receitas', 'Tipo'])['Valor Deflacionado'].pct_change()) * 100  # calcula a diferença entre o valor atual e o anterior
 
-    df_final['Receitas tributárias'] = (df_final['RT'] / df_final['RCL']) * 100
-    df_final['FPE'] = (df_final['FPE'] / df_final['RCL']) * 100
-    df_final['Fundeb'] = (df_final['FUNDEB'] / df_final['RCL']) * 100
-    df_final['Receita de exploração de RN'] = (df_final['RN'] / df_final['RCL']) * 100
+    df_final = df_merged[['Ano', 'Receitas', 'Tipo', 'Variação']].copy()
+    df_final.rename(columns={'Variação': 'Valor'}, inplace=True)
+    df_final.dropna(inplace=True)  # remove linhas com valores NaN
 
-    df_final.rename(columns={'exercicio': 'Ano'}, inplace=True)
-    df_final['Ano'] = df_final['Ano'].astype(str)
-    df_final = df_final[['Ano', 'Receitas tributárias', 'FPE', 'Fundeb', 'Receita de exploração de RN']]
-
-    c.to_excel(df_final, sheets_path, 'g11.2.xlsx')
+    df_final.to_excel(os.path.join(sheets_path, 't11.1.xlsx'), index=False, sheet_name='t11.1')
 
 except Exception as e:
-    errors['Gráfico 11.2'] = traceback.format_exc()
-
+    errors['Tabela 11.1'] = traceback.format_exc()
 
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
