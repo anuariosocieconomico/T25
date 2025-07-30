@@ -14,6 +14,9 @@ import re
 import requests
 
 
+# pandas config
+pd.set_option('display.float_format', lambda x: '{:,.4f}'.format(x))  # mostra os números com 4 casas decimais e separador de milhar
+
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
 dbs_path = tempfile.mkdtemp()
 sheets_path = c.sheets_dir
@@ -75,13 +78,13 @@ errors = {}
 #     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
 
 
-# # deflator IPEA IPCA
-# try:
-#     data = ipeadatapy.timeseries('PRECOS_IPCAG')
-#     data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
-#     c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
-# except Exception as e:
-#     errors['IPEA IPCA'] = traceback.format_exc()
+# deflator IPEA IPCA
+try:
+    data = ipeadatapy.timeseries('PRECOS_IPCAG')
+    data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
+    c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+except Exception as e:
+    errors['IPEA IPCA'] = traceback.format_exc()
 
 
 # # siconfi RREO anexos 3 e 4
@@ -509,41 +512,79 @@ except Exception as e:
 #     errors['Tabela 11.1'] = traceback.format_exc()
 
 
-# g11.3
+# # g11.3
+# try:
+#     df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[
+#         ['data', 'ano', 'mes', 'id_uf', 'va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']
+#     ]
+#     df_grouped = df.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
+
+#     # se
+#     ne_codes = [c.mapping_states_abbreviation[state] for state in c.ne_states]
+#     df_se = df_grouped.query('id_uf == "SE"').copy()
+#     df_se.loc[:, 'id_uf'] = 'Sergipe'
+#     # ne
+#     df_ne = df_grouped.query('id_uf in @ne_codes').copy()
+#     df_ne.loc[:, 'id_uf'] = 'Nordeste'
+#     df_ne = df_ne.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
+#     # br
+#     df_br = df_grouped.groupby('ano', as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
+#     df_br['id_uf'] = 'Brasil'
+#     df_br = df_br[['ano', 'id_uf', 'va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']]
+#     df_br = df_br.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
+
+#     df_concat = pd.concat([df_br, df_ne, df_se], ignore_index=True)
+#     total = df_concat[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum(axis=1)
+#     df_concat['Primário'] = (df_concat['va_icms_primario'] / total) * 100
+#     df_concat['Secundário'] = (df_concat['va_icms_secundario'] / total) * 100
+#     df_concat['Terciário'] = (df_concat['va_icms_terciario'] / total) * 100
+
+#     df_final = df_concat[['id_uf', 'ano', 'Primário', 'Secundário', 'Terciário']].copy()
+#     df_final.rename(columns={'ano': 'Ano', 'id_uf': 'Região'}, inplace=True)
+#     df_final.sort_values(by=['Região', 'Ano'], ascending=[False, True], inplace=True)
+    
+#     df_final.to_excel(os.path.join(sheets_path, 'g11.3.xlsx'), index=False, sheet_name='g11.3')
+
+# except Exception as e:
+#     errors['Gráfico 11.3'] = traceback.format_exc()
+
+
+# g11.4
 try:
     df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[
         ['data', 'ano', 'mes', 'id_uf', 'va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']
-    ]
+    ].query('id_uf == "SE"', engine='python')
     df_grouped = df.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
+    max_year = df_grouped['ano'].max()
+    min_year = df_grouped['ano'].min()
 
-    # se
-    ne_codes = [c.mapping_states_abbreviation[state] for state in c.ne_states]
-    df_se = df_grouped.query('id_uf == "SE"').copy()
-    df_se.loc[:, 'id_uf'] = 'Sergipe'
-    # ne
-    df_ne = df_grouped.query('id_uf in @ne_codes').copy()
-    df_ne.loc[:, 'id_uf'] = 'Nordeste'
-    df_ne = df_ne.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
-    # br
-    df_br = df_grouped.groupby('ano', as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
-    df_br['id_uf'] = 'Brasil'
-    df_br = df_br[['ano', 'id_uf', 'va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']]
-    df_br = df_br.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
-
-    df_concat = pd.concat([df_br, df_ne, df_se], ignore_index=True)
-    total = df_concat[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum(axis=1)
-    df_concat['Primário'] = (df_concat['va_icms_primario'] / total) * 100
-    df_concat['Secundário'] = (df_concat['va_icms_secundario'] / total) * 100
-    df_concat['Terciário'] = (df_concat['va_icms_terciario'] / total) * 100
-
-    df_final = df_concat[['id_uf', 'ano', 'Primário', 'Secundário', 'Terciário']].copy()
-    df_final.rename(columns={'ano': 'Ano', 'id_uf': 'Região'}, inplace=True)
-    df_final.sort_values(by=['Região', 'Ano'], ascending=[False, True], inplace=True)
+    df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    df_deflator.rename(columns={'Ano': 'ano'}, inplace=True)
     
-    df_final.to_excel(os.path.join(sheets_path, 'g11.3.xlsx'), index=False, sheet_name='g11.3')
+    # tratamento do deflator
+    df_deflator.sort_values('ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    df_deflator['Index'] = 100.00
+    df_deflator['Diff'] = None
+
+    for row in range(1, len(df_deflator)):
+        # df_deflator.loc[row,'Diff'] = df_deflator.loc[row - 1, 'Valor'] / df_deflator.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
+        df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+        df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
+
+    df_merged = df_grouped.merge(df_deflator[['ano', 'Index']], on='ano', how='left', validate='1:1').dropna(axis=0)
+    df_merged['Prim'] = (df_merged['va_icms_primario'] / df_merged['Index']) * 100
+    df_merged['Sec'] = (df_merged['va_icms_secundario'] / df_merged['Index']) * 100
+    df_merged['Terc'] = (df_merged['va_icms_terciario'] / df_merged['Index']) * 100
+
+    df_final = df_merged[['ano', 'Prim', 'Sec', 'Terc']].copy()
+    df_final.rename(columns={'ano': 'Ano'}, inplace=True)
+    df_final.sort_values(by='Ano', ascending=True, inplace=True)
+
+    df_final.to_excel(os.path.join(sheets_path, 'g11.4.xlsx'), index=False, sheet_name='g11.4')
 
 except Exception as e:
-    errors['Gráfico 11.3'] = traceback.format_exc()
+    errors['Gráfico 11.4'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
