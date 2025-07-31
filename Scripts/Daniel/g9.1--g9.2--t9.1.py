@@ -95,7 +95,7 @@ except Exception as e:
 # gráfico 9.1
 try:
     data = c.open_file(dbs_path, 'sidra_3416.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= 2009 and `Mês` == 12', engine='python')
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+    data.sort_values(['Região', 'Variável', 'Ano'], inplace=[True, True, False])  # ordena os dados por Região, Variável e Ano
     
     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
     assert df_ne['Região'].nunique() == 9, "Número de estados do NE diferente de 9"
@@ -121,7 +121,7 @@ except Exception as e:
 # gráfico 9.2
 try:
     data = c.open_file(dbs_path, 'sidra_3417.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= 2009 and `Mês` == 12', engine='python')
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+    data.sort_values(['Região', 'Variável', 'Ano'], inplace=[True, True, False])  # ordena os dados por Região, Variável e Ano
     
     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
     assert df_ne['Região'].nunique() == 9, "Número de estados do NE diferente de 9"
