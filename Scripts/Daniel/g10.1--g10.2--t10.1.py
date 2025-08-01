@@ -76,7 +76,7 @@ try:
     data = c.open_file(dbs_path, 'sidra_5906.xlsx', 'xls', sheet_name='Sheet1').query(
         '`Mês` == "dezembro" and `Variável`.str.contains("receita nominal")', engine='python'
     )  # filtra os dados para o mês de dezembro e para as variáveis que contêm "receita nominal"
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+    data.sort_values(['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena os dados por Região, Variável e Ano
     
     # tratamento dos dados principais
     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
@@ -102,7 +102,7 @@ try:
     data = c.open_file(dbs_path, 'sidra_5906.xlsx', 'xls', sheet_name='Sheet1').query(
         '`Mês` == "dezembro" and `Variável`.str.contains("volume de serviços")', engine='python'
     )  # filtra os dados para o mês de dezembro e para as variáveis que contêm "receita nominal"
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=True)  # ordena os dados por Região, Variável e Ano
+    data.sort_values(['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena os dados por Região, Variável e Ano
     
     # tratamento dos dados principais
     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
@@ -137,7 +137,7 @@ try:
     df_deflator['Diff'] = None
 
     for row in range(1, len(df_deflator)):
-        df_deflator.loc[row,'Diff'] = df_deflator.loc[row - 1, 'Valor'] / df_deflator.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
+        df_deflator.loc[row,'Diff'] = 1 +(df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
         df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
 
     # tratamento dos dados principais
