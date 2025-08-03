@@ -30,7 +30,7 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
-# # sidra 5906
+# # sidra contas regionais
 # url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais'
 
 # # download do arquivo especiais 2010
@@ -139,28 +139,81 @@ except Exception as e:
 #     errors['https://apidatalake.tesouro.gov.br (DCA)'] = traceback.format_exc()
 
 
-# boletim de arrecadação dos tributos estaduais
+# siconfi Relatório de Gestão Fiscal - RGF
 try:
-    url = 'https://dados.gov.br/dados/api/publico/conjuntos-dados/17df5c58-16d7-431f-9e53-3ff1446ba72c'
-    headers = {
-        'accept': 'application/json',
-        'chave-api-dados-abertos': os.environ.get('DADOS_ABERTOS_API', '')
-    }
-    response = requests.get(url, headers=headers)
-    data = response.json()
-    link = data['recursos'][0]['link']
+    base_year = 2015
+    poder = ['E', 'L', 'J', 'M', 'D']
+    current_year = datetime.now().year
 
-    sheet = requests.get(link, verify=False)
-    sheet_data = c.open_file(file_path=sheet.content, ext='xls', skiprows=1)
+    start_time = time.time()  # Inicia o contador de tempo
 
-    df = sheet_data[list(sheet_data.keys())[1]]
-    df['data'] = pd.to_datetime(df['co_periodo'], format='%Y%m', errors='coerce')
-    df['ano'] = df['data'].dt.year
-    df['mes'] = df['data'].dt.month
+    dfs_estados = []
+    for k, v in c.mapping_states_ibge_code.items():
 
-    c.to_excel(df, dbs_path, 'boletim_arrecadacao.xlsx')
+        dfs_year = []
+        for y in range(base_year, current_year + 1):
+
+            url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rgf?' \
+                f'an_exercicio={y}&in_periodicidade=Q&nr_periodo=3&co_tipo_demonstrativo=RGF&no_anexo=RGF-Anexo%2001&co_esfera=E&co_poder=E&id_ente={v}'
+            response = c.open_url(url)
+            time.sleep(1)
+            if response.status_code == 200 and len(response.json()['items']) > 1:
+                df = pd.DataFrame(response.json()['items'])
+                dfs_year.append(df)
+
+        df_concat = pd.concat(dfs_year, ignore_index=True)
+        df_concat['UF'] = k
+        df_concat['UF_ID'] = v
+        dfs_estados.append(df_concat)
+        print('Finalizado o Estado: ', k)
+
+    df_final = pd.concat(dfs_estados, ignore_index=True)
+
+    elapsed_time = time.time() - start_time  # Finaliza o contador de tempo
+    print(f"Tempo total de execução: {elapsed_time:.2f} segundos")
+    c.to_csv(df_final, 'Scripts\Daniel\Diversos', 'siconfi_RGF.csv')
+
 except Exception as e:
-    errors['https://www.sefaz.se.gov.br/boletim_arrecadacao'] = traceback.format_exc()
+    errors['https://apidatalake.tesouro.gov.br (RGF)'] = traceback.format_exc()
+
+
+# # boletim de arrecadação dos tributos estaduais
+# try:
+#     url = 'https://dados.gov.br/dados/api/publico/conjuntos-dados/17df5c58-16d7-431f-9e53-3ff1446ba72c'
+#     headers = {
+#         'accept': 'application/json',
+#         'chave-api-dados-abertos': os.environ.get('DADOS_ABERTOS_API', '')
+#     }
+#     response = requests.get(url, headers=headers)
+#     data = response.json()
+#     link = data['recursos'][0]['link']
+
+#     sheet = requests.get(link, verify=False)
+#     sheet_data = c.open_file(file_path=sheet.content, ext='xls', skiprows=1)
+
+#     df = sheet_data[list(sheet_data.keys())[1]]
+#     df['data'] = pd.to_datetime(df['co_periodo'], format='%Y%m', errors='coerce')
+#     df['ano'] = df['data'].dt.year
+#     df['mes'] = df['data'].dt.month
+
+#     c.to_excel(df, dbs_path, 'boletim_arrecadacao.xlsx')
+# except Exception as e:
+#     errors['https://www.sefaz.se.gov.br/boletim_arrecadacao'] = traceback.format_exc()
+
+
+# sidra 7358 - estimativa da população
+url = 'https://apisidra.ibge.gov.br/values/t/7358/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/c287/100362/c1933/all?formato=json'
+try:
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D6N', 'D1N', 'V']].copy()
+    df.columns = ['Ano', 'Região', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+
+    c.to_excel(df, dbs_path, 'sidra_7358.xlsx')
+except Exception as e:
+    errors['Sidra 7358'] = traceback.format_exc()
 
 
 # ************************
@@ -588,21 +641,70 @@ except Exception as e:
 #     errors['Gráfico 11.4'] = traceback.format_exc()
 
 
-# t11.2
-try:
-    df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[[
-        'data', 'ano', 'id_uf', 'va_icms_terciario', 'va_icms_terciario_atacadista', 'va_icms_terciario_varejista', 'va_icms_terciario_transportes',
-        'va_icms_terciario_comunicacao', 'va_icms_terciario_outros', 'va_icms_energia_terciario', 'va_icms_combustiveis_terciario'
-    ]].query('id_uf == "SE"', engine='python')
-    df_grouped = df.groupby('ano', as_index=False).sum(numeric_only=True)
-    max_year = df_grouped['ano'].max()
-    min_year = df_grouped['ano'].min()
+# # t11.2
+# try:
+#     df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[[
+#         'data', 'ano', 'id_uf', 'va_icms_terciario', 'va_icms_terciario_atacadista', 'va_icms_terciario_varejista', 'va_icms_terciario_transportes',
+#         'va_icms_terciario_comunicacao', 'va_icms_terciario_outros', 'va_icms_energia_terciario', 'va_icms_combustiveis_terciario'
+#     ]].query('id_uf == "SE"', engine='python')
+#     df_grouped = df.groupby('ano', as_index=False).sum(numeric_only=True)
+#     max_year = df_grouped['ano'].max()
+#     min_year = df_grouped['ano'].min()
 
-    df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
-    df_deflator.rename(columns={'Ano': 'ano'}, inplace=True)
+#     df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+#     df_deflator.rename(columns={'Ano': 'ano'}, inplace=True)
     
-    # tratamento do deflator
-    df_deflator.sort_values('ano', ascending=False, inplace=True)  # ordena os dados por Ano
+#     # tratamento do deflator
+#     df_deflator.sort_values('ano', ascending=False, inplace=True)  # ordena os dados por Ano
+#     df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+#     df_deflator['Index'] = 100.00
+#     df_deflator['Diff'] = None
+
+#     for row in range(1, len(df_deflator)):
+#         df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+#         df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
+
+#     df_merged = df_grouped.merge(df_deflator[['ano', 'Index']], on='ano', how='left', validate='1:1').dropna(axis=0)
+#     for col in df_merged.columns.to_list()[1:-1]:
+#         df_merged[col] = (df_merged[col] / df_merged['Index']) * 100
+#         df_merged[col + ' Diff'] = df_merged[col].pct_change() * 100
+
+#     cols_to_melt = [col for col in df_merged.columns.to_list() if col.endswith('Diff')]
+#     df_melted = df_merged.melt(id_vars=['ano'], value_vars=cols_to_melt, var_name='Atividade', value_name='Valor')
+#     df_melted['Atividade'] = df_melted['Atividade'].map({
+#         'va_icms_terciario Diff': 'Total',
+#         'va_icms_terciario_atacadista Diff': 'Comércio Atacadista',
+#         'va_icms_terciario_varejista Diff': 'Comércio Varejista',
+#         'va_icms_terciario_transportes Diff': 'Serviços de Transporte',
+#         'va_icms_terciario_comunicacao Diff': 'Serviços de Comunicação',
+#         'va_icms_terciario_outros Diff': 'Outros ICMS',
+#         'va_icms_energia_terciario Diff': 'Energia Elétrica Terciário',
+#         'va_icms_combustiveis_terciario Diff': 'Petróleo-Combustível-Lubrificantes Terciário'
+#     })
+#     df_melted.replace([np.inf, -np.inf], np.nan, inplace=True)
+#     df_melted.dropna(axis=0, inplace=True)
+#     df_melted.sort_values(by=['Atividade', 'ano'], inplace=True)
+#     df_melted.rename(columns={'ano': 'Ano'}, inplace=True)
+
+#     df_melted.to_excel(os.path.join(sheets_path, 't11.2.xlsx'), index=False, sheet_name='t11.2')
+
+# except Exception as e:
+#     errors['Tabela 11.2'] = traceback.format_exc()
+
+
+# g11.5
+try:
+    # dados siconfi
+    df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RGF.csv', 'csv').query(
+        'coluna.str.lower() == "valor" and conta.str.lower().str.startswith("despesa total com pessoal")' , engine='python'
+    )[['exercicio', 'cod_ibge', 'uf', 'UF', 'populacao', 'valor']]
+    df.rename(columns={'exercicio': 'Ano'}, inplace=True)
+    max_year = df['Ano'].max()
+    min_year = df['Ano'].min()
+
+    # dados deflatores
+    df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    df_deflator.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
     df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
     df_deflator['Index'] = 100.00
     df_deflator['Diff'] = None
@@ -611,32 +713,41 @@ try:
         df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
         df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
 
-    df_merged = df_grouped.merge(df_deflator[['ano', 'Index']], on='ano', how='left', validate='1:1').dropna(axis=0)
-    for col in df_merged.columns.to_list()[1:-1]:
-        df_merged[col] = (df_merged[col] / df_merged['Index']) * 100
-        df_merged[col + ' Diff'] = df_merged[col].pct_change() * 100
+    # dados populacionais
+    df_pop = c.open_file(dbs_path, 'sidra_7358.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    df_pop.rename(columns={'Valor': 'Pop'}, inplace=True)
 
-    cols_to_melt = [col for col in df_merged.columns.to_list() if col.endswith('Diff')]
-    df_melted = df_merged.melt(id_vars=['ano'], value_vars=cols_to_melt, var_name='Atividade', value_name='Valor')
-    df_melted['Atividade'] = df_melted['Atividade'].map({
-        'va_icms_terciario Diff': 'Total',
-        'va_icms_terciario_atacadista Diff': 'Comércio Atacadista',
-        'va_icms_terciario_varejista Diff': 'Comércio Varejista',
-        'va_icms_terciario_transportes Diff': 'Serviços de Transporte',
-        'va_icms_terciario_comunicacao Diff': 'Serviços de Comunicação',
-        'va_icms_terciario_outros Diff': 'Outros ICMS',
-        'va_icms_energia_terciario Diff': 'Energia Elétrica Terciário',
-        'va_icms_combustiveis_terciario Diff': 'Petróleo-Combustível-Lubrificantes Terciário'
-    })
-    df_melted.replace([np.inf, -np.inf], np.nan, inplace=True)
-    df_melted.dropna(axis=0, inplace=True)
-    df_melted.sort_values(by=['Atividade', 'ano'], inplace=True)
-    df_melted.rename(columns={'ano': 'Ano'}, inplace=True)
+    # dados do nordeste
+    df_ne = df.query('UF in @c.ne_states', engine='python').copy()
+    df_ne.rename(columns={'UF': 'Região'}, inplace=True)
+    df_ne.loc[:, 'Região'] = 'Nordeste'
+    df_ne_final = df_ne.groupby(['Ano', 'Região'], as_index=False)['valor'].sum()
 
-    df_melted.to_excel(os.path.join(sheets_path, 't11.2.xlsx'), index=False, sheet_name='t11.2')
+    # dados do brasil
+    df_br = df.copy()
+    df_br.rename(columns={'UF': 'Região'}, inplace=True)
+    df_br.loc[:, 'Região'] = 'Brasil'
+    df_br_final = df_br.groupby(['Ano', 'Região'], as_index=False)['valor'].sum()
+
+    # dados do sergipe
+    df_se = df.query('UF == "Sergipe"', engine='python').copy()
+    df_se.rename(columns={'UF': 'Região'}, inplace=True)
+    df_se.loc[:, 'Região'] = 'Sergipe'
+    df_se_final = df_se.groupby(['Ano', 'Região'], as_index=False)['valor'].sum()
+
+    # unindo as tabelas
+    df_siconfi = pd.concat([df_br_final, df_ne_final, df_se_final], ignore_index=True)
+    df_merged = df_siconfi.merge(df_deflator[['Ano', 'Index']], on='Ano', how='left', validate='m:1').merge(
+        df_pop[['Ano', 'Região', 'Pop']], on=['Ano', 'Região'], how='left', validate='1:1'
+    )
+    df_merged['Valor'] = (df_merged['valor'] / df_merged['Index']) * 100
+    df_merged['Valor'] = df_merged['Valor'] / df_merged['Pop']
+
+    df_final = df_merged[['Ano', 'Região', 'Valor']]
+    df_final.to_excel(os.path.join(sheets_path, 'g11.5.xlsx'), index=False, sheet_name='g11.5')
 
 except Exception as e:
-    errors['Tabela 11.2'] = traceback.format_exc()
+    errors['Gráfico 11.5'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
