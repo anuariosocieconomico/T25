@@ -590,10 +590,11 @@ except Exception as e:
 
 # t11.2
 try:
-    df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[
-        ['data', 'ano', 'mes', 'id_uf', 'va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']
-    ].query('id_uf == "SE"', engine='python')
-    df_grouped = df.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
+    df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[[
+        'data', 'ano', 'id_uf', 'va_icms_terciario', 'va_icms_terciario_atacadista', 'va_icms_terciario_varejista', 'va_icms_terciario_transportes',
+        'va_icms_terciario_comunicacao', 'va_icms_terciario_outros', 'va_icms_energia_terciario', 'va_icms_combustiveis_terciario'
+    ]].query('id_uf == "SE"', engine='python')
+    df_grouped = df.groupby('ano', as_index=False).sum(numeric_only=True)
     max_year = df_grouped['ano'].max()
     min_year = df_grouped['ano'].min()
 
@@ -607,20 +608,32 @@ try:
     df_deflator['Diff'] = None
 
     for row in range(1, len(df_deflator)):
-        # df_deflator.loc[row,'Diff'] = df_deflator.loc[row - 1, 'Valor'] / df_deflator.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
         df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
         df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
 
     df_merged = df_grouped.merge(df_deflator[['ano', 'Index']], on='ano', how='left', validate='1:1').dropna(axis=0)
-    df_merged['Prim'] = (df_merged['va_icms_primario'] / df_merged['Index']) * 100
-    df_merged['Sec'] = (df_merged['va_icms_secundario'] / df_merged['Index']) * 100
-    df_merged['Terc'] = (df_merged['va_icms_terciario'] / df_merged['Index']) * 100
+    for col in df_merged.columns.to_list()[1:-1]:
+        df_merged[col] = (df_merged[col] / df_merged['Index']) * 100
+        df_merged[col + ' Diff'] = df_merged[col].pct_change() * 100
 
-    df_final = df_merged[['ano', 'Prim', 'Sec', 'Terc']].copy()
-    df_final.rename(columns={'ano': 'Ano'}, inplace=True)
-    df_final.sort_values(by='Ano', ascending=True, inplace=True)
+    cols_to_melt = [col for col in df_merged.columns.to_list() if col.endswith('Diff')]
+    df_melted = df_merged.melt(id_vars=['ano'], value_vars=cols_to_melt, var_name='Atividade', value_name='Valor')
+    df_melted['Atividade'] = df_melted['Atividade'].map({
+        'va_icms_terciario Diff': 'Total',
+        'va_icms_terciario_atacadista Diff': 'Comércio Atacadista',
+        'va_icms_terciario_varejista Diff': 'Comércio Varejista',
+        'va_icms_terciario_transportes Diff': 'Serviços de Transporte',
+        'va_icms_terciario_comunicacao Diff': 'Serviços de Comunicação',
+        'va_icms_terciario_outros Diff': 'Outros ICMS',
+        'va_icms_energia_terciario Diff': 'Energia Elétrica Terciário',
+        'va_icms_combustiveis_terciario Diff': 'Petróleo-Combustível-Lubrificantes Terciário'
+    })
+    df_melted.replace([np.inf, -np.inf], np.nan, inplace=True)
+    df_melted.dropna(axis=0, inplace=True)
+    df_melted.sort_values(by=['Atividade', 'ano'], inplace=True)
+    df_melted.rename(columns={'ano': 'Ano'}, inplace=True)
 
-    df_final.to_excel(os.path.join(sheets_path, 't11.2.xlsx'), index=False, sheet_name='t11.2')
+    df_melted.to_excel(os.path.join(sheets_path, 't11.2.xlsx'), index=False, sheet_name='t11.2')
 
 except Exception as e:
     errors['Tabela 11.2'] = traceback.format_exc()
