@@ -78,13 +78,13 @@ errors = {}
 #     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
 
 
-# # deflator IPEA IPCA
-# try:
-#     data = ipeadatapy.timeseries('PRECOS_IPCAG')
-#     data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
-#     c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
-# except Exception as e:
-#     errors['IPEA IPCA'] = traceback.format_exc()
+# deflator IPEA IPCA
+try:
+    data = ipeadatapy.timeseries('PRECOS_IPCAG')
+    data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
+    c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+except Exception as e:
+    errors['IPEA IPCA'] = traceback.format_exc()
 
 
 # # siconfi RREO anexos 3 e 4
@@ -113,6 +113,35 @@ errors = {}
 
 # except Exception as e:
 #     errors['https://apidatalake.tesouro.gov.br (RREO)'] = traceback.format_exc()
+
+
+# siconfi RREO para g11.7
+try:
+    base_year = 2015
+    current_year = datetime.now().year
+
+    dfs_states = []
+    for k, v in c.mapping_states_ibge_code.items():
+        dfs_year = []
+        for y in range(base_year, current_year + 1):
+            url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
+                f'no_anexo=RREO-Anexo%2004&co_esfera=&id_ente={v}'
+            response = c.open_url(url)
+            time.sleep(1)
+            if response.status_code == 200 and len(response.json()['items']) > 1:
+                df = pd.DataFrame(response.json()['items'])
+                dfs_year.append(df)
+
+        df_concat = pd.concat(dfs_year, ignore_index=True)
+        df_concat['UF_ID'] = v
+        df_concat['UF'] = k
+        dfs_states.append(df_concat)
+
+    df_concat = pd.concat(dfs_states, ignore_index=True)
+    c.to_csv(df_concat, 'Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv')
+
+except Exception as e:
+    errors['https://apidatalake.tesouro.gov.br (RREO - g11.7)'] = traceback.format_exc()
 
 
 # # siconfi contas anuais DCA
@@ -201,19 +230,19 @@ errors = {}
 #     errors['https://www.sefaz.se.gov.br/boletim_arrecadacao'] = traceback.format_exc()
 
 
-# # sidra 7358 - estimativa da população
-# url = 'https://apisidra.ibge.gov.br/values/t/7358/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/c287/100362/c1933/all?formato=json'
-# try:
-#     data = c.open_url(url)
-#     df = pd.DataFrame(data.json())
-#     df = df[['D6N', 'D1N', 'V']].copy()
-#     df.columns = ['Ano', 'Região', 'Valor']
-#     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
-#     df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+# sidra 7358 - estimativa da população
+url = 'https://apisidra.ibge.gov.br/values/t/7358/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/c287/100362/c1933/all?formato=json'
+try:
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D6N', 'D1N', 'V']].copy()
+    df.columns = ['Ano', 'Região', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
 
-#     c.to_excel(df, dbs_path, 'sidra_7358.xlsx')
-# except Exception as e:
-#     errors['Sidra 7358'] = traceback.format_exc()
+    c.to_excel(df, dbs_path, 'sidra_7358.xlsx')
+except Exception as e:
+    errors['Sidra 7358'] = traceback.format_exc()
 
 
 # ************************
@@ -750,59 +779,114 @@ errors = {}
 #     errors['Gráfico 11.5'] = traceback.format_exc()
 
 
-# g11.6
+# # g11.6
+# try:
+#     # dados siconfi
+#     df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RGF.csv', 'csv').query(
+#         'coluna.str.lower().str.startswith("% sobre a rcl") and conta.str.lower().str.startswith("despesa total com pessoal")' , engine='python'
+#     )[['exercicio', 'UF', 'valor']]
+#     df.rename(columns={'exercicio': 'Ano', 'UF': 'Região', 'valor': 'Valor'}, inplace=True)
+
+#     # último ano
+#     df_last_year = df[df['Ano'] == df['Ano'].max()].copy()
+#     br_mean = df_last_year['Valor'].mean()
+#     ne_mean = df_last_year.query('Região in @c.ne_states')['Valor'].mean()
+
+#     df_last_year['Posição'] = df_last_year['Valor'].rank(method='first', ascending=False)
+#     df_last_year.sort_values(by='Posição', ascending=True, inplace=True)
+#     temp_df = pd.DataFrame({'Ano': [df_last_year['Ano'].max()] * 2, 'Região': ['BR', 'NE'], 'Valor': [br_mean, ne_mean], 'Posição': [np.nan, np.nan]})
+
+#     df_final_last_year = pd.concat(
+#         [
+#             df_last_year.query('`Posição` <= 6 | `Região` == "Sergipe"', engine='python').copy(),
+#             temp_df
+#         ],
+#         ignore_index=True
+#     )
+#     # muda o nome das regiões para as siglas, ignorando Brasil e Nordeste
+#     df_final_last_year['Região'] = df_final_last_year['Região'].apply(lambda x: c.mapping_states_abbreviation[x] if x not in ['BR', 'NE'] else x)
+
+#     df_final = df_final_last_year[['Região', 'Valor', 'Posição']]
+#     df_final.to_excel(os.path.join(sheets_path, 'g11.6a.xlsx'), index=False, sheet_name='g11.6a')
+
+#     # média histórica
+#     df_mean = df.groupby(['Região'], as_index=False)['Valor'].mean()
+#     df_mean['Posição'] = df_mean['Valor'].rank(method='first', ascending=False)
+#     df_mean.sort_values(by='Posição', ascending=True, inplace=True)
+    
+#     br_mean = df_mean['Valor'].mean()
+#     ne_mean = df_mean.query('Região in @c.ne_states')['Valor'].mean()
+#     temp_df = pd.DataFrame({'Região': ['Brasil', 'Nordeste'], 'Valor': [br_mean, ne_mean], 'Posição': [np.nan, np.nan]})
+
+#     df_mean_final = pd.concat(
+#         [
+#             df_mean.query('`Posição` <= 6 | `Região` == "Sergipe"', engine='python').copy(),
+#             temp_df
+#         ],
+#         ignore_index=True
+#     )
+#     # muda o nome das regiões para as siglas, ignorando Brasil e Nordeste
+#     df_mean_final['Região'] = df_mean_final['Região'].apply(lambda x: c.mapping_states_abbreviation[x] if x not in ['Brasil', 'Nordeste'] else x)
+
+#     df_mean_final.to_excel(os.path.join(sheets_path, 'g11.6b.xlsx'), index=False, sheet_name='g11.6b')
+
+# except Exception as e:
+#     errors['Gráfico 11.6'] = traceback.format_exc()
+
+
+# g11.7
 try:
     # dados siconfi
-    df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RGF.csv', 'csv').query(
-        'coluna.str.lower().str.startswith("% sobre a rcl") and conta.str.lower().str.startswith("despesa total com pessoal")' , engine='python'
+    df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv', 'csv').query(
+        'coluna.str.lower().str.startswith("despesas empenhadas até o bimestre") and ' \
+        'conta.str.lower().str.startswith("resultado previdenciário")',
+        engine='python'
     )[['exercicio', 'UF', 'valor']]
-    df.rename(columns={'exercicio': 'Ano', 'UF': 'Região', 'valor': 'Valor'}, inplace=True)
+    df.rename(columns={'exercicio': 'Ano'}, inplace=True)
+    max_year = df['Ano'].max()
+    min_year = df['Ano'].min()
 
-    # último ano
-    df_last_year = df[df['Ano'] == df['Ano'].max()].copy()
-    br_mean = df_last_year['Valor'].mean()
-    ne_mean = df_last_year.query('Região in @c.ne_states')['Valor'].mean()
+    df_grouped = df.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
 
-    df_last_year['Posição'] = df_last_year['Valor'].rank(method='first', ascending=False)
-    df_last_year.sort_values(by='Posição', ascending=True, inplace=True)
-    temp_df = pd.DataFrame({'Ano': [df_last_year['Ano'].max()] * 2, 'Região': ['BR', 'NE'], 'Valor': [br_mean, ne_mean], 'Posição': [np.nan, np.nan]})
+    # deflator
+    df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    df_deflator.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    df_deflator['Index'] = 100.00
+    df_deflator['Diff'] = None
 
-    df_final_last_year = pd.concat(
-        [
-            df_last_year.query('`Posição` <= 6 | `Região` == "Sergipe"', engine='python').copy(),
-            temp_df
-        ],
-        ignore_index=True
+    for row in range(1, len(df_deflator)):
+        df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+        df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
+
+    # população
+    df_pop = c.open_file(dbs_path, 'sidra_7358.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    df_pop.rename(columns={'Valor': 'Pop', 'Região': 'UF'}, inplace=True)
+
+    # estratos regionais
+    df_br = df_grouped.copy()
+    df_br.loc[:, 'UF'] = 'Brasil'
+    df_br_grouped = df_br.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+
+    df_ne = df_grouped.query('UF in @c.ne_states', engine='python').copy()
+    df_ne.loc[:, 'UF'] = 'Nordeste'
+    df_ne_grouped = df_ne.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+
+    df_se = df_grouped.query('UF == "Sergipe"', engine='python').copy()
+
+    # unindo as tabelas
+    df_concat = pd.concat([df_br_grouped, df_ne_grouped, df_se], ignore_index=True)
+    df_merged = df_concat.merge(df_deflator[['Ano', 'Index']], how='left', on='Ano', validate='m:1').merge(
+        df_pop[['Ano', 'UF', 'Pop']], how='left', on=['Ano', 'UF'], validate='1:1'
     )
-    # muda o nome das regiões para as siglas, ignorando Brasil e Nordeste
-    df_final_last_year['Região'] = df_final_last_year['Região'].apply(lambda x: c.mapping_states_abbreviation[x] if x not in ['BR', 'NE'] else x)
+    df_merged['Valor'] = (df_merged['valor'] / df_merged['Index']) * 100  # deflaciona os valores
+    df_merged['Valor/Pop'] = df_merged['Valor'] / df_merged['Pop']  # calcula o valor por habitante
 
-    df_final = df_final_last_year[['Região', 'Valor', 'Posição']]
-    df_final.to_excel(os.path.join(sheets_path, 'g11.6a.xlsx'), index=False, sheet_name='g11.6a')
-
-    # média histórica
-    df_mean = df.groupby(['Região'], as_index=False)['Valor'].mean()
-    df_mean['Posição'] = df_mean['Valor'].rank(method='first', ascending=False)
-    df_mean.sort_values(by='Posição', ascending=True, inplace=True)
-    
-    br_mean = df_mean['Valor'].mean()
-    ne_mean = df_mean.query('Região in @c.ne_states')['Valor'].mean()
-    temp_df = pd.DataFrame({'Região': ['Brasil', 'Nordeste'], 'Valor': [br_mean, ne_mean], 'Posição': [np.nan, np.nan]})
-
-    df_mean_final = pd.concat(
-        [
-            df_mean.query('`Posição` <= 6 | `Região` == "Sergipe"', engine='python').copy(),
-            temp_df
-        ],
-        ignore_index=True
-    )
-    # muda o nome das regiões para as siglas, ignorando Brasil e Nordeste
-    df_mean_final['Região'] = df_mean_final['Região'].apply(lambda x: c.mapping_states_abbreviation[x] if x not in ['Brasil', 'Nordeste'] else x)
-
-    df_mean_final.to_excel(os.path.join(sheets_path, 'g11.6b.xlsx'), index=False, sheet_name='g11.6b')
+    df_final = df_merged[['Ano', 'UF', 'Valor/Pop']].pivot(index='Ano', columns='UF', values='Valor/Pop').reset_index()
+    df_final.to_excel(os.path.join(sheets_path, 'g11.7.xlsx'), index=False, sheet_name='g11.7')
 
 except Exception as e:
-    errors['Gráfico 11.6'] = traceback.format_exc()
+    errors['Gráfico 11.7'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
