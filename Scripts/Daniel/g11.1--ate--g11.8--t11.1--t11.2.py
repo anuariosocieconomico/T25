@@ -78,13 +78,13 @@ errors = {}
 #     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
 
 
-# deflator IPEA IPCA
-try:
-    data = ipeadatapy.timeseries('PRECOS_IPCAG')
-    data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
-    c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
-except Exception as e:
-    errors['IPEA IPCA'] = traceback.format_exc()
+# # deflator IPEA IPCA
+# try:
+#     data = ipeadatapy.timeseries('PRECOS_IPCAG')
+#     data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
+#     c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+# except Exception as e:
+#     errors['IPEA IPCA'] = traceback.format_exc()
 
 
 # # siconfi RREO anexos 3 e 4
@@ -115,33 +115,33 @@ except Exception as e:
 #     errors['https://apidatalake.tesouro.gov.br (RREO)'] = traceback.format_exc()
 
 
-# siconfi RREO para g11.7
-try:
-    base_year = 2015
-    current_year = datetime.now().year
+# # siconfi RREO para g11.7
+# try:
+#     base_year = 2015
+#     current_year = datetime.now().year
 
-    dfs_states = []
-    for k, v in c.mapping_states_ibge_code.items():
-        dfs_year = []
-        for y in range(base_year, current_year + 1):
-            url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
-                f'no_anexo=RREO-Anexo%2004&co_esfera=&id_ente={v}'
-            response = c.open_url(url)
-            time.sleep(1)
-            if response.status_code == 200 and len(response.json()['items']) > 1:
-                df = pd.DataFrame(response.json()['items'])
-                dfs_year.append(df)
+#     dfs_states = []
+#     for k, v in c.mapping_states_ibge_code.items():
+#         dfs_year = []
+#         for y in range(base_year, current_year + 1):
+#             url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
+#                 f'no_anexo=RREO-Anexo%2004&co_esfera=&id_ente={v}'
+#             response = c.open_url(url)
+#             time.sleep(1)
+#             if response.status_code == 200 and len(response.json()['items']) > 1:
+#                 df = pd.DataFrame(response.json()['items'])
+#                 dfs_year.append(df)
 
-        df_concat = pd.concat(dfs_year, ignore_index=True)
-        df_concat['UF_ID'] = v
-        df_concat['UF'] = k
-        dfs_states.append(df_concat)
+#         df_concat = pd.concat(dfs_year, ignore_index=True)
+#         df_concat['UF_ID'] = v
+#         df_concat['UF'] = k
+#         dfs_states.append(df_concat)
 
-    df_concat = pd.concat(dfs_states, ignore_index=True)
-    c.to_csv(df_concat, 'Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv')
+#     df_concat = pd.concat(dfs_states, ignore_index=True)
+#     c.to_csv(df_concat, 'Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv')
 
-except Exception as e:
-    errors['https://apidatalake.tesouro.gov.br (RREO - g11.7)'] = traceback.format_exc()
+# except Exception as e:
+#     errors['https://apidatalake.tesouro.gov.br (RREO - g11.7)'] = traceback.format_exc()
 
 
 # # siconfi contas anuais DCA
@@ -230,19 +230,19 @@ except Exception as e:
 #     errors['https://www.sefaz.se.gov.br/boletim_arrecadacao'] = traceback.format_exc()
 
 
-# sidra 7358 - estimativa da população
-url = 'https://apisidra.ibge.gov.br/values/t/7358/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/c287/100362/c1933/all?formato=json'
-try:
-    data = c.open_url(url)
-    df = pd.DataFrame(data.json())
-    df = df[['D6N', 'D1N', 'V']].copy()
-    df.columns = ['Ano', 'Região', 'Valor']
-    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
-    df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
+# # sidra 7358 - estimativa da população
+# url = 'https://apisidra.ibge.gov.br/values/t/7358/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/c287/100362/c1933/all?formato=json'
+# try:
+#     data = c.open_url(url)
+#     df = pd.DataFrame(data.json())
+#     df = df[['D6N', 'D1N', 'V']].copy()
+#     df.columns = ['Ano', 'Região', 'Valor']
+#     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+#     df[['Ano', 'Valor']] = df[['Ano', 'Valor']].astype(int)
 
-    c.to_excel(df, dbs_path, 'sidra_7358.xlsx')
-except Exception as e:
-    errors['Sidra 7358'] = traceback.format_exc()
+#     c.to_excel(df, dbs_path, 'sidra_7358.xlsx')
+# except Exception as e:
+#     errors['Sidra 7358'] = traceback.format_exc()
 
 
 # ************************
@@ -834,17 +834,89 @@ except Exception as e:
 #     errors['Gráfico 11.6'] = traceback.format_exc()
 
 
-# g11.7
+# # g11.7
+# try:
+#     # dados siconfi
+#     df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv', 'csv').query(
+#         'coluna.str.lower().str.startswith("despesas empenhadas até o bimestre") and ' \
+#         'conta.str.lower().str.startswith("resultado previdenciário")',
+#         engine='python'
+#     )[['exercicio', 'UF', 'valor']]
+#     df.rename(columns={'exercicio': 'Ano'}, inplace=True)
+#     max_year = df['Ano'].max()
+#     min_year = df['Ano'].min()
+
+#     df_grouped = df.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+
+#     # deflator
+#     df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+#     df_deflator.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+#     df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+#     df_deflator['Index'] = 100.00
+#     df_deflator['Diff'] = None
+
+#     for row in range(1, len(df_deflator)):
+#         df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+#         df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
+
+#     # população
+#     df_pop = c.open_file(dbs_path, 'sidra_7358.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+#     df_pop.rename(columns={'Valor': 'Pop', 'Região': 'UF'}, inplace=True)
+
+#     # estratos regionais
+#     df_br = df_grouped.copy()
+#     df_br.loc[:, 'UF'] = 'Brasil'
+#     df_br_grouped = df_br.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+
+#     df_ne = df_grouped.query('UF in @c.ne_states', engine='python').copy()
+#     df_ne.loc[:, 'UF'] = 'Nordeste'
+#     df_ne_grouped = df_ne.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+
+#     df_se = df_grouped.query('UF == "Sergipe"', engine='python').copy()
+
+#     # unindo as tabelas
+#     df_concat = pd.concat([df_br_grouped, df_ne_grouped, df_se], ignore_index=True)
+#     df_merged = df_concat.merge(df_deflator[['Ano', 'Index']], how='left', on='Ano', validate='m:1').merge(
+#         df_pop[['Ano', 'UF', 'Pop']], how='left', on=['Ano', 'UF'], validate='1:1'
+#     )
+#     df_merged['Valor'] = (df_merged['valor'] / df_merged['Index']) * 100  # deflaciona os valores
+#     df_merged['Valor/Pop'] = df_merged['Valor'] / df_merged['Pop']  # calcula o valor por habitante
+
+#     df_final = df_merged[['Ano', 'UF', 'Valor/Pop']].pivot(index='Ano', columns='UF', values='Valor/Pop').reset_index()
+#     df_final.to_excel(os.path.join(sheets_path, 'g11.7.xlsx'), index=False, sheet_name='g11.7')
+
+# except Exception as e:
+#     errors['Gráfico 11.7'] = traceback.format_exc()
+
+
+# g11.8
 try:
     # dados siconfi
-    df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv', 'csv').query(
-        'coluna.str.lower().str.startswith("despesas empenhadas até o bimestre") and ' \
-        'conta.str.lower().str.startswith("resultado previdenciário")',
-        engine='python'
-    )[['exercicio', 'UF', 'valor']]
+    df = c.open_file('Scripts\Daniel\Diversos', 'siconfi_RREO_g11.7.csv', 'csv')
+    # filtragem para selecionar as variáveis certas de coluna, conta e cod_conta
+    # coluna segue um padrão para todos os anos, pelo menos nesse primeiro momento
+    # cod_conta garante que os dados são do plano financeiro, e não previdenciário
+    # é preciso coletar dois valores, o resultado e a despesa; o resultado segue um padrão para todos os anos
+    # já a despesa, a partir de certo ano a variável muda de nome (total das despesas do fundo em repartição)
+    df_filtered = df.loc[
+        (df["coluna"].str.lower().str.startswith("despesas empenhadas até o bimestre")) &
+        (
+            (df["conta"].str.lower().str.startswith("resultado previdenciário")) |
+            (df["conta"].str.lower().str.startswith("total das despesas previdenciárias")) |
+            (df["conta"].str.lower().str.startswith("total das despesas do fundo em repartição"))
+        ) &
+        (df["cod_conta"].str.lower().str.endswith("financeiro"))
+    ]
+    # por fim é realizada mais uma filtragem para coletar as linhas corretas de dados de anos antigos
+    # para determinado ano, exemplo 2020, há dados de despesas no ano corrente e em outros anos
+    # então a filtragem a seguir garante que apenas os dados do ano corrente sejam coletados; após ' / ' há o ano de referência
+    # já em anos mais atuais, há a letra 'd' que indica que o dado é do ano corrente
+    df_filtered = df_filtered.loc[
+        (df_filtered['coluna'].str.split(' / ').str[-1] == df_filtered['exercicio'].astype(str)) |
+        (df_filtered['coluna'].str.contains('(d)'))
+    ]
     df.rename(columns={'exercicio': 'Ano'}, inplace=True)
-    max_year = df['Ano'].max()
-    min_year = df['Ano'].min()
+
 
     df_grouped = df.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
 
@@ -883,10 +955,10 @@ try:
     df_merged['Valor/Pop'] = df_merged['Valor'] / df_merged['Pop']  # calcula o valor por habitante
 
     df_final = df_merged[['Ano', 'UF', 'Valor/Pop']].pivot(index='Ano', columns='UF', values='Valor/Pop').reset_index()
-    df_final.to_excel(os.path.join(sheets_path, 'g11.7.xlsx'), index=False, sheet_name='g11.7')
+    df_final.to_excel(os.path.join(sheets_path, 'g11.8.xlsx'), index=False, sheet_name='g11.8')
 
 except Exception as e:
-    errors['Gráfico 11.7'] = traceback.format_exc()
+    errors['Gráfico 11.8'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
