@@ -915,47 +915,58 @@ try:
         (df_filtered['coluna'].str.split(' / ').str[-1] == df_filtered['exercicio'].astype(str)) |
         (df_filtered['coluna'].str.contains('(d)'))
     ]
-    df.rename(columns={'exercicio': 'Ano'}, inplace=True)
+    max_year = df_filtered['exercicio'].max()
+    
+    # tratamento dos dados
+    df_pivoted = df_filtered.copy()
+    df_pivoted['Conta Padronizada'] = df_pivoted['conta'].apply(lambda x: 'Resultado' if x.lower().startswith('resultado') else 'Despesas')
+    df_pivoted = df_pivoted.pivot(index=['exercicio', 'UF'], columns='Conta Padronizada', values='valor').reset_index()
+    df_pivoted['Proporção'] = (df_pivoted['Resultado'] / (df_pivoted['Despesas'] + df_pivoted['Resultado'])) * 100
+    df_pivoted.loc[df_pivoted['Despesas'] + df_pivoted['Resultado'] == 0, 'Proporção'] = 1
 
+    # tabela média história dos estados
+    df_total = df_pivoted.groupby('UF', as_index=False)['Proporção'].mean()
+    df_total['Posição'] = df_total['Proporção'].rank(method='dense', ascending=False)
+    df_total = df_total.loc[(df_total['Posição'] <= 6) | (df_total['UF'] == 'Sergipe')].copy()
+    df_total.sort_values('Posição', inplace=True)
+    df_total['UF'] = df_total['UF'].apply(lambda x: c.mapping_states_abbreviation[x])
 
-    df_grouped = df.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+    df_br_total = df_pivoted.copy()
+    df_br_total.loc[:, 'UF'] = 'BR'
+    df_br_total = df_br_total.groupby('UF', as_index=False)['Proporção'].mean()
+    df_br_total['Posição'] = np.nan
 
-    # deflator
-    df_deflator = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
-    df_deflator.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
-    df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
-    df_deflator['Index'] = 100.00
-    df_deflator['Diff'] = None
+    df_ne_total = df_pivoted.query('UF in @c.ne_states', engine='python').copy()
+    df_ne_total.loc[:, 'UF'] = 'NE'
+    df_ne_total = df_ne_total.groupby('UF', as_index=False)['Proporção'].mean()
+    df_ne_total['Posição'] = np.nan
 
-    for row in range(1, len(df_deflator)):
-        df_deflator.loc[row,'Diff'] = 1 + (df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
-        df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
+    df_total_final = pd.concat([df_total, df_br_total, df_ne_total], ignore_index=True)
+    df_total_final.rename(columns={'UF': 'Região', 'Proporção': 'Valor'}, inplace=True)
 
-    # população
-    df_pop = c.open_file(dbs_path, 'sidra_7358.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
-    df_pop.rename(columns={'Valor': 'Pop', 'Região': 'UF'}, inplace=True)
+    df_total_final.to_excel(os.path.join(sheets_path, 'g11.8b.xlsx'), index=False, sheet_name='g11.8b')
 
-    # estratos regionais
-    df_br = df_grouped.copy()
-    df_br.loc[:, 'UF'] = 'Brasil'
-    df_br_grouped = df_br.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+    # tabela do último ano
+    df_last_year = df_pivoted.query('exercicio == @max_year', engine='python')[['UF', 'Proporção']].copy()
+    df_last_year['Posição'] = df_last_year['Proporção'].rank(method='dense', ascending=False)
+    df_last_year = df_last_year.loc[(df_last_year['Posição'] <= 6) | (df_last_year['UF'] == 'Sergipe')].copy()
+    df_last_year.sort_values('Posição', inplace=True)
+    df_last_year['UF'] = df_last_year['UF'].apply(lambda x: c.mapping_states_abbreviation[x])
 
-    df_ne = df_grouped.query('UF in @c.ne_states', engine='python').copy()
-    df_ne.loc[:, 'UF'] = 'Nordeste'
-    df_ne_grouped = df_ne.groupby(['Ano', 'UF'], as_index=False)['valor'].sum()
+    df_br_last_year = df_pivoted.query('exercicio == @max_year', engine='python')[['UF', 'Proporção']].copy()
+    df_br_last_year.loc[:, 'UF'] = 'BR'
+    df_br_last_year = df_br_last_year.groupby('UF', as_index=False)['Proporção'].mean()
+    df_br_last_year['Posição'] = np.nan
 
-    df_se = df_grouped.query('UF == "Sergipe"', engine='python').copy()
+    df_ne_last_year = df_pivoted.query('exercicio == @max_year and UF in @c.ne_states', engine='python')[['UF', 'Proporção']].copy()
+    df_ne_last_year.loc[:, 'UF'] = 'NE'
+    df_ne_last_year = df_ne_last_year.groupby('UF', as_index=False)['Proporção'].mean()
+    df_ne_last_year['Posição'] = np.nan
 
-    # unindo as tabelas
-    df_concat = pd.concat([df_br_grouped, df_ne_grouped, df_se], ignore_index=True)
-    df_merged = df_concat.merge(df_deflator[['Ano', 'Index']], how='left', on='Ano', validate='m:1').merge(
-        df_pop[['Ano', 'UF', 'Pop']], how='left', on=['Ano', 'UF'], validate='1:1'
-    )
-    df_merged['Valor'] = (df_merged['valor'] / df_merged['Index']) * 100  # deflaciona os valores
-    df_merged['Valor/Pop'] = df_merged['Valor'] / df_merged['Pop']  # calcula o valor por habitante
+    df_last_year_final = pd.concat([df_last_year, df_br_last_year, df_ne_last_year], ignore_index=True)
+    df_last_year_final.rename(columns={'UF': 'Região', 'Proporção': 'Valor'}, inplace=True)
 
-    df_final = df_merged[['Ano', 'UF', 'Valor/Pop']].pivot(index='Ano', columns='UF', values='Valor/Pop').reset_index()
-    df_final.to_excel(os.path.join(sheets_path, 'g11.8.xlsx'), index=False, sheet_name='g11.8')
+    df_last_year_final.to_excel(os.path.join(sheets_path, 'g11.8a.xlsx'), index=False, sheet_name='g11.8a')
 
 except Exception as e:
     errors['Gráfico 11.8'] = traceback.format_exc()
