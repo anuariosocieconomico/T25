@@ -30,52 +30,52 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
-# sidra contas regionais
-url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais'
+# # sidra contas regionais
+# url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais'
 
-# download do arquivo especiais 2010
-try:
-    response = c.open_url(url)
-    df = pd.DataFrame(response.json())
+# # download do arquivo especiais 2010
+# try:
+#     response = c.open_url(url)
+#     df = pd.DataFrame(response.json())
 
-    # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    df = df.loc[
-        (df['name'].str.startswith('2')) &
-        (df['name'].str.len() == 4),
-        ['name', 'path']
-    ]
-    df['name'] = df['name'].astype(int)
-    df.sort_values(by='name', ascending=False, inplace=True)
-    df.reset_index(drop=True, inplace=True)
+#     # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
+#     df = df.loc[
+#         (df['name'].str.startswith('2')) &
+#         (df['name'].str.len() == 4),
+#         ['name', 'path']
+#     ]
+#     df['name'] = df['name'].astype(int)
+#     df.sort_values(by='name', ascending=False, inplace=True)
+#     df.reset_index(drop=True, inplace=True)
 
-    # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    last_year = df['name'][0]
-    url_to_get = url + '/' + str(last_year) + '/xls'
-    response = c.open_url(url_to_get)
-    df = pd.DataFrame(response.json())
+#     # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
+#     last_year = df['name'][0]
+#     url_to_get = url + '/' + str(last_year) + '/xls'
+#     response = c.open_url(url_to_get)
+#     df = pd.DataFrame(response.json())
 
-    while True:
-        try:
-            url_to_get_esp = df.loc[
-                (df['name'].str.startswith('Especiais_2010')) &
-                (df['name'].str.endswith('.zip')),
-                'url'
-            ].values[0]
-            break
-        except:
-            last_year -= 1
-            url_to_get_esp = url + '/' + str(last_year) + '/xls'
-            response = c.open_url(url_to_get_esp)
-            df = pd.DataFrame(response.json())
-            if last_year == 0:
-                errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
-                raise Exception('Arquivo não encontrado em anos anteriores')
+#     while True:
+#         try:
+#             url_to_get_esp = df.loc[
+#                 (df['name'].str.startswith('Especiais_2010')) &
+#                 (df['name'].str.endswith('.zip')),
+#                 'url'
+#             ].values[0]
+#             break
+#         except:
+#             last_year -= 1
+#             url_to_get_esp = url + '/' + str(last_year) + '/xls'
+#             response = c.open_url(url_to_get_esp)
+#             df = pd.DataFrame(response.json())
+#             if last_year == 0:
+#                 errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
+#                 raise Exception('Arquivo não encontrado em anos anteriores')
 
-    # downloading e organização do arquivo: especiais 2010
-    file = c.open_url(url_to_get_esp)
-    c.to_file(dbs_path, 'ibge_especiais.zip', file.content)
-except Exception as e:
-    errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
+#     # downloading e organização do arquivo: especiais 2010
+#     file = c.open_url(url_to_get_esp)
+#     c.to_file(dbs_path, 'ibge_especiais.zip', file.content)
+# except Exception as e:
+#     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
 
 
 # deflator IPEA IPCA
@@ -87,32 +87,32 @@ except Exception as e:
     errors['IPEA IPCA'] = traceback.format_exc()
 
 
-# siconfi RREO anexos 3 e 4
-try:
-    base_year = 2015
-    current_year = datetime.now().year
+# # siconfi RREO anexos 3 e 4
+# try:
+#     base_year = 2015
+#     current_year = datetime.now().year
 
-    dfs_anexos = []
-    for a in [('Anexo 3', 'RREO-Anexo%2003'), ('Anexo 4', 'RREO-Anexo%2004')]:
-        dfs_year = []
-        for y in range(base_year, current_year + 1):
-            url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
-                f'no_anexo={a[1]}&co_esfera=E&id_ente=28'
-            response = c.open_url(url)
-            time.sleep(1)
-            if response.status_code == 200 and len(response.json()['items']) > 1:
-                df = pd.DataFrame(response.json()['items'])
-                dfs_year.append(df)
+#     dfs_anexos = []
+#     for a in [('Anexo 3', 'RREO-Anexo%2003'), ('Anexo 4', 'RREO-Anexo%2004')]:
+#         dfs_year = []
+#         for y in range(base_year, current_year + 1):
+#             url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
+#                 f'no_anexo={a[1]}&co_esfera=E&id_ente=28'
+#             response = c.open_url(url)
+#             time.sleep(1)
+#             if response.status_code == 200 and len(response.json()['items']) > 1:
+#                 df = pd.DataFrame(response.json()['items'])
+#                 dfs_year.append(df)
 
-        df_concat = pd.concat(dfs_year, ignore_index=True)
-        df_concat['Anexo'] = a[0]
-        dfs_anexos.append(df_concat)
+#         df_concat = pd.concat(dfs_year, ignore_index=True)
+#         df_concat['Anexo'] = a[0]
+#         dfs_anexos.append(df_concat)
 
-    df_concat = pd.concat(dfs_anexos, ignore_index=True)
-    c.to_csv(df_concat, dbs_path, 'siconfi_RREO.csv')
+#     df_concat = pd.concat(dfs_anexos, ignore_index=True)
+#     c.to_csv(df_concat, dbs_path, 'siconfi_RREO.csv')
 
-except Exception as e:
-    errors['https://apidatalake.tesouro.gov.br (RREO)'] = traceback.format_exc()
+# except Exception as e:
+#     errors['https://apidatalake.tesouro.gov.br (RREO)'] = traceback.format_exc()
 
 
 # # siconfi RREO para g11.7
@@ -144,28 +144,28 @@ except Exception as e:
 #     errors['https://apidatalake.tesouro.gov.br (RREO - g11.7)'] = traceback.format_exc()
 
 
-# # siconfi contas anuais DCA
-# try:
-#     base_year = 2013
-#     anexo_13 = 'Anexo%20I-C'
-#     anexo_all = 'DCA-Anexo%20I-C'
-#     current_year = datetime.now().year
+# siconfi contas anuais DCA
+try:
+    base_year = 2013
+    anexo_13 = 'Anexo%20I-C'
+    anexo_all = 'DCA-Anexo%20I-C'
+    current_year = datetime.now().year
 
-#     dfs_year = []
-#     for y in range(base_year, current_year + 1):
-#         ax = anexo_13 if y == 2013 else anexo_all
-#         url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//dca?an_exercicio={y}&no_anexo={ax}&id_ente=28'
-#         response = c.open_url(url)
-#         time.sleep(1)
-#         if response.status_code == 200 and len(response.json()['items']) > 1:
-#             df = pd.DataFrame(response.json()['items'])
-#             dfs_year.append(df)
+    dfs_year = []
+    for y in range(base_year, current_year + 1):
+        ax = anexo_13 if y == 2013 else anexo_all
+        url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//dca?an_exercicio={y}&no_anexo={ax}&id_ente=28'
+        response = c.open_url(url)
+        time.sleep(1)
+        if response.status_code == 200 and len(response.json()['items']) > 1:
+            df = pd.DataFrame(response.json()['items'])
+            dfs_year.append(df)
 
-#     df_concat = pd.concat(dfs_year, ignore_index=True)
-#     c.to_csv(df_concat, dbs_path, 'siconfi_DCA.csv')
+    df_concat = pd.concat(dfs_year, ignore_index=True)
+    c.to_csv(df_concat, dbs_path, 'siconfi_DCA.csv')
 
-# except Exception as e:
-#     errors['https://apidatalake.tesouro.gov.br (DCA)'] = traceback.format_exc()
+except Exception as e:
+    errors['https://apidatalake.tesouro.gov.br (DCA)'] = traceback.format_exc()
 
 
 # # siconfi Relatório de Gestão Fiscal - RGF
@@ -249,73 +249,73 @@ except Exception as e:
 # PLANILHA
 # ************************
 
-# gráfico 11.1
-try:
-    # tabela ibge
-    data_ibge = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab03', skiprows=3)
-    sheet = list(data_ibge.keys())[0]
-    df_ibge = data_ibge[sheet]
-    cols = df_ibge.columns.tolist()
-    df_ibge.rename(columns={cols[0]: 'Região'}, inplace=True)
-    df_ibge = df_ibge.query('Região == "Sergipe"').copy()
-    df_ibge = df_ibge.melt(id_vars=['Região'], var_name='Ano', value_name='PIB')
-    df_ibge['Ano'] = df_ibge['Ano'].astype(int)
-    df_ibge.sort_values('Ano', ascending=True, inplace=True)  # ordena os dados por Ano
-    df_ibge.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
-    df_ibge['PIB Variação'] = ((df_ibge['PIB'] / df_ibge['PIB'].shift(1)) - 1) * 100  # calcula a diferença entre o valor atual e o anterior
+# # gráfico 11.1
+# try:
+#     # tabela ibge
+#     data_ibge = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab03', skiprows=3)
+#     sheet = list(data_ibge.keys())[0]
+#     df_ibge = data_ibge[sheet]
+#     cols = df_ibge.columns.tolist()
+#     df_ibge.rename(columns={cols[0]: 'Região'}, inplace=True)
+#     df_ibge = df_ibge.query('Região == "Sergipe"').copy()
+#     df_ibge = df_ibge.melt(id_vars=['Região'], var_name='Ano', value_name='PIB')
+#     df_ibge['Ano'] = df_ibge['Ano'].astype(int)
+#     df_ibge.sort_values('Ano', ascending=True, inplace=True)  # ordena os dados por Ano
+#     df_ibge.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+#     df_ibge['PIB Variação'] = ((df_ibge['PIB'] / df_ibge['PIB'].shift(1)) - 1) * 100  # calcula a diferença entre o valor atual e o anterior
 
-    # tabela siconfi
-    data_siconfi = c.open_file(dbs_path, 'siconfi_RREO.csv', 'csv')
-    data_siconfi = data_siconfi.loc[
-        (
-            (data_siconfi['Anexo'] == "Anexo 3") &
-            (data_siconfi['coluna'].str.lower().str.startswith("total")) &
-            (
-                (
-                    data_siconfi['conta'].str.lower().str.startswith("receita corrente líquida (iii)") &
-                    (data_siconfi['exercicio'] <= 2019)
-                ) |
-                (
-                    data_siconfi['conta'].str.lower().str.startswith("receita corrente líquida") &
-                    data_siconfi['conta'].str.lower().str.contains("despesa com pessoal")
-                )
-            )
-        )
-    ]
-    data_siconfi.rename(columns={'exercicio': 'Ano', 'valor': 'RCL'}, inplace=True)
-    data_siconfi.sort_values('Ano', ascending=True, inplace=True)  # ordena os dados por Ano
-    data_siconfi.reset_index(drop=True, inplace=True)  # reseta o índice
+#     # tabela siconfi
+#     data_siconfi = c.open_file(dbs_path, 'siconfi_RREO.csv', 'csv')
+#     data_siconfi = data_siconfi.loc[
+#         (
+#             (data_siconfi['Anexo'] == "Anexo 3") &
+#             (data_siconfi['coluna'].str.lower().str.startswith("total")) &
+#             (
+#                 (
+#                     data_siconfi['conta'].str.lower().str.startswith("receita corrente líquida (iii)") &
+#                     (data_siconfi['exercicio'] <= 2019)
+#                 ) |
+#                 (
+#                     data_siconfi['conta'].str.lower().str.startswith("receita corrente líquida") &
+#                     data_siconfi['conta'].str.lower().str.contains("despesa com pessoal")
+#                 )
+#             )
+#         )
+#     ]
+#     data_siconfi.rename(columns={'exercicio': 'Ano', 'valor': 'RCL'}, inplace=True)
+#     data_siconfi.sort_values('Ano', ascending=True, inplace=True)  # ordena os dados por Ano
+#     data_siconfi.reset_index(drop=True, inplace=True)  # reseta o índice
 
-    # define o ano máximo e mínimo para a tabela ipca
-    max_year = data_siconfi['Ano'].max()
-    min_year = data_siconfi['Ano'].min()
+#     # define o ano máximo e mínimo para a tabela ipca
+#     max_year = data_siconfi['Ano'].max()
+#     min_year = data_siconfi['Ano'].min()
 
-    # tabela ipca
-    data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
-    data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
-    data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
-    data_ipca['Index'] = 100.00
-    data_ipca['Diff'] = 0.00
+#     # tabela ipca
+#     data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+#     data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+#     data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+#     data_ipca['Index'] = 100.00
+#     data_ipca['Diff'] = 0.00
 
-    for row in range(1, len(data_ipca)):
-        data_ipca.loc[row,'Diff'] = 1 + (data_ipca.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
-        data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
+#     for row in range(1, len(data_ipca)):
+#         data_ipca.loc[row,'Diff'] = 1 + (data_ipca.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+#         data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
 
-    # união da RCL com deflator IPCA
-    df_merged = pd.merge(data_siconfi[['Ano', 'RCL']], data_ipca[['Ano', 'Index']], on='Ano', how='left', validate='1:1')
-    df_merged['RCL deflacionada'] = (df_merged['RCL'] / df_merged['Index']) * 100
-    df_merged.sort_values('Ano', ascending=True, inplace=True)  # ordena os dados por Ano
-    df_merged['RCL Variação'] = ((df_merged['RCL deflacionada'] / df_merged['RCL deflacionada'].shift(1)) - 1) * 100  # calcula a diferença entre o valor atual e o anterior
+#     # união da RCL com deflator IPCA
+#     df_merged = pd.merge(data_siconfi[['Ano', 'RCL']], data_ipca[['Ano', 'Index']], on='Ano', how='left', validate='1:1')
+#     df_merged['RCL deflacionada'] = (df_merged['RCL'] / df_merged['Index']) * 100
+#     df_merged.sort_values('Ano', ascending=True, inplace=True)  # ordena os dados por Ano
+#     df_merged['RCL Variação'] = ((df_merged['RCL deflacionada'] / df_merged['RCL deflacionada'].shift(1)) - 1) * 100  # calcula a diferença entre o valor atual e o anterior
 
-    df_final = pd.merge(df_merged[['Ano', 'RCL Variação']], df_ibge[['Ano', 'PIB Variação']], on='Ano', how='left', validate='1:1')
-    df_final.dropna(inplace=True)  # remove linhas com valores NaN
-    df_final.rename(columns={'RCL Variação': 'RCL', 'PIB Variação': 'PIB'}, inplace=True)
-    df_final = df_final[['Ano', 'PIB', 'RCL']]
+#     df_final = pd.merge(df_merged[['Ano', 'RCL Variação']], df_ibge[['Ano', 'PIB Variação']], on='Ano', how='left', validate='1:1')
+#     df_final.dropna(inplace=True)  # remove linhas com valores NaN
+#     df_final.rename(columns={'RCL Variação': 'RCL', 'PIB Variação': 'PIB'}, inplace=True)
+#     df_final = df_final[['Ano', 'PIB', 'RCL']]
 
-    df_final.to_excel(os.path.join(sheets_path, 'g11.1.xlsx'), index=False, sheet_name='g11.1')
+#     df_final.to_excel(os.path.join(sheets_path, 'g11.1.xlsx'), index=False, sheet_name='g11.1')
 
-except Exception as e:
-    errors['Gráfico 11.1'] = traceback.format_exc()
+# except Exception as e:
+#     errors['Gráfico 11.1'] = traceback.format_exc()
 
 
 # # gráfico 11.2
@@ -467,144 +467,144 @@ except Exception as e:
 #     errors['Gráfico 11.2'] = traceback.format_exc()
 
 
-# # tabela 11.1
-# try:
-#     # tabela siconfi
-#     data_siconfi = c.open_file(dbs_path, 'siconfi_DCA.csv', 'csv')
+# tabela 11.1
+try:
+    # tabela siconfi
+    data_siconfi = c.open_file(dbs_path, 'siconfi_DCA.csv', 'csv')
 
-#     pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*-\s*)(.*)"
-#     data_siconfi['conta'] = data_siconfi['conta'].apply(
-#         lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
+    pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*-\s*)(.*)"
+    data_siconfi['conta'] = data_siconfi['conta'].apply(
+        lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
     
-#     pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*)(.*)"
-#     data_siconfi['conta'] = data_siconfi['conta'].apply(
-#         lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
+    pattern = r"(\d+\.\d+\.\d+\.\d+\.\d+\.\d+\.\d+\s*)(.*)"
+    data_siconfi['conta'] = data_siconfi['conta'].apply(
+        lambda x: re.search(pattern, x).group(2).strip() if re.search(pattern, x) else x)
 
-#     df_siconfi = data_siconfi.loc[
-#         # condicional para filtrar as linhas da conta
-#         (
-#             ((data_siconfi['conta'].str.contains('Receita Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) |
-#             ((data_siconfi['conta'].str.contains('Imposto sobre Op.')) | (data_siconfi['conta'].str.contains('Imposto sobre Operações'))) |
-#             (data_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos')) |
-#             ((data_siconfi['conta'] == 'Transferências da União') | (data_siconfi['conta'] == 'Transferências da União e de suas Entidades')) |
-#             ((data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados'))) |
-#             (data_siconfi['conta'].str.contains('FUNDEB')) |
-#             (
-#                 (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) & 
-#                 ~(data_siconfi['conta'].str.contains('Outras'))
-#             )
-#         ) &
-#         # condicional para filtrar as linhas da coluna
-#         ~(data_siconfi['coluna'].str.contains('Deduções'))
-#         , ['exercicio', 'conta', 'coluna', 'valor']
-#     ].copy()
+    df_siconfi = data_siconfi.loc[
+        # condicional para filtrar as linhas da conta
+        (
+            ((data_siconfi['conta'].str.contains('Receita Tributária')) | (data_siconfi['conta'].str.contains('Taxas e Contribuições'))) |
+            ((data_siconfi['conta'].str.contains('Imposto sobre Op.')) | (data_siconfi['conta'].str.contains('Imposto sobre Operações'))) |
+            (data_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos')) |
+            ((data_siconfi['conta'] == 'Transferências da União') | (data_siconfi['conta'] == 'Transferências da União e de suas Entidades')) |
+            ((data_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (data_siconfi['conta'].str.contains('Estados'))) |
+            (data_siconfi['conta'].str.contains('FUNDEB')) |
+            (
+                (data_siconfi['conta'].str.contains('Transferência')) & (data_siconfi['conta'].str.contains('Recursos Naturais')) & 
+                ~(data_siconfi['conta'].str.contains('Outras'))
+            )
+        ) &
+        # condicional para filtrar as linhas da coluna
+        (~(data_siconfi['coluna'].str.contains('Deduções')) & (data_siconfi['cod_conta'].str.startswith('RO1')))
+        , ['exercicio', 'conta', 'coluna', 'valor']
+    ].copy()
 
-#     df_siconfi['conta_padronizada'] = ''
-#     df_siconfi['coluna_padronizada'] = ''
+    df_siconfi['conta_padronizada'] = ''
+    df_siconfi['coluna_padronizada'] = ''
 
-#     # renomeia as contas para padronizar as receitas tributárias
-#     df_siconfi.loc[
-#         (
-#             (df_siconfi['conta'].str.contains('Receita Tributária')) | (df_siconfi['conta'].str.contains('Taxas e Contribuições')) |
-#             (df_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos')) |
-#             (df_siconfi['conta'].str.contains('Imposto sobre Operações')) | (df_siconfi['conta'].str.contains('Imposto sobre Op.'))
-#         )
-#         , 'conta_padronizada'
-#     ] = 'Receitas Tributárias'
+    # renomeia as contas para padronizar as receitas tributárias
+    df_siconfi.loc[
+        (
+            (df_siconfi['conta'].str.contains('Receita Tributária')) | (df_siconfi['conta'].str.contains('Taxas e Contribuições')) |
+            (df_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos')) |
+            (df_siconfi['conta'].str.contains('Imposto sobre Operações')) | (df_siconfi['conta'].str.contains('Imposto sobre Op.'))
+        )
+        , 'conta_padronizada'
+    ] = 'Receitas Tributárias'
 
-#     # renomeia as contas para padronizar as receitas de exploração de recursos naturais
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.contains('Transferência')) & (df_siconfi['conta'].str.contains('Recursos Naturais'))
-#         , 'conta_padronizada'
-#     ] = 'Receitas de Exploração de Recursos Naturais'
+    # renomeia as contas para padronizar as receitas de exploração de recursos naturais
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Transferência')) & (df_siconfi['conta'].str.contains('Recursos Naturais'))
+        , 'conta_padronizada'
+    ] = 'Receitas de Exploração de Recursos Naturais'
 
-#     # renomeia as contas para padronizar as transferências federais
-#     df_siconfi.loc[
-#         (
-#             (df_siconfi['conta'] == 'Transferências da União') | (df_siconfi['conta'] == 'Transferências da União e de suas Entidades') |
-#             (df_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (df_siconfi['conta'].str.contains('Estados')) |
-#             (df_siconfi['conta'].str.contains('FUNDEB'))
-#         )
-#         , 'conta_padronizada'
-#     ] = 'Transferências Federais'
+    # renomeia as contas para padronizar as transferências federais
+    df_siconfi.loc[
+        (
+            (df_siconfi['conta'] == 'Transferências da União') | (df_siconfi['conta'] == 'Transferências da União e de suas Entidades') |
+            (df_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (df_siconfi['conta'].str.contains('Estados')) |
+            (df_siconfi['conta'].str.contains('FUNDEB'))
+        )
+        , 'conta_padronizada'
+    ] = 'Transferências Federais'
 
-#     # renomeia as colunas para padronizar as receitas tributárias
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.contains('Receita Tributária')) | (df_siconfi['conta'].str.contains('Taxas e Contribuições'))
-#         , 'coluna_padronizada'
-#     ] = 'Total (1)'
+    # renomeia as colunas para padronizar as receitas tributárias
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Receita Tributária')) | (df_siconfi['conta'].str.contains('Taxas e Contribuições'))
+        , 'coluna_padronizada'
+    ] = 'Total (1)'
 
-#     # renomeia as colunas para padronizar impostos sobre operações
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.contains('Imposto sobre Op.')) | (df_siconfi['conta'].str.contains('Imposto sobre Operações'))
-#         , 'coluna_padronizada'
-#     ] = 'ICMS'
+    # renomeia as colunas para padronizar impostos sobre operações
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Imposto sobre Op.')) | (df_siconfi['conta'].str.contains('Imposto sobre Operações'))
+        , 'coluna_padronizada'
+    ] = 'ICMS'
 
-#     # renomeia as colunas para padronizar impostos sobre a propriedade de veículos
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos'))
-#         , 'coluna_padronizada'
-#     ] = 'IPVA'
+    # renomeia as colunas para padronizar impostos sobre a propriedade de veículos
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.startswith('Imposto sobre a Propriedade de Veículos'))
+        , 'coluna_padronizada'
+    ] = 'IPVA'
 
-#     # renomeia as colunas para padronizar as transferências federais
-#     df_siconfi.loc[
-#         (df_siconfi['conta'] == 'Transferências da União') | (df_siconfi['conta'] == 'Transferências da União e de suas Entidades')
-#         , 'coluna_padronizada'
-#     ] = 'Total (2)'
+    # renomeia as colunas para padronizar as transferências federais
+    df_siconfi.loc[
+        (df_siconfi['conta'] == 'Transferências da União') | (df_siconfi['conta'] == 'Transferências da União e de suas Entidades')
+        , 'coluna_padronizada'
+    ] = 'Total (2)'
 
-#     # renomeia as colunas para padronizar a participação dos estados no FPE
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (df_siconfi['conta'].str.contains('Estados'))
-#         , 'coluna_padronizada'
-#     ] = 'Fundo de Participação dos Estados'
+    # renomeia as colunas para padronizar a participação dos estados no FPE
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Cota-Parte do Fundo')) & (df_siconfi['conta'].str.contains('Estados'))
+        , 'coluna_padronizada'
+    ] = 'Fundo de Participação dos Estados'
 
-#     # renomeia as colunas para padronizar o FUNDEB
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.contains('FUNDEB'))
-#         , 'coluna_padronizada'
-#     ] = 'Fundeb'
+    # renomeia as colunas para padronizar o FUNDEB
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('FUNDEB'))
+        , 'coluna_padronizada'
+    ] = 'Fundeb'
 
-#     # renomeia as colunas para padronizar as receitas de exploração de recursos naturais
-#     df_siconfi.loc[
-#         (df_siconfi['conta'].str.contains('Transferência')) & (df_siconfi['conta'].str.contains('Recursos Naturais'))
-#         , 'coluna_padronizada'
-#     ] = 'Total (3)'
+    # renomeia as colunas para padronizar as receitas de exploração de recursos naturais
+    df_siconfi.loc[
+        (df_siconfi['conta'].str.contains('Transferência')) & (df_siconfi['conta'].str.contains('Recursos Naturais'))
+        , 'coluna_padronizada'
+    ] = 'Total (3)'
 
-#     df_siconfi.rename(columns={'exercicio': 'Ano', 'conta_padronizada': 'Receitas', 'coluna_padronizada': 'Tipo', 'valor': 'Valor'}, inplace=True)
-#     df_siconfi.sort_values(by=['Receitas', 'Tipo'], ascending=True, inplace=True)  # ordena os dados por Ano
-#     min_year = df_siconfi['Ano'].min()
-#     max_year = df_siconfi['Ano'].max()
+    df_siconfi.rename(columns={'exercicio': 'Ano', 'conta_padronizada': 'Receitas', 'coluna_padronizada': 'Tipo', 'valor': 'Valor'}, inplace=True)
+    df_siconfi.sort_values(by=['Receitas', 'Tipo'], ascending=True, inplace=True)  # ordena os dados por Ano
+    min_year = df_siconfi['Ano'].min()
+    max_year = df_siconfi['Ano'].max()
 
-#     # tabela de deflator IPCA
-#     data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
-#     data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
-#     data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
-#     data_ipca['Index'] = 100.00
-#     data_ipca['Diff'] = 0.00
+    # tabela de deflator IPCA
+    data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    data_ipca['Index'] = 100.00
+    data_ipca['Diff'] = 0.00
 
-#     for row in range(1, len(data_ipca)):
-#         # data_ipca.loc[row,'Diff'] = data_ipca.loc[row - 1, 'Valor'] / data_ipca.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
-#         data_ipca.loc[row,'Diff'] = 1 + (data_ipca.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
-#         data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
+    for row in range(1, len(data_ipca)):
+        # data_ipca.loc[row,'Diff'] = data_ipca.loc[row - 1, 'Valor'] / data_ipca.loc[row, 'Valor']  # calcula a diferença entre o valor atual e o anterior
+        data_ipca.loc[row,'Diff'] = 1 + (data_ipca.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+        data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
 
-#     # união da tabela siconfi com deflator IPCA
-#     df_merged = df_siconfi[['Ano', 'Receitas', 'Tipo', 'Valor']].merge(
-#         data_ipca[['Ano', 'Index']],
-#         on='Ano',
-#         how='left',
-#         validate='m:1'
-#     )
-#     df_merged['Valor Deflacionado'] = (df_merged['Valor'] / df_merged['Index']) * 100  # deflaciona os valores
-#     df_merged['Variação'] = (df_merged.groupby(['Receitas', 'Tipo'])['Valor Deflacionado'].pct_change()) * 100  # calcula a diferença entre o valor atual e o anterior
+    # união da tabela siconfi com deflator IPCA
+    df_merged = df_siconfi[['Ano', 'Receitas', 'Tipo', 'Valor']].merge(
+        data_ipca[['Ano', 'Index']],
+        on='Ano',
+        how='left',
+        validate='m:1'
+    )
+    df_merged['Valor Deflacionado'] = (df_merged['Valor'] / df_merged['Index']) * 100  # deflaciona os valores
+    df_merged['Variação'] = (df_merged.groupby(['Receitas', 'Tipo'])['Valor Deflacionado'].pct_change()) * 100  # calcula a diferença entre o valor atual e o anterior
 
-#     df_final = df_merged[['Ano', 'Receitas', 'Tipo', 'Variação']].copy()
-#     df_final.rename(columns={'Variação': 'Valor'}, inplace=True)
-#     df_final.dropna(inplace=True)  # remove linhas com valores NaN
+    df_final = df_merged[['Ano', 'Receitas', 'Tipo', 'Variação']].copy()
+    df_final.rename(columns={'Variação': 'Valor'}, inplace=True)
+    df_final.dropna(inplace=True)  # remove linhas com valores NaN
 
-#     df_final.to_excel(os.path.join(sheets_path, 't11.1.xlsx'), index=False, sheet_name='t11.1')
+    df_final.to_excel(os.path.join(sheets_path, 't11.1.xlsx'), index=False, sheet_name='t11.1')
 
-# except Exception as e:
-#     errors['Tabela 11.1'] = traceback.format_exc()
+except Exception as e:
+    errors['Tabela 11.1'] = traceback.format_exc()
 
 
 # # g11.3
