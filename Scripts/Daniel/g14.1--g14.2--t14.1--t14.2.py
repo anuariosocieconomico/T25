@@ -10,6 +10,7 @@ import tempfile
 import shutil
 from datetime import datetime
 from time import sleep
+import ipeadatapy
 
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
@@ -25,65 +26,32 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS E PLANILHA
 # ************************
 
-# Gráfico 16.1
+# sidra 5442
+url = 'https://apisidra.ibge.gov.br/values/t/5442/n1/all/n2/2/n3/28/v/5932/p/all/c888/47946,47947,47948,47949,47950,56622,56623,56624,60032?formato=json'
 try:
-    # looping de requisições para cada tabela da figura
-    dfs = []
-    for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='5442',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='5934',
-            classifications={'888': '47946'},
-            period="all"
-        )
+    data = c.open_url(url)
+    df = pd.DataFrame(data.json())
+    df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
+    df.columns = ['Data', 'Região', 'Variável', 'Valor']
+    df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
+    df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
+    df['Valor'] = df['Valor'].fillna(0)  # substitui valores nulos por 0
+    df['Ano'] = df['Data'].str.split(' ').str[-1].astype(int)  # extrai o ano da coluna Data
+    df['Trimestre'] = df['Data'].str.split(' ').str[0].str[0].astype(int)  # extrai o ano da coluna Data
+    df['Valor'] = df['Valor'].astype(int)
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
-
-        dfs.append(data)
-
-    data = pd.concat(dfs, ignore_index=True)
-
-    # seleção das colunas de interesse
-    data = data[['D1N', 'D3N', 'D2N', 'V']].copy()
-    data.columns = ['Região', 'Variável', 'Ano', 'Valor']
-    data['Trimestre'] = data['Ano'].apply(lambda x: x[0]).astype(int)
-    data['Ano'] = data['Ano'].apply(lambda x: x.split(' ')[-1]).astype(int)
-    data['Valor'] = data['Valor'].replace('...', 0).astype(float)  # valores nulos são definidos por '...'
-
-    # conversão em arquivo csv
-    c.to_csv(data, dbs_path, 'base_rendimento.csv')
-
+    c.to_excel(df, dbs_path, 'sidra_5442.xlsx')
 except Exception as e:
-    errors['Base de rendimentos'] = traceback.format_exc()
+    errors['Sidra 3939-2'] = traceback.format_exc()
 
 
-# DOWNLOAD DA BASE DE DADOS IPCA ---------------------------------------------------------------------------------------
-url = 'http://www.ipeadata.gov.br/ExibeSerie.aspx?serid=1410807112&module=M'
+# deflator IPEA IPCA
 try:
-    response = c.open_url(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    tbs = pd.read_html(io.StringIO(str(soup)), thousands='.', decimal=',')  # leitura de todas as tabelas da html
-    df = [tb for tb in tbs if tb.shape[0] > 30][0]  # seleciona a tabela que houver + 30 linhas
-    df = df.iloc[1:].copy()  # remoção de ruído na linha 0
-    df.columns = ['Ano', 'IPCA']  # renomeação das colunas
-
-    # cálculo dos índices
-    df.sort_values(by='Ano', ascending=False, inplace=True)  # ordenação descendente dos anos
-    df['Index'] = 0.0  # inicialização da coluna de índice
-    df['IPCA'] = df['IPCA'].astype(float) / 100  # conversão da porcentagem para fração
-    df.iloc[0, -1] = 100  # atribuição do valor 100 ao primeiro ano da série
-
-    for i in range(len(df)):
-        if i == 0:
-            continue
-        else:
-            df.iloc[i, -1] = df.iloc[i-1, -1] / (1 + df.iloc[i-1, -2])
-
-    c.to_csv(df, dbs_path, 'tb-ipca.csv')
-except:
-    errors[url] = traceback.format_exc()
+    data = ipeadatapy.timeseries('PRECOS_IPCAG')
+    data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
+    c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+except Exception as e:
+    errors['IPEA IPCA'] = traceback.format_exc()
 
 
 # ************************
@@ -93,12 +61,38 @@ except:
 # g14.1
 try:
     # leitura da base de dados
-    data = c.open_file(dbs_path, 'base_rendimento.csv', 'csv')
-    ipca = c.open_file(dbs_path, 'tb-ipca.csv', 'csv')
+    data = c.open_file(dbs_path, 'sidra_5442.xlsx', 'xls', sheet_name='Sheet1').query("`Variável` == 'Total'")
+    ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1')
+    max_year = data['Ano'].max()  # obtém o ano mais recente da base de dados
+    min_year = data['Ano'].min()  # obtém o ano mais antigo da base de dados
 
-    # união das bases de dados
-    df_merge = data.merge(ipca, how='left', on='Ano', validate='m:1')
-    df_merge['Taxa'] = (df_merge['Valor'] / df_merge['Index']) * 100
+    # tratamento do deflator
+    df_deflator = ipca.query('Ano >= @min_year & Ano <= @max_year', engine='python').copy()  # filtra o deflator para o ano mais recente
+    df_deflator.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    df_deflator.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    df_deflator['Index'] = 100.00
+    df_deflator['Diff'] = None
+
+    for row in range(1, len(df_deflator)):
+        df_deflator.loc[row,'Diff'] = 1 +(df_deflator.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+        df_deflator.loc[row, 'Index'] = df_deflator.loc[row - 1, 'Index'] / df_deflator.loc[row, 'Diff']  # calcula o índice de preços
+
+    df_merged = data.merge(df_deflator[['Ano', 'Index']], how='left', on='Ano', validate='m:1')  # une as bases de dados
+    df_merged.dropna(subset=['Index'], inplace=True)  # remove linhas onde o índice de preços é nulo
+    df_merged['Valor'] = (df_merged['Valor'] / df_merged['Index']) * 100  # calcula o valor deflacionado
+    df_merged.loc[:, 'Variável'] = 'Rendimento médio mensal real das pessoas de 14 anos ou mais de idade ocupadas na semana de referência com rendimento de trabalho, habitualmente recebido em todos os trabalhos'
+    df_merged['Mês'] = df_merged['Trimestre'].map({
+        1: '01',
+        2: '04',
+        3: '07',
+        4: '10'
+    })
+    df_merged['Trimestre'] = '01/' + df_merged['Mês'] + '/' + df_merged['Ano'].astype(str)  # formata o trimestre
+
+    df_final = df_merged.query('Ano >= 2017')[['Região', 'Variável', 'Trimestre', 'Valor']].copy()  # seleciona as colunas relevantes
+    df_final['Valor'] = df_final['Valor'].round(0)
+
+    df_final.to_excel(os.path.join(sheets_path, 'g14.1.xlsx'), index=False)  # salva a planilha
 
 except:
     errors['Gráfico 14.1'] = traceback.format_exc()
