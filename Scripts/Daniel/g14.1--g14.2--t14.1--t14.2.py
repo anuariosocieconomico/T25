@@ -92,7 +92,7 @@ try:
     df_final = df_merged.query('Ano >= 2017')[['Região', 'Variável', 'Trimestre', 'Valor']].copy()  # seleciona as colunas relevantes
     df_final['Valor'] = df_final['Valor'].round(0)
 
-    df_final.to_excel(os.path.join(sheets_path, 'g14.1.xlsx'), index=False)  # salva a planilha
+    c.to_excel(df_final, sheets_path, 'g14.1.xlsx')
 
 except:
     errors['Gráfico 14.1'] = traceback.format_exc()
