@@ -182,6 +182,8 @@ except Exception as e:
     errors['Gráfico 16.3'] = traceback.format_exc()
 
 
+# FALTA TERMINAR FIGURAS COM FONTE IBGE INDICADORES SOCIAIS; ESTÁ FORA DO AR
+
 # # Planilha de Indicadores Sociais
 # try:
 #     # projeção da taxa
