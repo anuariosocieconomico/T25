@@ -122,18 +122,34 @@ errors = {}
 # ideb resultados anos iniciais
 url = 'https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados'
 try:
-    driver = c.Google(visible=True, rep=dbs_path)  # instância do objeto driver do Selenium
+    driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
     driver.get(url)  # acessa a página
     time.sleep(2)
     driver.random_click()
+    driver.click('/html/body/div[5]/div/div/div/div/div[2]/button[2]')  # aceita os cookies
     driver.wait('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
-    driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
+    driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')  # clica no link de download da planilha
     time.sleep(2)
+    driver.quit()  # encerra o driver do Selenium
 
+    # abre o arquivo zip
     data = c.open_file(dbs_path, os.listdir(dbs_path)[0], ext='zip', excel_name='divulgacao', skiprows=9)
-    df = data[list(data.keys())[0]].copy()  # cópia da primeira aba da planilha
+    df_tb = data[list(data.keys())[0]].copy()  # cópia da primeira aba da planilha
+    index = df_tb[df_tb[df_tb.columns[0]].str.lower().str.contains('fonte', na=False)].index  # localiza a linha de fonte para remover tudo que vem depois dela
+    df_tb = df_tb.iloc[:index[0], :].copy()  # mantém apenas as linhas até a linha de fonte
+    df_tb.dropna(how='all', inplace=True)  # remove linhas que estão completamente vazias
+    cols = [col for col in df_tb.columns if 'Unnamed' in col or 'VL_OBSERVADO' in col or 'VL_PROJECAO' in col]
 
-    # INICAR TRATAMENTO DOS DADOS
+    df_filtered = df_tb[cols].copy()  # mantém apenas as colunas de interesse
+    df_filtered.rename(columns={cols[0]: 'Região', cols[1]: 'Rede'}, inplace=True)  # renomeia as colunas
+    df_melted = df_filtered.melt(id_vars=['Região', 'Rede'], var_name='Ano', value_name='Valor')  # transforma a tabela para o formato longo
+    df_melted['Categoria'] = df_melted['Ano'].str.split('_').str[1]  # extrai a categoria (observado ou projeção) da coluna Ano
+    df_melted['Ano'] = df_melted['Ano'].str.split('_').str[-1].astype(int)  # extrai o ano da coluna Ano
+    df_melted['Valor'] = pd.to_numeric(df_melted['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
+
+    c.to_excel(df_melted, dbs_path, 'ideb_anos_iniciais.xlsx')
+    
+
 except Exception as e:
     errors['IDEB Resultados'] = traceback.format_exc()
 
@@ -183,21 +199,41 @@ except Exception as e:
 #     errors['Gráfico 17.2'] = traceback.format_exc()
 
 
-# tabela 17.1
+# # tabela 17.1
+# try:
+#     # tabela ibge
+#     data = c.open_file(dbs_path, 'sidra_7143.xlsx', 'xls', sheet_name='Sheet1')
+
+#     data['Ano'] = '01/01/' + data['Ano'].astype(str)  # formata a coluna Ano para o formato de data
+#     data.sort_values(by=['Região', 'Ano', 'Nível', 'Rede'], inplace=True)  # ordena os dados por Região e Ano
+#     data.rename(columns={'Rede': 'Rede de ensino', 'Nível': 'Curso frequentado'}, inplace=True)
+
+#     df_final = data[['Região', 'Curso frequentado', 'Rede de ensino', 'Ano', 'Valor']].copy()
+
+#     c.to_excel(df_final, sheets_path, 't17.1.xlsx')
+
+# except Exception as e:
+#     errors['Tabela 17.1'] = traceback.format_exc()
+
+
+# gráfico 17.3
 try:
     # tabela ibge
-    data = c.open_file(dbs_path, 'sidra_7143.xlsx', 'xls', sheet_name='Sheet1')
+    data = c.open_file(dbs_path, 'ideb_anos_iniciais.xlsx', 'xls', sheet_name='Sheet1').query(
+        'not `Região` in ["Norte", "Nordeste", "Sudeste", "Sul", "Centro-Oeste"] and ' \
+        'Rede.str.contains("Total")'
+    )
+    df_pivoted = pd.pivot(data, index=['Região', 'Ano'], columns='Categoria', values='Valor').reset_index()
+    df_pivoted.sort_values(by=['Ano', 'Região'], inplace=True)
+    df_pivoted['Rank'] = df_pivoted.groupby('Ano')['OBSERVADO'].rank(ascending=False, method='first')
 
-    data['Ano'] = '01/01/' + data['Ano'].astype(str)  # formata a coluna Ano para o formato de data
-    data.sort_values(by=['Região', 'Ano', 'Nível', 'Rede'], inplace=True)  # ordena os dados por Região e Ano
-    data.rename(columns={'Rede': 'Rede de ensino', 'Nível': 'Curso frequentado'}, inplace=True)
+    df_final = df_pivoted.query('`Região` == "Sergipe"')[['Ano', 'OBSERVADO', 'PROJECAO', 'Rank']].copy()
+    df_final.rename(columns={'OBSERVADO': 'Resultado', 'PROJECAO': 'Meta', 'Rank': 'Ranking nacional'}, inplace=True)
 
-    df_final = data[['Região', 'Curso frequentado', 'Rede de ensino', 'Ano', 'Valor']].copy()
-
-    c.to_excel(df_final, sheets_path, 't17.1.xlsx')
+    df_final.to_excel(os.path.join(sheets_path, 'g17.3.xlsx'), index=False, sheet_name='g17.3')
 
 except Exception as e:
-    errors['Tabela 17.1'] = traceback.format_exc()
+    errors['Gráfico 17.3'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
