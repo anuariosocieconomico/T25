@@ -1,11 +1,3 @@
-'''
-
-ESSAS FIGURAS FORAM CONFIGURADAS POR OUTRA PESSOA
-
-'''
-
-
-
 import functions as c
 import os
 import pandas as pd
@@ -37,7 +29,7 @@ try:
 except Exception as e:
     errors['IPEA IPCA'] = traceback.format_exc()
 
-
+# g18.1 e g18.2
 # url
 url = 'http://siops-asp.datasus.gov.br/cgi/tabcgi.exe?SIOPS/SerHist/ESTADO/indicuf.def'
 
@@ -77,70 +69,70 @@ except Exception as e:
 # PLANILHA
 # ************************
 
-# # g18.1
-# try:
-#     df = c.open_file(dbs_path, os.listdir(dbs_path)[0], 'csv', sep=';', encoding='cp1252', skiprows=3)
+# g18.1
+try:
+    df = c.open_file(dbs_path, os.listdir(dbs_path)[0], 'csv', sep=';', encoding='cp1252', skiprows=3)
 
-#     cols = df.columns[1:-1]
-#     df_melted = df.melt(id_vars='UF', value_vars=cols, var_name='Ano', value_name='Valor')
-#     df_melted.sort_values(by=['UF', 'Ano'], inplace=True)
+    cols = df.columns[1:-1]
+    df_melted = df.melt(id_vars='UF', value_vars=cols, var_name='Ano', value_name='Valor')
+    df_melted.sort_values(by=['UF', 'Ano'], inplace=True)
 
-#     df_melted['UF'] = df_melted['UF'].astype('str')
-#     df_melted['Ano'] = df_melted['Ano'].astype(int)
-#     df_melted['Valor'] = df_melted['Valor'].astype('float64')
+    df_melted['UF'] = df_melted['UF'].astype('str')
+    df_melted['Ano'] = df_melted['Ano'].astype(int)
+    df_melted['Valor'] = df_melted['Valor'].astype('float64')
 
-#     # tabela ipca
-#     min_year = df_melted['Ano'].min()
-#     max_year = df_melted['Ano'].max()
-#     data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
-#     data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
-#     data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
-#     data_ipca['Index'] = 100.00
-#     data_ipca['Diff'] = 0.00
+    # tabela ipca
+    min_year = df_melted['Ano'].min()
+    max_year = df_melted['Ano'].max()
+    data_ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= @min_year and Ano <= @max_year', engine='python')
+    data_ipca.sort_values('Ano', ascending=False, inplace=True)  # ordena os dados por Ano
+    data_ipca.reset_index(drop=True, inplace=True)  # reseta o índice do DataFrame
+    data_ipca['Index'] = 100.00
+    data_ipca['Diff'] = 0.00
 
-#     for row in range(1, len(data_ipca)):
-#         data_ipca.loc[row,'Diff'] = 1 + (data_ipca.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
-#         data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
+    for row in range(1, len(data_ipca)):
+        data_ipca.loc[row,'Diff'] = 1 + (data_ipca.loc[row - 1, 'Valor'] / 100)  # calcula a diferença entre o valor atual e o anterior
+        data_ipca.loc[row, 'Index'] = data_ipca.loc[row - 1, 'Index'] / data_ipca.loc[row, 'Diff']  # calcula o índice de preços
 
-#     df_merged = pd.merge(df_melted, data_ipca[['Ano', 'Index']], on='Ano', how='left', validate='m:1')  # mescla as tabelas
-#     df_merged['Valor'] = (df_merged['Valor'] / df_merged['Index']) * 100  # atualiza o valor pela inflação
-#     df_merged.loc[df_merged['UF'] == 'Total', 'UF'] = 'Brasil'  # renomeia a unidade da federação Total para Brasil
+    df_merged = pd.merge(df_melted, data_ipca[['Ano', 'Index']], on='Ano', how='left', validate='m:1')  # mescla as tabelas
+    df_merged['Valor'] = (df_merged['Valor'] / df_merged['Index']) * 100  # atualiza o valor pela inflação
+    df_merged.loc[df_merged['UF'] == 'Total', 'UF'] = 'Brasil'  # renomeia a unidade da federação Total para Brasil
 
-#     df_ne = df_merged.loc[df_merged['UF'].isin(c.ne_states)].copy()
-#     df_ne.loc[:, 'UF'] = 'Nordeste'  # renomeia a unidade da federação Total para Brasil
-#     df_ne_mean = df_ne.groupby(['UF', 'Ano'])['Valor'].mean().reset_index()  # calcula a média dos estados do Nordeste
+    df_ne = df_merged.loc[df_merged['UF'].isin(c.ne_states)].copy()
+    df_ne.loc[:, 'UF'] = 'Nordeste'  # renomeia a unidade da federação Total para Brasil
+    df_ne_mean = df_ne.groupby(['UF', 'Ano'])['Valor'].mean().reset_index()  # calcula a média dos estados do Nordeste
 
-#     # tabela gasto do último ano
-#     df_last_year = df_merged.loc[(df_merged['Ano'] == df_merged['Ano'].max()) & (df_merged['UF'] != 'Brasil')].copy()
-#     df_last_year['Rank'] = df_last_year['Valor'].rank(ascending=False, method='first')  # calcula o ranking do último ano disponível
-#     df_last_year_final = pd.concat([
-#         df_last_year[['UF', 'Valor', 'Rank']],
-#         df_ne_mean.query('Ano == @max_year')[['UF', 'Valor']],
-#         df_merged.loc[(df_merged['UF'] == 'Brasil') & (df_merged['Ano'] == max_year), ['UF', 'Valor']]
-#     ], ignore_index=True)
-#     df_last_year_final = df_last_year_final.query('Rank <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
-#     df_last_year_final.sort_values(by=['Rank', 'UF'], inplace=True)
-#     df_last_year_final.rename(columns={'UF': 'Região', 'Valor': 'Gasto', 'Rank': 'Posição'}, inplace=True)
+    # tabela gasto do último ano
+    df_last_year = df_merged.loc[(df_merged['Ano'] == df_merged['Ano'].max()) & (df_merged['UF'] != 'Brasil')].copy()
+    df_last_year['Rank'] = df_last_year['Valor'].rank(ascending=False, method='first')  # calcula o ranking do último ano disponível
+    df_last_year_final = pd.concat([
+        df_last_year[['UF', 'Valor', 'Rank']],
+        df_ne_mean.query('Ano == @max_year')[['UF', 'Valor']],
+        df_merged.loc[(df_merged['UF'] == 'Brasil') & (df_merged['Ano'] == max_year), ['UF', 'Valor']]
+    ], ignore_index=True)
+    df_last_year_final = df_last_year_final.query('Rank <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
+    df_last_year_final.sort_values(by=['Rank', 'UF'], inplace=True)
+    df_last_year_final.rename(columns={'UF': 'Região', 'Valor': 'Gasto', 'Rank': 'Posição'}, inplace=True)
 
-#     c.to_excel(df_last_year_final, sheets_path, 'g18.1a.xlsx')
+    c.to_excel(df_last_year_final, sheets_path, 'g18.1a.xlsx')
 
-#     # tabela gasto médio da série histórica
-#     df_all = df_merged.query('UF != "Brasil"').groupby(['UF'])['Valor'].mean().reset_index()
-#     df_all['Posição'] = df_all['Valor'].rank(ascending=False, method='first')  # calcula o ranking do gasto médio
+    # tabela gasto médio da série histórica
+    df_all = df_merged.query('UF != "Brasil"').groupby(['UF'])['Valor'].mean().reset_index()
+    df_all['Posição'] = df_all['Valor'].rank(ascending=False, method='first')  # calcula o ranking do gasto médio
 
-#     df_all_final = pd.concat([
-#         df_all[['UF', 'Valor', 'Posição']],
-#         df_ne_mean.groupby('UF')['Valor'].mean().reset_index(),
-#         df_merged.loc[df_merged['UF'] == 'Brasil', ['UF', 'Valor']].groupby('UF').mean().reset_index()
-#     ], ignore_index=True)
-#     df_all_final = df_all_final.query('Posição <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
-#     df_all_final.sort_values(by=['Posição', 'UF'], inplace=True)
-#     df_all_final.rename(columns={'UF': 'Região', 'Valor': f'Média ({min_year}-{max_year})', 'Posição': 'Posição'}, inplace=True)
+    df_all_final = pd.concat([
+        df_all[['UF', 'Valor', 'Posição']],
+        df_ne_mean.groupby('UF')['Valor'].mean().reset_index(),
+        df_merged.loc[df_merged['UF'] == 'Brasil', ['UF', 'Valor']].groupby('UF').mean().reset_index()
+    ], ignore_index=True)
+    df_all_final = df_all_final.query('Posição <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
+    df_all_final.sort_values(by=['Posição', 'UF'], inplace=True)
+    df_all_final.rename(columns={'UF': 'Região', 'Valor': f'Média ({min_year}-{max_year})', 'Posição': 'Posição'}, inplace=True)
 
-#     c.to_excel(df_all_final, sheets_path, 'g18.1b.xlsx')
+    c.to_excel(df_all_final, sheets_path, 'g18.1b.xlsx')
 
-# except Exception as e:
-#     errors['Gráfico 18.1'] = traceback.format_exc()
+except Exception as e:
+    errors['Gráfico 18.1'] = traceback.format_exc()
 
 
 # g18.2
