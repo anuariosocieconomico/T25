@@ -45,25 +45,24 @@ except Exception as e:
     errors['Sidra 5442'] = traceback.format_exc()
 
 
-## CONTINUAR EXTRAÇÃO DESSA FONTE; ESTAVA FORA DO AR NO MOMENTO
+# CONTINUAR EXTRAÇÃO DESSA FONTE; ESTAVA FORA DO AR NO MOMENTO
 
 # # sintese de indicadores sociais
-# url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
+# year = datetime.now().year
 # try:
-#     data = c.open_url(url)
-#     df = pd.DataFrame(data.json())
-#     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
-#     df.columns = ['Data', 'Região', 'Variável', 'Valor']
-#     df.drop(0, axis='index', inplace=True)  # remove a primeira linha que contém o cabeçalho
-#     df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
-#     df['Valor'] = df['Valor'].fillna(0)  # substitui valores nulos por 0
-#     df['Ano'] = df['Data'].str.split(' ').str[-1].astype(int)  # extrai o ano da coluna Data
-#     df['Trimestre'] = df['Data'].str.split(' ').str[0].str[0].astype(int)  # extrai o ano da coluna Data
-#     df['Valor'] = df['Valor'].astype(int)
+#     while True:
+#         url = f'https://ftp.ibge.gov.br/Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{year}/Tabelas/xls/2_Distribuicao_Renda_xls.zip'
+#         try:
+#             data = c.open_url(url)
+#             if data.status_code == 200:
+#                 df = c.open_file(file_path=data.content, ext='zip', excel_name='', skiprows=6, sheet_name='4) INDICADORES')
+#             break
+#         except Exception:
+#             year -= 1
 
-#     c.to_excel(df, dbs_path, 'sidra_5442.xlsx')
+#     c.to_excel(df, dbs_path, 'indicadores_sociais.xlsx')
 # except Exception as e:
-#     errors['Sidra 5442'] = traceback.format_exc()
+#     errors['IBGE - Síntese de Indicadores Sociais'] = traceback.format_exc()
 
 
 # sidra 5606
