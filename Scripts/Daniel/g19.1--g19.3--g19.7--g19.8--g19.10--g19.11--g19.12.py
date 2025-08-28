@@ -24,46 +24,46 @@ errors = {}
 # url
 url = 'https://www.gov.br/mj/pt-br/assuntos/sua-seguranca/seguranca-publica/estatistica/dados-nacionais-1/base-de-dados-e-notas-metodologicas-dos-gestores-estaduais-sinesp-vde-2022-e-2023'
 
-# # tenta baixar o arquivo conforme os comandos anteriores; caso haja alguma atualização no site, registra-se o erro
-# try:
-#     # request ao site e extração dos elementos da html
-#     html = c.open_url(url)
-#     soup = BeautifulSoup(html.text, 'html.parser')
+# tenta baixar o arquivo conforme os comandos anteriores; caso haja alguma atualização no site, registra-se o erro
+try:
+    # request ao site e extração dos elementos da html
+    html = c.open_url(url)
+    soup = BeautifulSoup(html.text, 'html.parser')
 
-#     # Extrai a tag div com id="content-core"
-#     content_core = soup.find('div', id='content-core')
+    # Extrai a tag div com id="content-core"
+    content_core = soup.find('div', id='content-core')
 
-#     # Extrai todas as tags div com class="column col-md-2" dentro de content_core
-#     columns = content_core.find_all('div', class_='column col-md-2')
+    # Extrai todas as tags div com class="column col-md-2" dentro de content_core
+    columns = content_core.find_all('div', class_='column col-md-2')
 
-#     # Itera pelas colunas para extrair a href
-#     hrefs = []
-#     for column in columns:
-#         # Extrai a tag div com class="cover-banner-tile tile-content"
-#         tile_content = column.find('div', class_='cover-banner-tile tile-content')
-#         if tile_content:
-#             # Extrai a href da tag <a>
-#             link = tile_content.find('a', href=True)
-#             if link:
-#                 hrefs.append(link['href'])
+    # Itera pelas colunas para extrair a href
+    hrefs = []
+    for column in columns:
+        # Extrai a tag div com class="cover-banner-tile tile-content"
+        tile_content = column.find('div', class_='cover-banner-tile tile-content')
+        if tile_content:
+            # Extrai a href da tag <a>
+            link = tile_content.find('a', href=True)
+            if link:
+                hrefs.append(link['href'])
 
-#     for i, href in enumerate(hrefs):
-#         for tries in range(5):
-#             try:
-#                 file = c.open_url(href)
-#                 print(f'Base de dados {i+1} baixada com sucesso!')
-#                 break
-#             except:
-#                 print(f'Erro ao baixar base de dados {i+1}. Tentativa {tries+1} de 5.')
-#                 if tries  == 4:
-#                     raise
-#                 sleep(5)
+    for i, href in enumerate(hrefs):
+        for tries in range(5):
+            try:
+                file = c.open_url(href)
+                print(f'Base de dados {i+1} baixada com sucesso!')
+                break
+            except:
+                print(f'Erro ao baixar base de dados {i+1}. Tentativa {tries+1} de 5.')
+                if tries  == 4:
+                    raise
+                sleep(5)
         
-#         c.to_file(dbs_path, f'VDE{i+1}.xlsx', file.content)
+        c.to_file(dbs_path, f'VDE{i+1}.xlsx', file.content)
 
-#     print('Bases de dados baixadas com sucesso!')
-# except Exception as e:
-#     errors[url] = traceback.format_exc()
+    print('Bases de dados baixadas com sucesso!')
+except Exception as e:
+    errors[url] = traceback.format_exc()
 
 # ************************
 # ELABORAÇÃO DA PLANILHA 
