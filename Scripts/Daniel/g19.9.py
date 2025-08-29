@@ -1,3 +1,10 @@
+'''
+comecei a criar este script seguindo as descrições da documentação, mas percebi que ela estava desatualizada,
+já que os valores do novo arquivo não batiam com os valores do arquivo do repositório;
+além disso, as demais figuras desse grupo utilizavam da fonte sinesp, enquanto a g19.9 utilizava tabnet
+'''
+
+
 import functions as c
 import os
 import pandas as pd
