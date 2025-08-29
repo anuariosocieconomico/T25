@@ -160,6 +160,7 @@ try:
     df_merged.loc[df_merged['evento'] == 'Furto de veículo', 'Taxa'] = df_merged['total'] / (df_merged['Total'] / 100_000)
     df_merged.loc[df_merged['evento'] == 'Roubo de veículo', 'Taxa'] = df_merged['total'] / (df_merged['Total'] / 100_000)
     df_merged.loc[df_merged['evento'] == 'Roubo de carga', 'Taxa'] = df_merged['total'] / (df_merged['Total'] / 100_000)
+    df_merged.loc[df_merged['evento'] == 'Morte no trânsito ou em decorrência dele (exceto homicídio doloso)', 'Taxa'] = df_merged['total_vitima'] / (df_merged['Total'] / 100_000)
 
     # ranking dos estados por taxa de homicídios por 100 mil habitantes
     dfs_ranked = []
@@ -172,6 +173,7 @@ try:
         'Furto de veículo',
         'Roubo de veículo',
         'Roubo de carga',
+        'Morte no trânsito ou em decorrência dele (exceto homicídio doloso)'
     ]:
         # filtragem por evento
         if event == 'latrocínio':
@@ -230,6 +232,7 @@ try:
         ('latrocínio', 'g19.3'),
         ('Feminicídio', 'g19.7'),
         ('Estupro', 'g19.8'),
+        ('Morte no trânsito ou em decorrência dele (exceto homicídio doloso)', 'g19.9'),
         ('Furto de veículo', 'g19.10'),
         ('Roubo de veículo', 'g19.11'),
         ('Roubo de carga', 'g19.12')
@@ -250,5 +253,5 @@ except Exception as e:
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
 # se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
 if errors:
-    with open(os.path.join(errors_path, 'script--g19.1--g19.3--g19.7--g19.8--g19.10--g19.11--g19.12.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(errors_path, 'script--g19.1--g19.3--g19.7--g19.8--g19.8--g19.10--g19.11--g19.12.txt'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(errors, indent=4, ensure_ascii=False))
