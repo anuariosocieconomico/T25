@@ -120,51 +120,75 @@ except:
 #     errors['Gráfico 20.6'] = traceback.format_exc()
 
 
-# Gráfico 20.7
+# # Gráfico 20.7
+# try:
+#     # importação dos indicadores
+#     df = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 2.18', skiprows=5)
+#     df_last_year = df[list(df.keys())[0]]
+#     df_fisrt_year = df[list(df.keys())[-2]]
+    
+#     dfs = []
+#     for i, tb in enumerate([df_last_year, df_fisrt_year]):
+#         df_tb = tb.copy()
+#         df_tb.columns = ['uf', 'total', '< 2,15', '< 3,65', '< 6,85', 'mediana nacional', 'mediana regional', 'tanto faz']
+#         df_tb.dropna(how='any', inplace=True)
+#         df_tb['ano'] = int(list(df.keys())[0]) if i == 0 else int(list(df.keys())[-2])
+
+#         dfs.append(df_tb.query('uf.isin(@c.mapping_states_abbreviation.keys())')[['uf', 'ano', '< 2,15']])
+
+#     df_concat = pd.concat(dfs, ignore_index=True)
+
+#     # tabela a
+#     df_a = df_concat.query('ano == @df_concat.ano.max()').copy()
+#     df_a['valor'] = df_a['< 2,15']
+#     df_a.loc[df_a['uf'].isin(['Brasil', 'Nordeste']), 'valor'] = np.nan
+#     df_a['rank'] = df_a['valor'].rank(method='first', ascending=False)
+#     df_a.sort_values(by=['rank'], inplace=True)
+#     df_a_final = df_a[['uf', '< 2,15', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
+#     df_a_final.columns = ['Região', 'Percentual', 'Posição']
+
+#     df_a_final.to_excel(os.path.join(sheets_path, 'g20.7a.xlsx'), index=False, sheet_name='g20.7a')
+
+#     # tabela b
+#     df_b = df_concat.copy()
+#     df_b.sort_values(by=['uf', 'ano'], inplace=True)
+#     df_b['diff'] = df_b.groupby('uf')['< 2,15'].diff()
+#     df_b['valor'] = df_b['diff']
+#     df_b.loc[df_b['uf'].isin(['Brasil', 'Nordeste']), 'valor'] = np.nan
+#     df_b = df_b.query('ano == @df_concat.ano.max()').copy()
+#     df_b['rank'] = df_b['valor'].rank(method='first', ascending=False)
+#     df_b.sort_values(by=['ano', 'rank'], inplace=True)
+#     df_b_final = df_b[['uf', 'diff', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
+#     df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
+
+#     df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.7b')
+
+# except:
+#     errors['Gráfico 20.7'] = traceback.format_exc()
+
+
+# Gráfico 20.8
 try:
     # importação dos indicadores
     df = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 2.18', skiprows=5)
-    df_last_year = df[list(df.keys())[0]]
-    df_fisrt_year = df[list(df.keys())[-2]]
     
     dfs = []
-    for i, tb in enumerate([df_last_year, df_fisrt_year]):
-        df_tb = tb.copy()
-        df_tb.columns = ['uf', 'total', '< 2,15', '< 3,65', '< 6,85', 'mediana nacional', 'mediana regional', 'tanto faz']
-        df_tb.dropna(how='any', inplace=True)
-        df_tb['ano'] = int(list(df.keys())[0]) if i == 0 else int(list(df.keys())[-2])
+    for i, tb in enumerate(df.keys()):
+        if '(CV)' not in tb:
+            df_tb = df[tb].copy()
+            df_tb.columns = ['uf', 'total', '< 2,15', '< 3,65', '< 6,85', 'mediana nacional', 'mediana regional', 'tanto faz']
+            df_tb.dropna(how='any', inplace=True)
+            df_tb['Ano'] = int(tb)
 
-        dfs.append(df_tb.query('uf.isin(@c.mapping_states_abbreviation.keys())')[['uf', 'ano', '< 2,15']])
+            dfs.append(df_tb.query('uf.isin(["Brasil", "Nordeste", "Sergipe"])')[['uf', 'Ano', '< 2,15']])
 
     df_concat = pd.concat(dfs, ignore_index=True)
+    df_pivoted = df_concat.pivot(index='Ano', columns='uf', values='< 2,15').reset_index()
 
-    # tabela a
-    df_a = df_concat.query('ano == @df_concat.ano.max()').copy()
-    df_a['valor'] = df_a['< 2,15']
-    df_a.loc[df_a['uf'].isin(['Brasil', 'Nordeste']), 'valor'] = np.nan
-    df_a['rank'] = df_a['valor'].rank(method='first', ascending=False)
-    df_a.sort_values(by=['rank'], inplace=True)
-    df_a_final = df_a[['uf', '< 2,15', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
-    df_a_final.columns = ['Região', 'Percentual', 'Posição']
-
-    df_a_final.to_excel(os.path.join(sheets_path, 'g20.7a.xlsx'), index=False, sheet_name='g20.7a')
-
-    # tabela b
-    df_b = df_concat.copy()
-    df_b.sort_values(by=['uf', 'ano'], inplace=True)
-    df_b['diff'] = df_b.groupby('uf')['< 2,15'].diff()
-    df_b['valor'] = df_b['diff']
-    df_b.loc[df_b['uf'].isin(['Brasil', 'Nordeste']), 'valor'] = np.nan
-    df_b = df_b.query('ano == @df_concat.ano.max()').copy()
-    df_b['rank'] = df_b['valor'].rank(method='first', ascending=False)
-    df_b.sort_values(by=['ano', 'rank'], inplace=True)
-    df_b_final = df_b[['uf', 'diff', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
-    df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
-
-    df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.7b')
+    df_pivoted.to_excel(os.path.join(sheets_path, 'g20.8.xlsx'), index=False, sheet_name='g20.8')
 
 except:
-    errors['Gráfico 20.7'] = traceback.format_exc()
+    errors['Gráfico 20.8'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
