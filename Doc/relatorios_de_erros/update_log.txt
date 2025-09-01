@@ -1,2 +1,2 @@
 Executado(s) o(s) scipt(s): ['run_monthly_update.py'] ...
-Data da execução: Friday, 01 de August de 2025 - 00:57:07.
+Data da execução: Monday, 01 de September de 2025 - 00:53:39.
