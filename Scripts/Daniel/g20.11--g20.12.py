@@ -70,26 +70,26 @@ try:
 except Exception as e:
     errors['Gráfico 20.11'] = traceback.format_exc()
 
-# # g20.12
-# try:
-#     regions = [('1', 'all'), ('2', '2'), ('3', '28')]
-#     dfs = []
-#     for reg in regions:
-#         data = sidrapy.get_table(table_code='7435', territorial_level=reg[0], ibge_territorial_code=reg[1],
-#                                 variable='10681', period='all', header='n')
-#         data = data[['D1N', 'D2N', 'V']]
-#         dfs.append(data)
-#         c.delay_requests(1)
+# g20.12
+try:
+    regions = [('1', 'all'), ('2', '2'), ('3', '28')]
+    dfs = []
+    for reg in regions:
+        data = sidrapy.get_table(table_code='7435', territorial_level=reg[0], ibge_territorial_code=reg[1],
+                                variable='10681', period='all', header='n')
+        data = data[['D1N', 'D2N', 'V']]
+        dfs.append(data)
+        c.delay_requests(1)
 
-#     df_concat = pd.concat(dfs, ignore_index=True)
-#     df_concat.columns = ['Região', 'Ano', 'Índice de Gini']
-#     c.convert_type(df_concat, 'Ano', 'int')
-#     c.convert_type(df_concat, 'Índice de Gini', 'float')
+    df_concat = pd.concat(dfs, ignore_index=True)
+    df_concat.columns = ['Região', 'Ano', 'Índice de Gini']
+    c.convert_type(df_concat, 'Ano', 'int')
+    c.convert_type(df_concat, 'Índice de Gini', 'float')
 
-#     c.to_excel(df_concat, sheets_path, 'g20.12.xlsx')
+    c.to_excel(df_concat, sheets_path, 'g20.12.xlsx')
 
-# except Exception as e:
-#     errors['Gráfico 20.12'] = traceback.format_exc()
+except Exception as e:
+    errors['Gráfico 20.12'] = traceback.format_exc()
 
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
