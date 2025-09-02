@@ -95,7 +95,7 @@ except Exception as e:
 # gráfico 9.1
 try:
     data = c.open_file(dbs_path, 'sidra_3416.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= 2009 and `Mês` == 12', engine='python')
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=[True, True, False])  # ordena os dados por Região, Variável e Ano
+    data.sort_values(['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena os dados por Região, Variável e Ano
     
     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
     assert df_ne['Região'].nunique() == 9, "Número de estados do NE diferente de 9"
@@ -121,7 +121,7 @@ except Exception as e:
 # gráfico 9.2
 try:
     data = c.open_file(dbs_path, 'sidra_3417.xlsx', 'xls', sheet_name='Sheet1').query('Ano >= 2009 and `Mês` == 12', engine='python')
-    data.sort_values(['Região', 'Variável', 'Ano'], inplace=[True, True, False])  # ordena os dados por Região, Variável e Ano
+    data.sort_values(['Região', 'Variável', 'Ano'], ascending=[True, True, False], inplace=True)  # ordena os dados por Região, Variável e Ano
     
     df_ne = data.query('`Região` in @c.ne_states', engine='python').copy()
     assert df_ne['Região'].nunique() == 9, "Número de estados do NE diferente de 9"
@@ -230,7 +230,7 @@ except Exception as e:
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
 # se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
 if errors:
-    with open(os.path.join(errors_path, 'script--g3.1--g3.2--g3.3--g3.4--g3.5--g3.6--g3.7--g3.8--g3.9--g3.10.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(errors_path, 'script--g9.1--g9.2--t9.1.txt'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(errors, indent=4, ensure_ascii=False))
 
 # remove os arquivos baixados
