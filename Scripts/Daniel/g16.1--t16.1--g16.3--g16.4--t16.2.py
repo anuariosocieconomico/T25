@@ -173,7 +173,7 @@ try:
 
     # classificação dos dados
     data['Ano'] = data['Ano'].dt.strftime('%d/%m/%Y')
-    data['Valor'] = data['Valor'].astype('float')
+    data['Valor'] = pd.to_numeric(data['Valor'], errors='coerce')
 
     # conversão em arquivo csv
     c.to_excel(data, sheets_path, 'g16.3.xlsx')
