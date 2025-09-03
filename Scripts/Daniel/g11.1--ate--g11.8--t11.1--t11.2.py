@@ -220,7 +220,7 @@ try:
     sheet = requests.get(link, verify=False)
     sheet_data = c.open_file(file_path=sheet.content, ext='xls', skiprows=1)
 
-    df = sheet_data[list(sheet_data.keys())[1]]
+    df = sheet_data[list(sheet_data.keys())[0]]
     df['data'] = pd.to_datetime(df['co_periodo'], format='%Y%m', errors='coerce')
     df['ano'] = df['data'].dt.year
     df['mes'] = df['data'].dt.month
