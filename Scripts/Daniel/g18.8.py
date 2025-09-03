@@ -114,7 +114,7 @@ try:
     df = df.iloc[:-1].copy()
 
     for col in df.columns[1:]:
-        df[col] = df[col].astype(int)
+        df[col] = pd.to_numeric(df[col], errors='coerce')
 
     cols = df.columns
     df.loc[:, cols[0]] = df[cols[0]].apply(lambda x: x.split()[-1] if not x.startswith('Região') else x)
