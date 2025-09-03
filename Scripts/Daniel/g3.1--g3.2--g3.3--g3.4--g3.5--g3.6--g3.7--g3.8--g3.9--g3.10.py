@@ -339,9 +339,9 @@ try:
     # top 6 regiões com maior razão
     df_top_razao = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
     df_top_razao['Razão 2'] = df_top_razao['Razão']
-    df_top_razao['Razão 2'].loc[df_top_razao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_top_razao.loc[df_top_razao['Região'].isin(['Brasil', 'Nordeste']), 'Razão 2'] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
     df_top_razao['Ranking'] = df_top_razao['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
-    df_top_razao['Ranking'].loc[df_top_razao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera o ranking para Brasil e Nordeste
+    df_top_razao.loc[df_top_razao['Região'].isin(['Brasil', 'Nordeste']), 'Ranking'] = np.nan  # zera o ranking para Brasil e Nordeste
     df_top_razao = df_top_razao[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_top_razao.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
     df_top_razao.rename(columns={'Razão': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão
@@ -350,9 +350,9 @@ try:
     # top 6 regiões com maior média da razão
     df_top_razao_media = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
     df_top_razao_media['Razão 2'] = df_top_razao_media['Razão Média']
-    df_top_razao_media['Razão 2'].loc[df_top_razao_media['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_top_razao_media.loc[df_top_razao_media['Região'].isin(['Brasil', 'Nordeste']), 'Razão 2'] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
     df_top_razao_media['Ranking'] = df_top_razao_media['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão média
-    df_top_razao_media['Ranking'].loc[df_top_razao_media['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera o ranking para Brasil e Nordeste
+    df_top_razao_media.loc[df_top_razao_media['Região'].isin(['Brasil', 'Nordeste']), 'Ranking'] = np.nan  # zera o ranking para Brasil e Nordeste
     df_top_razao_media = df_top_razao_media[['Região', 'Razão Média', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_top_razao_media.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
     df_top_razao_media.rename(columns={'Razão Média': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão média
@@ -361,9 +361,9 @@ try:
     # top 6 regiões com maior variação acumulada
     df_top_variacao = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
     df_top_variacao['Variação Acumulada 2'] = df_top_variacao['Variação Acumulada']
-    df_top_variacao['Variação Acumulada 2'].loc[df_top_variacao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_top_variacao.loc[df_top_variacao['Região'].isin(['Brasil', 'Nordeste']), 'Variação Acumulada 2'] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
     df_top_variacao['Ranking'] = df_top_variacao['Variação Acumulada 2'].rank(method='first', ascending=False)  # cria o ranking da razão
-    df_top_variacao['Ranking'].loc[df_top_variacao['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera o ranking para Brasil e Nordeste
+    df_top_variacao.loc[df_top_variacao['Região'].isin(['Brasil', 'Nordeste']), 'Ranking'] = np.nan  # zera o ranking para Brasil e Nordeste
     df_top_variacao = df_top_variacao[['Região', 'Variação Acumulada', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_top_variacao.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
     df_top_variacao.rename(columns={'Variação Acumulada': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão
@@ -485,7 +485,7 @@ try:
     # maiores razões do último ano
     df_last_year = df_joined.query('Ano == @max_year').copy()
     df_last_year['Razão 2'] = df_last_year['Razão']
-    df_last_year['Razão 2'].loc[df_last_year['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_last_year.loc[df_last_year['Região'].isin(['Brasil', 'Nordeste']), 'Razão 2'] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
     df_last_year['Ranking'] = df_last_year['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
     df_last_year.sort_values(by='Ranking', ascending=True, inplace=True)
     df_last_year = df_last_year[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
@@ -496,7 +496,7 @@ try:
     # maiores razões da série histórica
     df_all = df_joined.groupby('Região', as_index=False)['Razão'].mean()  # calcula a média da razão por região e variável
     df_all['Razão 2'] = df_all['Razão']
-    df_all['Razão 2'].loc[df_all['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_all.loc[df_all['Região'].isin(['Brasil', 'Nordeste']), 'Razão 2'] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
     df_all['Ranking'] = df_all['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
     df_all.sort_values(by='Ranking', ascending=True, inplace=True)
     df_all = df_all[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
@@ -509,7 +509,7 @@ try:
     df_diff = df_diff.pivot(index='Região', columns='Ano', values='Razão').reset_index(drop=False)  # pivota os dados para ter as regiões como linhas e anos como colunas
     df_diff['Razão'] = (df_diff[max_year] - df_diff[min_year]) / df_diff[min_year] * 100  # calcula a variação percentual da razão
     df_diff['Razão 2'] = df_diff['Razão']
-    df_diff['Razão 2'].loc[df_diff['Região'].isin(['Brasil', 'Nordeste'])] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
+    df_diff.loc[df_diff['Região'].isin(['Brasil', 'Nordeste']), 'Razão 2'] = np.nan  # zera a razão para Brasil e Nordeste para não interferir no ranking
     df_diff['Ranking'] = df_diff['Razão 2'].rank(method='first', ascending=False)  # cria o ranking da razão
     df_diff.sort_values(by='Ranking', ascending=True, inplace=True)
     df_diff = df_diff[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
