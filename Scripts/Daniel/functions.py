@@ -14,6 +14,8 @@ import zipfile
 
 # Módulos de scraping
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from parsel import Selector
 from bs4 import BeautifulSoup
 
@@ -544,3 +546,33 @@ mapping_states_ibge_code = {
     'Goiás': 52,
     'Distrito Federal': 53
 }
+
+
+def create_session_with_retries(total_retries=5, backoff_factor=2, timeout=60):
+    """
+    Cria uma sessão requests com retries e timeout configuráveis.
+    
+    Args:
+        total_retries (int): número máximo de tentativas.
+        backoff_factor (float): fator de espera exponencial entre tentativas.
+        timeout (int or float): timeout padrão em segundos para cada request.
+        
+    Returns:
+        session (requests.Session): sessão pronta para uso.
+    """
+    session = requests.Session()
+    
+    retries = Retry(
+        total=total_retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=[429, 500, 502, 503, 504],
+        allowed_methods=["HEAD", "GET", "OPTIONS"]  # GET é usado para download
+    )
+    
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    
+    # Armazenamos o timeout como atributo customizado para uso fácil
+    session.request_timeout = timeout
+    return session
