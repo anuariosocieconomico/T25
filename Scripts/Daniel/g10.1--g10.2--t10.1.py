@@ -24,10 +24,20 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
+"""
+Teste de request com retry e maior timeout
+Como usar:
+- cria a sessão com c.create_session_with_retries(); (total_retries=5, backoff_factor=2, timeout=60) são valores padrão e podem ser alterados
+- faz a request com session.get(url, timeout=session.request_timeout
+"""
+
+session = c.create_session_with_retries(total_retries=5, backoff_factor=2, timeout=60)
+
 # sidra 5906
 url = 'https://apisidra.ibge.gov.br/values/t/5906/n1/all/n3/all/v/7168/p/all/c11046/all/d/v7168%205?formato=json'
 try:
-    data = c.open_url(url)
+    # data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout)  # nova forma de fazer a request
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
     df.columns = ['Data', 'Região', 'Variável', 'Valor']
@@ -45,7 +55,8 @@ except Exception as e:
 # sidra 2715 (IBGE - Pesquisa Anual de Serviços (PAS))
 url = 'https://apisidra.ibge.gov.br/values/t/2715/n1/all/v/672/p/all/c12354/all/c12355/9309,31399,106869,106874,106876,106882,106883,107071?formato=json'
 try:
-    data = c.open_url(url)
+    # data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout)  # nova forma de fazer a request
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D4N', 'D5N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
