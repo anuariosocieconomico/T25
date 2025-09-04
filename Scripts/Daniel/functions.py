@@ -82,18 +82,18 @@ def get_html(path: str):
 
 
 # abre os arquivos baixados
-def open_file(dir_path=None, file_path=None, ext=None, encoding='utf-8',
+def open_file(dir_path=None, file_path=None, ext=None, encoding='utf-8', encoding_errors='replace',
               sep=',', skiprows=None, excel_name=None, sheet_name=None, decimal=','):
 
     # se o arquivo for csv
     if ext == 'csv' and file_path is not None:
         if not isinstance(file_path, str):  # verifica se o arquivo está na memória local ou em ‘bytes’
             dataframe = pd.read_csv(io.BytesIO(file_path),
-                                    encoding=encoding, sep=sep, decimal=decimal, skiprows=skiprows)
+                                    encoding=encoding, encoding_errors=encoding_errors, sep=sep, decimal=decimal, skiprows=skiprows)
             return dataframe
         else:
             dataframe = pd.read_csv(os.path.join(dir_path, file_path),
-                                    encoding=encoding, sep=sep, decimal=decimal, skiprows=skiprows)
+                                    encoding=encoding, encoding_errors=encoding_errors, sep=sep, decimal=decimal, skiprows=skiprows)
             return dataframe
 
     # se o arquivo for xlsx
