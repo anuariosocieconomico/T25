@@ -1,6 +1,7 @@
 import functions as c
 import os
 import pandas as pd
+import numpy as np
 import json
 import io
 import sidrapy
@@ -44,25 +45,31 @@ try:
 except Exception as e:
     errors['Sidra 5442'] = traceback.format_exc()
 
+"""
+Para esta fonte, foi hardcoded o ano do arquivo, em vez de buscar o ano mais recente.
+No arquivo mais recente, o dado descrito da documentação não está mais disponível.
+Enquanto o professor busca uma alternativa, ele pediu que coletasse os dados do ano que continha o dado.
+"""
+# sintese de indicadores sociais
+try:
+    url = 'https://ftp.ibge.gov.br/Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_2020/xls/2_Rendimento_xls.zip'
+    file = c.open_url(url)
+    content = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 2.3', skiprows=6)
+    dfs = []
+    for tb in content.keys():
+        if '(CV)' not in tb:
+            df = content[tb].dropna(how='any').reset_index(drop=True)
+            df = df.iloc[:, [0, 3, 9, 15, 21]]
+            df.columns = ['Região', 'Total', 'Até 1/4', 'Mais de 1/4 até 1/2', 'Mais de 3']
+            df['Ano'] = int(tb)
+            
+            dfs.append(df)
+    
+    df = pd.concat(dfs, ignore_index=True).query('`Região` in @c.mapping_states_abbreviation.keys()')
 
-# CONTINUAR EXTRAÇÃO DESSA FONTE; ESTAVA FORA DO AR NO MOMENTO
-
-# # sintese de indicadores sociais
-# year = datetime.now().year
-# try:
-#     while True:
-#         url = f'https://ftp.ibge.gov.br/Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{year}/Tabelas/xls/2_Distribuicao_Renda_xls.zip'
-#         try:
-#             data = c.open_url(url)
-#             if data.status_code == 200:
-#                 df = c.open_file(file_path=data.content, ext='zip', excel_name='', skiprows=6, sheet_name='4) INDICADORES')
-#             break
-#         except Exception:
-#             year -= 1
-
-#     c.to_excel(df, dbs_path, 'indicadores_sociais.xlsx')
-# except Exception as e:
-#     errors['IBGE - Síntese de Indicadores Sociais'] = traceback.format_exc()
+    c.to_csv(df, dbs_path, 'indicadores_sociais.csv')
+except Exception as e:
+    errors['IBGE - Síntese de Indicadores Sociais'] = traceback.format_exc()
 
 
 # sidra 5606
@@ -220,49 +227,78 @@ except:
     errors['Tabela 14.1'] = traceback.format_exc()
 
 
-# ## CONTINUAR EXTRAÇÃO DESSA FONTE; ESTAVA FORA DO AR NO MOMENTO
+# g14.3
+try:
+    # leitura da base de dados
+    df = c.open_file(dbs_path, 'indicadores_sociais.csv', 'csv')[['Região', 'Ano', 'Total']]
+    df['Dummy'] = df['Total']
+    df.loc[df['Região'].isin(['Brasil', 'Nordeste']), 'Dummy'] = np.nan
+    df['Colocação'] = df.groupby('Ano')['Dummy'].rank(ascending=False, method='first')
 
-# # g14.3
-# try:
-#     # leitura da base de dados
-#     data = c.open_file(dbs_path, 'sidra_5442.xlsx', 'xls', sheet_name='Sheet1').query("`Variável` != 'Total'")
-#     ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1')
+    df_a = df.loc[
+        (df['Ano'] == df['Ano'].max()) & 
+        ((df['Colocação'] <= 6) | (df['Região'].isin(['Brasil', 'Nordeste', 'Sergipe'])))
+    ].copy()
+
+    df_a['Variável'] = 'Trabalho como origem na renda (%)'
+    df_a['Ano'] = '31/12/' + df_a['Ano'].astype(str)
+    df_final = df_a[['Região', 'Variável', 'Ano', 'Total', 'Colocação']].copy()
+    df_final.sort_values(['Colocação', 'Região'], ascending=[True, False], inplace=True)
+    df_final['Colocação'] = df_final['Colocação'].apply(lambda x: f'{int(x)}º' if pd.notnull(x) else '')
+    df_final.rename(columns={'Total': 'Valor'}, inplace=True)
     
+    c.to_excel(df_final, sheets_path, 'g14.3a.xlsx')
 
-#     c.to_excel(df_final, sheets_path, 'g14.3.xlsx')
+    df_b = df.groupby('Região')['Total'].mean().reset_index()
+    df_b['Dummy'] = df_b['Total']
+    df_b.loc[df_b['Região'].isin(['Brasil', 'Nordeste']), 'Dummy'] = np.nan
+    df_b['Colocação'] = df_b['Dummy'].rank(ascending=False, method='first')
 
-# except:
-#     errors['Gráfico 14.3'] = traceback.format_exc()
+    df_b = df_b.loc[
+        (df_b['Colocação'] <= 6) | (df_b['Região'].isin(['Brasil', 'Nordeste', 'Sergipe']))
+    ].copy()
+
+    df_b['Variável'] = f'Trabalho como origem na renda (%): média de {df["Ano"].min()} a {df["Ano"].max()}'
+    df_b = df_b[['Região', 'Variável', 'Total', 'Colocação']].copy()
+    df_b.sort_values(['Colocação', 'Região'], ascending=[True, False], inplace=True)
+    df_b['Colocação'] = df_b['Colocação'].apply(lambda x: f'{int(x)}º' if pd.notnull(x) else '')
+    df_b.rename(columns={'Total': 'Valor'}, inplace=True)
+
+    c.to_excel(df_b, sheets_path, 'g14.3b.xlsx')
+
+except:
+    errors['Gráfico 14.3'] = traceback.format_exc()
 
 
-# ## CONTINUAR EXTRAÇÃO DESSA FONTE; ESTAVA FORA DO AR NO MOMENTO
+# g14.4
+try:
+    # leitura da base de dados
+    data = c.open_file(dbs_path, 'indicadores_sociais.csv', 'csv').query('`Região` in ["Brasil", "Nordeste", "Sergipe"]')[['Região', 'Ano', 'Total']]
+    data['Variável'] = 'Trabalho como origem na renda (%)'
+    data.sort_values(['Região', 'Ano'], inplace=True)
+    data['Ano'] = '31/12/' + data['Ano'].astype(str)
+    data.rename(columns={'Total': 'Valor'}, inplace=True)
+    df_final = data[['Região', 'Variável', 'Ano', 'Valor']].copy()
 
-# # g14.4
-# try:
-#     # leitura da base de dados
-#     data = c.open_file(dbs_path, 'sidra_5442.xlsx', 'xls', sheet_name='Sheet1').query("`Variável` != 'Total'")
-#     ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1')
-    
+    c.to_excel(df_final, sheets_path, 'g14.4.xlsx')
 
-#     c.to_excel(df_final, sheets_path, 'g14.4.xlsx')
-
-# except:
-#     errors['Gráfico 14.4'] = traceback.format_exc()
+except:
+    errors['Tabela 14.4'] = traceback.format_exc()
 
 
-# ## CONTINUAR EXTRAÇÃO DESSA FONTE; ESTAVA FORA DO AR NO MOMENTO
+# t14.2
+try:
+    # leitura da base de dados
+    data = c.open_file(dbs_path, 'indicadores_sociais.csv', 'csv').query('`Região` in ["Brasil", "Nordeste", "Sergipe"]')
+    df_melted = data.melt(id_vars=['Região', 'Ano'], value_vars=['Até 1/4', 'Mais de 1/4 até 1/2', 'Mais de 3'], var_name='Variável', value_name='Valor')
+    df_melted.sort_values(['Região', 'Variável', 'Ano'], inplace=True)
+    df_melted['Ano'] = '31/12/' + df_melted['Ano'].astype(str)
+    df_final = df_melted[['Região', 'Variável', 'Ano', 'Valor']].copy()
 
-# # t14.2
-# try:
-#     # leitura da base de dados
-#     data = c.open_file(dbs_path, 'sidra_5442.xlsx', 'xls', sheet_name='Sheet1').query("`Variável` != 'Total'")
-#     ipca = c.open_file(dbs_path, 'ipeadata_ipca.xlsx', 'xls', sheet_name='Sheet1')
-    
+    c.to_excel(df_final, sheets_path, 't14.2.xlsx')
 
-#     c.to_excel(df_final, sheets_path, 't14.2.xlsx')
-
-# except:
-#     errors['Tabela 14.2'] = traceback.format_exc()
+except:
+    errors['Tabela 14.2'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
