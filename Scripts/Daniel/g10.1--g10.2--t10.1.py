@@ -37,7 +37,7 @@ session = c.create_session_with_retries(total_retries=5, backoff_factor=2, timeo
 url = 'https://apisidra.ibge.gov.br/values/t/5906/n1/all/n3/all/v/7168/p/all/c11046/all/d/v7168%205?formato=json'
 try:
     # data = c.open_url(url)
-    data = session.get(url, timeout=session.request_timeout)  # nova forma de fazer a request
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)  # nova forma de fazer a request
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
     df.columns = ['Data', 'Região', 'Variável', 'Valor']
@@ -56,7 +56,7 @@ except Exception as e:
 url = 'https://apisidra.ibge.gov.br/values/t/2715/n1/all/v/672/p/all/c12354/all/c12355/9309,31399,106869,106874,106876,106882,106883,107071?formato=json'
 try:
     # data = c.open_url(url)
-    data = session.get(url, timeout=session.request_timeout)  # nova forma de fazer a request
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)  # nova forma de fazer a request
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D4N', 'D5N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']

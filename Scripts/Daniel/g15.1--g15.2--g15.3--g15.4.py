@@ -22,6 +22,7 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS E PLANILHA
 # ************************
 
+session = c.create_session_with_retries()
 # Gráfico 15.1
 try:
     # looping de requisições para cada tabela da figura
@@ -62,18 +63,18 @@ except Exception as e:
 try:
     # projeção da taxa
     url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Projecao_da_Populacao'
-    response = c.open_url(url)
+    response = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(response.json())
 
     df = df.loc[df['name'].str.startswith('Projecao'),
                 ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
 
     url_to_get = df['path'][0].split('/')[-1]
-    response = c.open_url(url + '/' + url_to_get)
+    response = session.get(url + '/' + url_to_get, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(response.json())
     url_to_get_pib = df.loc[df['name'].str.endswith('indicadores.xlsx'), 'url'].values[0]
 
-    file = c.open_url(url_to_get_pib)
+    file = session.get(url_to_get_pib, timeout=session.request_timeout, headers=c.headers)
 except:
     errors['Planilha de Projeção'] = traceback.format_exc()
 

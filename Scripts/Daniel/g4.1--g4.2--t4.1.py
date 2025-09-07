@@ -24,11 +24,11 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
-
+session = c.create_session_with_retries()
 # sidra 5603
 url = 'https://apisidra.ibge.gov.br/values/t/5603/n3/28/v/631,706,808,810,811/p/all?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D2N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
@@ -56,7 +56,7 @@ except Exception as e:
 # sidra 1849
 url = 'https://apisidra.ibge.gov.br/values/t/1849/n3/all/v/810/p/all/c12762/116880,116911,116952,116965,116985,117048,117099,117136,117261,117897?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D2N', 'D4N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Atividade', 'Valor']

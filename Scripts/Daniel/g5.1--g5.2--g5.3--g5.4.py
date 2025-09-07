@@ -24,13 +24,14 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
+session = c.create_session_with_retries()
 # contas da produção
 try:
     year = datetime.now().year
     while True:
         # url da base contas regionais
         url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
-        response = c.open_url(url)
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
         
         if response.status_code == 200:
             content = pd.DataFrame(response.json())
@@ -54,7 +55,7 @@ except Exception as e:
 # sidra 3939
 url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/28/v/all/p/all/c79/2670,2672,2677,32793,32794,32796?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']

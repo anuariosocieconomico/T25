@@ -30,12 +30,13 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
+session = c.create_session_with_retries()
 # sidra contas regionais
 url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais'
 
 # download do arquivo especiais 2010
 try:
-    response = c.open_url(url)
+    response = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(response.json())
 
     # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
@@ -51,7 +52,7 @@ try:
     # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
     last_year = df['name'][0]
     url_to_get = url + '/' + str(last_year) + '/xls'
-    response = c.open_url(url_to_get)
+    response =session.get(url_to_get, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(response.json())
 
     while True:
@@ -65,14 +66,14 @@ try:
         except:
             last_year -= 1
             url_to_get_esp = url + '/' + str(last_year) + '/xls'
-            response = c.open_url(url_to_get_esp)
+            response = session.get(url_to_get_esp, timeout=session.request_timeout, headers=c.headers)
             df = pd.DataFrame(response.json())
             if last_year == 0:
                 errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
                 raise Exception('Arquivo não encontrado em anos anteriores')
 
     # downloading e organização do arquivo: especiais 2010
-    file = c.open_url(url_to_get_esp)
+    file = session.get(url_to_get_esp, timeout=session.request_timeout, headers=c.headers)
     c.to_file(dbs_path, 'ibge_especiais.zip', file.content)
 except Exception as e:
     errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
@@ -98,7 +99,7 @@ try:
         for y in range(base_year, current_year + 1):
             url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
                 f'no_anexo={a[1]}&co_esfera=E&id_ente=28'
-            response = c.open_url(url)
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
             time.sleep(1)
             if response.status_code == 200 and len(response.json()['items']) > 1:
                 df = pd.DataFrame(response.json()['items'])
@@ -126,7 +127,7 @@ try:
         for y in range(base_year, current_year + 1):
             url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rreo?an_exercicio={y}&nr_periodo=6&co_tipo_demonstrativo=RREO&' \
                 f'no_anexo=RREO-Anexo%2004&co_esfera=&id_ente={v}'
-            response = c.open_url(url)
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
             time.sleep(1)
             if response.status_code == 200 and len(response.json()['items']) > 1:
                 df = pd.DataFrame(response.json()['items'])
@@ -155,7 +156,7 @@ try:
     for y in range(base_year, current_year + 1):
         ax = anexo_13 if y == 2013 else anexo_all
         url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//dca?an_exercicio={y}&no_anexo={ax}&id_ente=28'
-        response = c.open_url(url)
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
         time.sleep(1)
         if response.status_code == 200 and len(response.json()['items']) > 1:
             df = pd.DataFrame(response.json()['items'])
@@ -184,7 +185,7 @@ try:
 
             url = f'https://apidatalake.tesouro.gov.br/ords/siconfi/tt//rgf?' \
                 f'an_exercicio={y}&in_periodicidade=Q&nr_periodo=3&co_tipo_demonstrativo=RGF&no_anexo=RGF-Anexo%2001&co_esfera=E&co_poder=E&id_ente={v}'
-            response = c.open_url(url)
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
             time.sleep(1)
             if response.status_code == 200 and len(response.json()['items']) > 1:
                 df = pd.DataFrame(response.json()['items'])
@@ -213,11 +214,11 @@ try:
         'accept': 'application/json',
         'chave-api-dados-abertos': os.environ.get('DADOS_ABERTOS_API', '')
     }
-    response = requests.get(url, headers=headers)
+    response = session.get(url, timeout=session.request_timeout, headers=c.headers)
     data = response.json()
     link = data['recursos'][0]['link']
 
-    sheet = requests.get(link, verify=False)
+    sheet = session.get(url, timeout=session.request_timeout, headers=c.headers, verify=False)
     sheet_data = c.open_file(file_path=sheet.content, ext='xls', skiprows=1)
 
     df = sheet_data[list(sheet_data.keys())[0]]
@@ -233,7 +234,7 @@ except Exception as e:
 # sidra 7358 - estimativa da população
 url = 'https://apisidra.ibge.gov.br/values/t/7358/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/c287/100362/c1933/all?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D6N', 'D1N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Valor']

@@ -30,6 +30,7 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
+session = c.create_session_with_retries()
 # deflator IPEA IPCA
 try:
     data = ipeadatapy.timeseries('PRECOS_IPCAG')
@@ -42,7 +43,7 @@ except Exception as e:
 # sidra 1187 - estimativa da população
 url = 'https://apisidra.ibge.gov.br/values/t/1187/n1/all/n2/2/n3/28/v/all/p/all/c2/6794/d/v2513%201?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Valor']
@@ -58,7 +59,7 @@ except Exception as e:
 # sidra 7113 - estimativa da população
 url = 'https://apisidra.ibge.gov.br/values/t/7113/n1/all/n2/2/n3/28/v/10267/p/all/c2/6794/c58/2795/d/v10267%201?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Valor']
@@ -74,7 +75,7 @@ except Exception as e:
 # sidra 356 - estimativa da população
 url = 'https://apisidra.ibge.gov.br/values/t/356/n1/all/n2/2/n3/28/v/1887/p/all/c1/6795/c2/6794/c58/2795/d/v1887%201?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Valor']
@@ -90,7 +91,7 @@ except Exception as e:
 # sidra 7126 - estimativa da população
 url = 'https://apisidra.ibge.gov.br/values/t/7126/n1/all/n2/2/n3/28/v/3593/p/all/c2/6794/c58/2795/d/v3593%201?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Valor']
@@ -106,7 +107,7 @@ except Exception as e:
 # sidra 7143 - estimativa da população
 url = 'https://apisidra.ibge.gov.br/values/t/7143/n1/all/n2/2/n3/28/v/10274/p/all/c872/47821,47823,47825,47826/c11797/allxt/d/v10274%201?formato=json'
 try:
-    data = c.open_url(url)
+    data =session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D5N', 'D4N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Rede', 'Nível', 'Valor']

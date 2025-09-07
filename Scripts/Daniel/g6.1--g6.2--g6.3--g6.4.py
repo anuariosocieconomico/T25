@@ -24,13 +24,14 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
+session = c.create_session_with_retries()
 # contas da produção
 try:
     year = datetime.now().year
     while True:
         # url da base contas regionais
         url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
-        response = c.open_url(url)
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
         
         if response.status_code == 200:
             content = pd.DataFrame(response.json())

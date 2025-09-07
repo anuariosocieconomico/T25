@@ -24,13 +24,14 @@ errors = {}
 # DOWNLOAD DA BASE DE DADOS
 # ************************
 
+session = c.create_session_with_retries()
 # contas da produção
 try:
     year = datetime.now().year
     while True:
         # url da base contas regionais
         url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
-        response = c.open_url(url)
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
         
         if response.status_code == 200:
             content = pd.DataFrame(response.json())
@@ -54,7 +55,7 @@ except Exception as e:
 # sidra 3939
 url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/28/v/all/p/all/c79/2670,2672,2677,32793,32794,32796?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
@@ -69,7 +70,7 @@ except Exception as e:
 # sidra 74
 url = 'https://apisidra.ibge.gov.br/values/t/74/n1/all/n2/2/n3/28/v/106/p/all/c80/2682,2685,2687?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'MN', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Unidade', 'Valor']
@@ -84,7 +85,7 @@ except Exception as e:
 # sidra 1092
 url = 'https://apisidra.ibge.gov.br/values/t/1092/n1/all/n3/all/v/284,1000284/p/all/c12716/115236/c18/992/c12529/118225/d/v1000284%202?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D2N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
@@ -103,7 +104,7 @@ except Exception as e:
 # sidra 3939-2
 url = 'https://apisidra.ibge.gov.br/values/t/3939/n1/all/n2/2/n3/11,12,13,14,15,16,21,22,23,24,17,25,26,27,28,29,31,32,33,35,41,42,43,51,52,50/v/all/p/all/c79/2670,32794,32796?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Valor']
@@ -120,7 +121,7 @@ except Exception as e:
 # sidra 3940
 url = 'https://apisidra.ibge.gov.br/values/t/3940/n1/all/n2/2/n3/all/v/allxp/p/all/c654/allxt/d/v215%200?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D2N', 'D4N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Variável', 'Produto', 'Valor']

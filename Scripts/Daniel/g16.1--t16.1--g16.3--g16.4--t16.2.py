@@ -191,11 +191,11 @@ try:
     while True:
         print(f'Tentando baixar a planilha de Indicadores Sociais do ano {year}...')
         url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{str(year)}/Tabelas/xls'
-        response = c.open_url(url)
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
         if response.status_code == 200 and len(response.json()) > 1:  # verifica se a resposta é válida e contém dados
             data = pd.DataFrame(response.json())
             download = data.loc[data['name'].str.lower().str.contains('moradia'), 'url'].values[0]  # extrai a URL de download do arquivo de moradia
-            file = c.open_url(download)
+            file = session.get(url, timeout=session.request_timeout, headers=c.headers)
             if file.status_code == 200:
                 zip_file = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 3.8', skiprows=9)
                 for tb in zip_file.keys():  # percorre as abas do excel, ignorando as que contêm (CV)
@@ -249,11 +249,11 @@ try:
     while True:
         print(f'Tentando baixar a planilha de Indicadores Sociais do ano {year}...')
         url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{str(year)}/Tabelas/xls'
-        response = c.open_url(url)
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
         if response.status_code == 200 and len(response.json()) > 1:  # verifica se a resposta é válida e contém dados
             data = pd.DataFrame(response.json())
             download = data.loc[data['name'].str.lower().str.contains('moradia'), 'url'].values[0]  # extrai a URL de download do arquivo de moradia
-            file = c.open_url(download)
+            file = session.get(url, timeout=session.request_timeout, headers=c.headers)
             if file.status_code == 200:
                 zip_file = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 3.22', skiprows=8)
                 for tb in zip_file.keys():  # percorre as abas do excel, ignorando as que contêm (CV)
