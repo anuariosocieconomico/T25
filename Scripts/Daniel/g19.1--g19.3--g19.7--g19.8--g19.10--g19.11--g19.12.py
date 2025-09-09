@@ -95,13 +95,19 @@ try:
     c.to_excel(df_concat, dbs_path, 'VDE_concat.xlsx')
 
     # coleta dados populacionais das UFs (GERAL)
-    data = sidrapy.get_table(
-        table_code='7358',
-        territorial_level='3', ibge_territorial_code='all',
-        variable='all',
-        period="all",
-        classifications={'2': '5,6794', '287':'100362', '1933':'all'}
-    )
+    attempts = 0
+    while attempts <= 5:
+        try:
+            data = sidrapy.get_table(
+                table_code='7358',
+                territorial_level='3', ibge_territorial_code='all',
+                variable='all',
+                period="all",
+                classifications={'2': '5,6794', '287':'100362', '1933':'all'}
+            )
+            break
+        except:
+            attempts += 1
 
     # tratamento básico para join na tabela de homicídios
     data.drop(0, axis='index', inplace=True)

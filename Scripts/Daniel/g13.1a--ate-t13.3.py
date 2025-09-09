@@ -45,19 +45,25 @@ try:
     }.items():
         # looping de requisições para cada região da tabela
         dfs = []
+        attempts = 0
         for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
-            data = sidrapy.get_table(
-                table_code=table['tb'],
-                territorial_level=reg[0],ibge_territorial_code=reg[1],
-                variable=table['var'],
-                classifications=table['class'],
-                period="all"
-            )
+            while attempts <= 5:
+                try:
+                    data = sidrapy.get_table(
+                        table_code=table['tb'],
+                        territorial_level=reg[0],ibge_territorial_code=reg[1],
+                        variable=table['var'],
+                        classifications=table['class'],
+                        period="all"
+                    )
 
-            # remoção da linha 0, dados para serem usados como rótulos das colunas
-            data.drop(0, axis='index', inplace=True)
+                    # remoção da linha 0, dados para serem usados como rótulos das colunas
+                    data.drop(0, axis='index', inplace=True)
 
-            dfs.append(data)
+                    dfs.append(data)
+                    break
+                except:
+                    attempts += 1
 
         # união das regiões da variável
         data = pd.concat(dfs, ignore_index=True)

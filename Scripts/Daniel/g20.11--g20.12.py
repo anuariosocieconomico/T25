@@ -74,12 +74,19 @@ except Exception as e:
 try:
     regions = [('1', 'all'), ('2', '2'), ('3', '28')]
     dfs = []
+    attempts = 0
     for reg in regions:
-        data = sidrapy.get_table(table_code='7435', territorial_level=reg[0], ibge_territorial_code=reg[1],
-                                variable='10681', period='all', header='n')
-        data = data[['D1N', 'D2N', 'V']]
-        dfs.append(data)
-        c.delay_requests(1)
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(table_code='7435', territorial_level=reg[0], ibge_territorial_code=reg[1],
+                                        variable='10681', period='all', header='n')
+                data = data[['D1N', 'D2N', 'V']]
+                dfs.append(data)
+                c.delay_requests(1)
+                break
+            except:
+                attempts += 1
+
 
     df_concat = pd.concat(dfs, ignore_index=True)
     df_concat.columns = ['Região', 'Ano', 'Índice de Gini']

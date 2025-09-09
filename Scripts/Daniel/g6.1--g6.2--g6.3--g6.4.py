@@ -28,25 +28,24 @@ session = c.create_session_with_retries()
 # contas da produção
 try:
     year = datetime.now().year
-    while True:
-        # url da base contas regionais
-        url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
-        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
-        
-        if response.status_code == 200:
+    while year >= 2020:
+        try:
+            # url da base contas regionais
+            url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais/{year}/xls'
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
             content = pd.DataFrame(response.json())
             link = content.query(
                 'name.str.lower().str.startswith("conta_da_producao_2010") and name.str.lower().str.endswith(".zip")'
             )['url'].values[0]
-            if link:
-                response = c.open_url(link)
-                c.to_file(dbs_path, 'ibge_conta_producao.zip', response.content)
-                break
-        else:
-            if year > 2020:
-                year -= 1
-            else:
-                break
+            response = session.get(link, timeout=session.request_timeout, headers=c.headers)
+            c.to_file(dbs_path, 'ibge_conta_producao.zip', response.content)
+            break
+        
+        except:
+            year -= 1
+    
+    if response.status_code == 200:
+        print(f'Download da base "Contas da Produção" realizado com sucesso para o ano de {year}.')
 
 except Exception as e:
     errors[url + ' (Conta da Produção)'] = traceback.format_exc()

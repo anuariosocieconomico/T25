@@ -26,13 +26,21 @@ session = c.create_session_with_retries()
 # Gráfico 15.1
 try:
     # looping de requisições para cada tabela da figura
-    data = sidrapy.get_table(
-        table_code='6706',
-        territorial_level='3',ibge_territorial_code='28',
-        variable='8413',
-        classifications={'2': '6794', '58': 'all'},
-        period="all"
-    )
+    attempts = 0
+    while True:
+        try:
+            data = sidrapy.get_table(
+                table_code='6706',
+                territorial_level='3',ibge_territorial_code='28',
+                variable='8413',
+                classifications={'2': '6794', '58': 'all'},
+                period="all"
+            )
+        except:
+            attempts += 1
+
+        if not data.empty or attempts == 5:
+            break
 
     # remoção da linha 0, dados para serem usados como rótulos das colunas
     # não foram usados porque variam de acordo com a tabela
@@ -82,18 +90,24 @@ except:
 try:
     # looping de requisições para cada tabela da figura
     dfs = []
+    attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='3727',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='all',
-            period="all"
-        )
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='3727',
+                    territorial_level=reg[0],ibge_territorial_code=reg[1],
+                    variable='all',
+                    period="all"
+                )
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
+                # remoção da linha 0, dados para serem usados como rótulos das colunas
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     data = pd.concat(dfs, ignore_index=True)
 
@@ -158,18 +172,24 @@ except Exception as e:
 try:
     # looping de requisições para cada tabela da figura
     dfs = []
+    attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='3834',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='all',
-            period="all"
-        )
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='3834',
+                    territorial_level=reg[0],ibge_territorial_code=reg[1],
+                    variable='all',
+                    period="all"
+                )
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
+                # remoção da linha 0, dados para serem usados como rótulos das colunas
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     data = pd.concat(dfs, ignore_index=True)
 
@@ -235,18 +255,24 @@ except Exception as e:
 try:
     # looping de requisições para cada tabela da figura
     dfs = []
+    attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='1174',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='all',
-            period="all"
-        )
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='1174',
+                    territorial_level=reg[0],ibge_territorial_code=reg[1],
+                    variable='all',
+                    period="all"
+                )
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
+                # remoção da linha 0, dados para serem usados como rótulos das colunas
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     data = pd.concat(dfs, ignore_index=True)
 

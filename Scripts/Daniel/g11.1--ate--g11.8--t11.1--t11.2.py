@@ -214,11 +214,11 @@ try:
         'accept': 'application/json',
         'chave-api-dados-abertos': os.environ.get('DADOS_ABERTOS_API', '')
     }
-    response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+    response = session.get(url, timeout=session.request_timeout, headers=headers)
     data = response.json()
     link = data['recursos'][0]['link']
 
-    sheet = session.get(url, timeout=session.request_timeout, headers=c.headers, verify=False)
+    sheet = session.get(link, timeout=session.request_timeout, headers=headers, verify=False)
     sheet_data = c.open_file(file_path=sheet.content, ext='xls', skiprows=1)
 
     df = sheet_data[list(sheet_data.keys())[0]]

@@ -27,19 +27,25 @@ session = c.create_session_with_retries()
 # Gráfico 16.1
 try:
     # looping de requisições para cada tabela da figura
+    attempts = 0
     dfs = []
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='6578',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='10163',
-            period="all"
-        )
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='6578',
+                    territorial_level=reg[0],ibge_territorial_code=reg[1],
+                    variable='10163',
+                    period="all"
+                )
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
+                # remoção da linha 0, dados para serem usados como rótulos das colunas
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     data = pd.concat(dfs, ignore_index=True)
 
@@ -93,19 +99,25 @@ try:
     }.items():
         # looping de requisições para cada região da tabela
         dfs = []
+        attempts = 0
         for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-            data = sidrapy.get_table(
-                table_code=table['tb'],
-                territorial_level=reg[0],ibge_territorial_code=reg[1],
-                variable=table['var'],
-                classifications=table['class'],
-                period="all"
-            )
+            while attempts <= 5:
+                try:
+                    data = sidrapy.get_table(
+                        table_code=table['tb'],
+                        territorial_level=reg[0],ibge_territorial_code=reg[1],
+                        variable=table['var'],
+                        classifications=table['class'],
+                        period="all"
+                    )
 
-            # remoção da linha 0, dados para serem usados como rótulos das colunas
-            data.drop(0, axis='index', inplace=True)
+                    # remoção da linha 0, dados para serem usados como rótulos das colunas
+                    data.drop(0, axis='index', inplace=True)
 
-            dfs.append(data)
+                    dfs.append(data)
+                    break
+                except:
+                    attempts += 1
 
         # união das regiões da variável
         data = pd.concat(dfs, ignore_index=True)
@@ -149,19 +161,25 @@ except Exception as e:
 try:
     # looping de requisições para cada tabela da figura
     dfs = []
+    attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='6821',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='9784',
-            classifications={'63': 'allxt'},
-            period="all"
-        )
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='6821',
+                    territorial_level=reg[0],ibge_territorial_code=reg[1],
+                    variable='9784',
+                    classifications={'63': 'allxt'},
+                    period="all"
+                )
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
+                # remoção da linha 0, dados para serem usados como rótulos das colunas
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     data = pd.concat(dfs, ignore_index=True)
 
@@ -188,39 +206,34 @@ try:
     # projeção da taxa
     year = datetime.today().year
     dfs = []
-    while True:
-        print(f'Tentando baixar a planilha de Indicadores Sociais do ano {year}...')
-        url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{str(year)}/Tabelas/xls'
-        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
-        if response.status_code == 200 and len(response.json()) > 1:  # verifica se a resposta é válida e contém dados
+    while year > 2023:
+        try:
+            print(f'Tentando baixar a planilha de Indicadores Sociais do ano {year}...')
+            url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{str(year)}/Tabelas/xls'
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+
             data = pd.DataFrame(response.json())
             download = data.loc[data['name'].str.lower().str.contains('moradia'), 'url'].values[0]  # extrai a URL de download do arquivo de moradia
-            file = session.get(url, timeout=session.request_timeout, headers=c.headers)
-            if file.status_code == 200:
-                zip_file = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 3.8', skiprows=9)
-                for tb in zip_file.keys():  # percorre as abas do excel, ignorando as que contêm (CV)
-                    if '(CV)' not in tb:
-                        df = zip_file[tb].dropna(how='any').reset_index(drop=True)  # remove linhas com valores nulos
-                        df = df.iloc[:, [0, 4]]  # seleciona apenas as colunas de interesse (UF e Mais de 3 moradores)
-                        df.columns = ['UF', 'Valor']
-                        df['Ano'] = tb
+            file = session.get(download, timeout=session.request_timeout, headers=c.headers)
 
-                        dfs.append(df)
-                    
-                df_final = pd.concat(dfs, ignore_index=True)
-                c.to_csv(df_final, dbs_path, 'indicadores_sociais_moradia.csv')
-                break
+            zip_file = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 3.8', skiprows=9)
+            for tb in zip_file.keys():  # percorre as abas do excel, ignorando as que contêm (CV)
+                if '(CV)' not in tb:
+                    df = zip_file[tb].dropna(how='any').reset_index(drop=True)  # remove linhas com valores nulos
+                    df = df.iloc[:, [0, 4]]  # seleciona apenas as colunas de interesse (UF e Mais de 3 moradores)
+                    df.columns = ['UF', 'Valor']
+                    df['Ano'] = tb
 
-            else:
-                errors['Planilha de Indicadores Sociais (Moradia)'] = f'Erro ao baixar a planilha de Indicadores Sociais do ano {year}. Status code: {file.status_code}'
-                break
+                    dfs.append(df)
+                        
+            df_final = pd.concat(dfs, ignore_index=True)
+            c.to_csv(df_final, dbs_path, 'indicadores_sociais_moradia.csv')
+            break
 
-        else:
-            if year > 2023:
-                year -= 1
-            else:
-                errors['Planilha de Indicadores Sociais (Moradia)'] = 'Não foi possível encontrar uma planilha válida de Indicadores Sociais.'
-                break
+        except:
+            year -= 1
+
+    df_final.columns
 
 except:
     errors['Planilha de Indicadores Sociais (Moradia)'] = traceback.format_exc()
@@ -246,39 +259,34 @@ try:
     # projeção da taxa
     year = datetime.today().year
     dfs = []
-    while True:
-        print(f'Tentando baixar a planilha de Indicadores Sociais do ano {year}...')
-        url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{str(year)}/Tabelas/xls'
-        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
-        if response.status_code == 200 and len(response.json()) > 1:  # verifica se a resposta é válida e contém dados
-            data = pd.DataFrame(response.json())
-            download = data.loc[data['name'].str.lower().str.contains('moradia'), 'url'].values[0]  # extrai a URL de download do arquivo de moradia
-            file = session.get(url, timeout=session.request_timeout, headers=c.headers)
-            if file.status_code == 200:
-                zip_file = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 3.22', skiprows=8)
-                for tb in zip_file.keys():  # percorre as abas do excel, ignorando as que contêm (CV)
-                    if '(CV)' not in tb:
-                        df = zip_file[tb].dropna(how='any').reset_index(drop=True)  # remove linhas com valores nulos
-                        df = df.iloc[:, [0, 4]]  # seleciona apenas as colunas de interesse (UF e Mais de 3 moradores)
-                        df.columns = ['UF', 'Valor']
-                        df['Ano'] = tb
+    while year > 2023:
+        try:
+            print(f'Tentando baixar a planilha de Indicadores Sociais do ano {year}...')
+            url = f'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_{str(year)}/Tabelas/xls'
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+            if response.status_code == 200 and len(response.json()) > 1:  # verifica se a resposta é válida e contém dados
+                data = pd.DataFrame(response.json())
+                download = data.loc[data['name'].str.lower().str.contains('moradia'), 'url'].values[0]  # extrai a URL de download do arquivo de moradia
+                file = session.get(download, timeout=session.request_timeout, headers=c.headers)
+                if file.status_code == 200:
+                    zip_file = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 3.22', skiprows=8)
+                    for tb in zip_file.keys():  # percorre as abas do excel, ignorando as que contêm (CV)
+                        if '(CV)' not in tb:
+                            df = zip_file[tb].dropna(how='any').reset_index(drop=True)  # remove linhas com valores nulos
+                            df = df.iloc[:, [0, 4]]  # seleciona apenas as colunas de interesse (UF e Mais de 3 moradores)
+                            df.columns = ['UF', 'Valor']
+                            df['Ano'] = tb
 
-                        dfs.append(df)
-                    
-                df_final = pd.concat(dfs, ignore_index=True)
-                c.to_csv(df_final, dbs_path, 'indicadores_sociais_moradia_2.csv')
-                break
+                            dfs.append(df)
+                        
+                    df_final = pd.concat(dfs, ignore_index=True)
+                    c.to_csv(df_final, dbs_path, 'indicadores_sociais_moradia_2.csv')
+                    break
 
-            else:
-                errors['Planilha de Indicadores Sociais (Moradia)'] = f'Erro ao baixar a planilha de Indicadores Sociais do ano {year}. Status code: {file.status_code}'
-                break
+        except:
+            year -= 1
 
-        else:
-            if year > 2023:
-                year -= 1
-            else:
-                errors['Planilha de Indicadores Sociais (Moradia)'] = 'Não foi possível encontrar uma planilha válida de Indicadores Sociais.'
-                break
+    df_final.columns
 
 except:
     errors['Planilha de Indicadores Sociais (Moradia)'] = traceback.format_exc()
@@ -302,22 +310,28 @@ except:
 try:
     # looping de requisições para cada tabela da figura
     dfs = []
+    attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        data = sidrapy.get_table(
-            table_code='6677',
-            territorial_level=reg[0],ibge_territorial_code=reg[1],
-            variable='10250',
-            classifications={'845': 'allxt'},
-            period="all"
-        )
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='6677',
+                    territorial_level=reg[0],ibge_territorial_code=reg[1],
+                    variable='10250',
+                    classifications={'845': 'allxt'},
+                    period="all"
+                )
 
-        # remoção da linha 0, dados para serem usados como rótulos das colunas
-        data.drop(0, axis='index', inplace=True)
+                # remoção da linha 0, dados para serem usados como rótulos das colunas
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     data = pd.concat(dfs, ignore_index=True)
-
+    
     # seleção das colunas de interesse
     data = data[['D1N', 'D4N', 'D2N', 'V']].copy()
     data['D2N'] = pd.to_datetime(data['D2N'], format='%Y')

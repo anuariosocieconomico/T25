@@ -40,15 +40,15 @@ script_path = os.path.dirname(os.path.abspath(__file__))
 # para testes
 scripts_to_run = [
     'g3.1--g3.2--g3.3--g3.4--g3.5--g3.6--g3.7--g3.8--g3.9--g3.10.py',
-    'g4.1--g4.2--t4.1.py',
+    # 'g4.1--g4.2--t4.1.py',
     'g5.1--g5.2--g5.3--g5.4.py',
     'g6.1--g6.2--g6.3--g6.4.py',
-    'g10.1--g10.2--t10.1.py',
+    # 'g10.1--g10.2--t10.1.py',
     'g11.1--ate--g11.8--t11.1--t11.2.py',
     'g15.1--g15.2--g15.3--g15.4.py',
     'g16.1--t16.1--g16.3--g16.4--t16.2.py',
     'g17.1--g17.2--g17.3--g17.4--t17.1--t17.2.py',
-    'g20.5--g20.6--g20.7--g20.8.py'
+    # 'g20.5--g20.6--g20.7--g20.8.py'
     ]
 
 # Executa os scripts selecionados

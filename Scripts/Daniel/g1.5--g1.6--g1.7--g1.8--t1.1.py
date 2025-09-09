@@ -7,6 +7,7 @@ import traceback
 import tempfile
 import shutil
 import sidrapy
+from datetime import datetime
 
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
@@ -23,108 +24,159 @@ errors = {}
 # ************************
 
 # url da base contas regionais
-url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Contas_Regionais'
+session = c.create_session_with_retries()
 
 # download do arquivo pib pela ótica da renda
 try:
-    response = c.open_url(url)
-    df = pd.DataFrame(response.json())
-
-    # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    df = df.loc[
-        (df['name'].str.startswith('2')) &
-        (df['name'].str.len() == 4),
-        ['name', 'path']
-    ]
-    df['name'] = df['name'].astype(int)
-    df.sort_values(by='name', ascending=False, inplace=True)
-    df.reset_index(drop=True, inplace=True)
-
-    # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    last_year = df['name'][0]
-    url_to_get = url + '/' + str(last_year) + '/xls'
-    response = c.open_url(url_to_get)
-    df = pd.DataFrame(response.json())
-
-    while True:
+    attempts = 0
+    year = datetime.now().year
+    while attempts <= 5:
         try:
-            url_to_get_pib = df.loc[
-                (df['name'].str.startswith('PIB_Otica_Renda')) &
-                (df['name'].str.endswith('.xls')),
-                'url'
-            ].values[0]
-            break
+            url = f'https://ftp.ibge.gov.br/Contas_Regionais/{year}/xls/PIB_Otica_Renda_UF.xls'
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+            if response.status_code == 200:
+                c.to_file(dbs_path, 'ibge_pib_otica_renda.xls', response.content)
+                break
+            else:
+                attempts += 1
+                year -= 1
         except:
-            last_year -= 1
-            url_to_get = url + '/' + str(last_year) + '/xls'
-            response = c.open_url(url_to_get)
-            df = pd.DataFrame(response.json())
-            if last_year == 0:
-                errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
-                raise Exception('Arquivo não encontrado em anos anteriores')
+            attempts += 1
+            year -= 1
+    
+    # attempts = 0
+    # while attempts <= 5:
+    #     try:
+    #         response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+    #         df = pd.DataFrame(response.json())
+    #         break
+    #     except:
+    #         attempts += 1
 
-    # downloading e organização do arquivo pib pela ótica da renda
-    file = c.open_url(url_to_get_pib)
-    c.to_file(dbs_path, 'ibge_pib_otica_renda.xls', file.content)
+    # # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
+    # df = df.loc[
+    #     (df['name'].str.startswith('2')) &
+    #     (df['name'].str.len() == 4),
+    #     ['name', 'path']
+    # ]
+    # df['name'] = df['name'].astype(int)
+    # df.sort_values(by='name', ascending=False, inplace=True)
+    # df.reset_index(drop=True, inplace=True)
+
+    # # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
+    # last_year = df['name'][0]
+    # url_to_get = url + '/' + str(last_year) + '/xls'
+    # attempts = 0
+    # while attempts <= 5:
+    #     try:
+    #         response = session.get(url_to_get, timeout=session.request_timeout, headers=c.headers)
+    #         df = pd.DataFrame(response.json())
+    #         break
+    #     except:
+    #         attempts += 1
+
+    # while True:
+    #     try:
+    #         url_to_get_pib = df.loc[
+    #             (df['name'].str.startswith('PIB_Otica_Renda')) &
+    #             (df['name'].str.endswith('.xls')),
+    #             'url'
+    #         ].values[0]
+    #         break
+    #     except:
+    #         last_year -= 1
+    #         url_to_get = url + '/' + str(last_year) + '/xls'
+    #         response = c.open_url(url_to_get)
+    #         df = pd.DataFrame(response.json())
+    #         if last_year == 2020:
+    #             errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
+    #             raise Exception('Arquivo não encontrado em anos anteriores')
+
+    # # downloading e organização do arquivo pib pela ótica da renda
+    # file = c.open_url(url_to_get_pib)
+    # c.to_file(dbs_path, 'ibge_pib_otica_renda.xls', file.content)
 except Exception as e:
-    errors[url + ' (PIB)'] = traceback.format_exc()
+    errors['PIB - Contas Regionais'] = traceback.format_exc()
+
 
 # download do arquivo especiais 2010
 try:
-    response = c.open_url(url)
-    df = pd.DataFrame(response.json())
-
-    # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    df = df.loc[
-        (df['name'].str.startswith('2')) &
-        (df['name'].str.len() == 4),
-        ['name', 'path']
-    ]
-    df['name'] = df['name'].astype(int)
-    df.sort_values(by='name', ascending=False, inplace=True)
-    df.reset_index(drop=True, inplace=True)
-
-    # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    last_year = df['name'][0]
-    url_to_get = url + '/' + str(last_year) + '/xls'
-    response = c.open_url(url_to_get)
-    df = pd.DataFrame(response.json())
-
-    while True:
+    attempts = 0
+    year = datetime.now().year
+    while attempts <= 5:
         try:
-            url_to_get_esp = df.loc[
-                (df['name'].str.startswith('Especiais_2010')) &
-                (df['name'].str.endswith('.zip')),
-                'url'
-            ].values[0]
-            break
+            url = f'https://ftp.ibge.gov.br/Contas_Regionais/{year}/xls/Especiais_2010_{year}_xls.zip'
+            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+            if response.status_code == 200:
+                c.to_file(dbs_path, 'ibge_especiais.zip', response.content)
+                break
+            else:
+                attempts += 1
+                year -= 1
         except:
-            last_year -= 1
-            url_to_get_esp = url + '/' + str(last_year) + '/xls'
-            response = c.open_url(url_to_get_esp)
-            df = pd.DataFrame(response.json())
-            if last_year == 0:
-                errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
-                raise Exception('Arquivo não encontrado em anos anteriores')
+            attempts += 1
+            year -= 1
+    
+    # response = c.open_url(url)
+    # df = pd.DataFrame(response.json())
 
-    # downloading e organização do arquivo: especiais 2010
-    file = c.open_url(url_to_get_esp)
-    c.to_file(dbs_path, 'ibge_especiais.zip', file.content)
+    # # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
+    # df = df.loc[
+    #     (df['name'].str.startswith('2')) &
+    #     (df['name'].str.len() == 4),
+    #     ['name', 'path']
+    # ]
+    # df['name'] = df['name'].astype(int)
+    # df.sort_values(by='name', ascending=False, inplace=True)
+    # df.reset_index(drop=True, inplace=True)
+
+    # # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
+    # last_year = df['name'][0]
+    # url_to_get = url + '/' + str(last_year) + '/xls'
+    # response = c.open_url(url_to_get)
+    # df = pd.DataFrame(response.json())
+
+    # while True:
+    #     try:
+    #         url_to_get_esp = df.loc[
+    #             (df['name'].str.startswith('Especiais_2010')) &
+    #             (df['name'].str.endswith('.zip')),
+    #             'url'
+    #         ].values[0]
+    #         break
+    #     except:
+    #         last_year -= 1
+    #         url_to_get_esp = url + '/' + str(last_year) + '/xls'
+    #         response = c.open_url(url_to_get_esp)
+    #         df = pd.DataFrame(response.json())
+    #         if last_year == 0:
+    #             errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
+    #             raise Exception('Arquivo não encontrado em anos anteriores')
+
+    # # downloading e organização do arquivo: especiais 2010
+    # file = c.open_url(url_to_get_esp)
+    # c.to_file(dbs_path, 'ibge_especiais.zip', file.content)
 except Exception as e:
-    errors[url + ' (ESPECIAIS)'] = traceback.format_exc()
+    errors['Especiais - Contas Regionais'] = traceback.format_exc()
 
 # dados da população
 try:
     dfs = []
+    attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
-        data = sidrapy.get_table(
-            table_code='6579',
-            territorial_level=reg[0], ibge_territorial_code=reg[1],
-            variable='all', period='all'
-        )
-        data.drop(0, axis='index', inplace=True)
+        while attempts <= 5:
+            try:
+                data = sidrapy.get_table(
+                    table_code='6579',
+                    territorial_level=reg[0], ibge_territorial_code=reg[1],
+                    variable='all', period='all'
+                )
+                data.drop(0, axis='index', inplace=True)
 
-        dfs.append(data)
+                dfs.append(data)
+                break
+            except:
+                attempts += 1
 
     df = pd.concat(dfs, ignore_index=True)
     df = df[['D1N', 'D2N', 'V']]
@@ -137,7 +189,7 @@ try:
     c.to_excel(df, dbs_path, 'ibge_populacao.xlsx')
 
 except Exception as e:
-    errors[url] = traceback.format_exc()
+    errors['Sidra 6579'] = traceback.format_exc()
 
 # ************************
 # PLANILHA
