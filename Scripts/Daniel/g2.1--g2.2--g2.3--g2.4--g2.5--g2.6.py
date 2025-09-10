@@ -406,6 +406,7 @@ try:
 
     # join das duas tabelas
     df_merged = pd.merge(df_all_years, df_last_year, how='left', on='Produto', validate='1:1')
+    df_merged = df_merged.melt(id_vars=['Produto'], var_name='Categoria', value_name='Valor')
     df_merged.to_excel(os.path.join(sheets_path, 'g2.3.xlsx'), index=False, sheet_name='g2.3')
 
 except Exception as e:
