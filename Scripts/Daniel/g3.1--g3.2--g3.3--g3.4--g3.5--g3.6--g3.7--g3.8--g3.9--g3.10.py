@@ -345,7 +345,8 @@ try:
     df_top_razao = df_top_razao[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_top_razao.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
     df_top_razao.rename(columns={'Razão': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão
-    df_top_razao.to_excel(os.path.join(sheets_path, 'g3.5a.xlsx'), index=False, sheet_name=f'g3.5a {df_joined["Ano"].max()}')
+    df_top_razao['Ano'] = df_joined['Ano'].max()
+    df_top_razao.to_excel(os.path.join(sheets_path, 'g3.5a.xlsx'), index=False, sheet_name=f'g3.5a')
 
     # top 6 regiões com maior média da razão
     df_top_razao_media = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
@@ -356,7 +357,8 @@ try:
     df_top_razao_media = df_top_razao_media[['Região', 'Razão Média', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_top_razao_media.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
     df_top_razao_media.rename(columns={'Razão Média': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão média
-    df_top_razao_media.to_excel(os.path.join(sheets_path, 'g3.5b.xlsx'), index=False, sheet_name=f'g3.5b Média({df_joined["Ano"].min()}-{df_joined["Ano"].max()})')
+    df_top_razao_media['Ano'] = f'{df_joined["Ano"].min()}-{df_joined["Ano"].max()}'
+    df_top_razao_media.to_excel(os.path.join(sheets_path, 'g3.5b.xlsx'), index=False, sheet_name=f'g3.5b Média')
 
     # top 6 regiões com maior variação acumulada
     df_top_variacao = df_joined.query('Ano == @df_joined["Ano"].max()').copy()
@@ -367,7 +369,8 @@ try:
     df_top_variacao = df_top_variacao[['Região', 'Variação Acumulada', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_top_variacao.sort_values(by='Ranking', ascending=True, inplace=True)  # ordena pelo ranking
     df_top_variacao.rename(columns={'Variação Acumulada': 'Valor', 'Ranking': 'Ordem'}, inplace=True)  # renomeia a coluna de razão
-    df_top_variacao.to_excel(os.path.join(sheets_path, 'g3.5c.xlsx'), index=False, sheet_name=f'g3.5c Aumento({df_joined["Ano"].min()}-{df_joined["Ano"].max()})')
+    df_top_variacao['Ano'] = f'{df_joined["Ano"].min()}-{df_joined["Ano"].max()}'
+    df_top_variacao.to_excel(os.path.join(sheets_path, 'g3.5c.xlsx'), index=False, sheet_name=f'g3.5c Aumento')
 
 except Exception as e:
     errors['Gráfico 3.5'] = traceback.format_exc()
