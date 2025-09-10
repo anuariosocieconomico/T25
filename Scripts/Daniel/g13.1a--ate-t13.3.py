@@ -154,12 +154,12 @@ try:
         month = '10/'
 
     df_final['Variável'] = 'Pessoas de 14 anos ou mais de idade, na força de trabalho, na semana de referência'
-    df_final['Trimesetre'] = '01/' + month + df_final['Ano'].astype(str)
+    df_final['Trimestre'] = '01/' + month + df_final['Ano'].astype(str)
     
     df_final.drop('Valor', axis='columns', inplace=True)
     df_final.rename(columns={'Taxa': 'Valor'}, inplace=True)
     df_final['Valor'] = df_final['Valor'].round(2)
-    df_export = df_final[['Região', 'Variável', 'Trimesetre', 'Valor', 'Colocação']].copy()
+    df_export = df_final[['Região', 'Variável', 'Trimestre', 'Valor', 'Colocação']].copy()
     
     # tratamento para inclusão do símbolo de ordem
     df_export['Colocação'] = df_export['Colocação'].fillna(0.0).astype(int)
