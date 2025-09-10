@@ -112,7 +112,7 @@ try:
     ], ignore_index=True)
     df_last_year_final = df_last_year_final.query('Rank <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
     df_last_year_final.sort_values(by=['Rank', 'UF'], inplace=True)
-    df_last_year_final.rename(columns={'UF': 'Região', 'Valor': 'Gasto', 'Rank': 'Posição'}, inplace=True)
+    df_last_year_final.rename(columns={'UF': 'Região', 'Valor': 'Gasto ', 'Rank': 'Posição'}, inplace=True)
 
     c.to_excel(df_last_year_final, sheets_path, 'g18.1a.xlsx')
 
@@ -127,7 +127,8 @@ try:
     ], ignore_index=True)
     df_all_final = df_all_final.query('Posição <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
     df_all_final.sort_values(by=['Posição', 'UF'], inplace=True)
-    df_all_final.rename(columns={'UF': 'Região', 'Valor': f'Média ({min_year}-{max_year})', 'Posição': 'Posição'}, inplace=True)
+    df_all_final.rename(columns={'UF': 'Região', 'Valor': 'Média', 'Posição': 'Posição'}, inplace=True)
+    df_all_final['Ano'] = f'{min_year}-{max_year}'
 
     c.to_excel(df_all_final, sheets_path, 'g18.1b.xlsx')
 
@@ -176,6 +177,7 @@ try:
     df_final['Ano'] = '31/12/' + df_final['Ano'].astype('str')
 
     df_final.to_excel(os.path.join(sheets_path, 'g18.2.xlsx'), index=False, sheet_name='g18.2')
+    print(df_final['Ano'].unique())
 
 except Exception as e:
     errors['Gráfico 18.2'] = traceback.format_exc()
