@@ -162,7 +162,7 @@ try:
     df_b_final = df_b[['uf', 'diff', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
 
-    df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.7b')
+    df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.b')
 
 except:
     errors['Gráfico 20.7'] = traceback.format_exc()
