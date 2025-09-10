@@ -191,6 +191,7 @@ try:
     df_final.rename(columns={cols[-2]: 'Produto'}, inplace=True)
     df_final.sort_values(by='Produto', inplace=True)
     df_final = df_final[['Produto'] + final_cols[-2:]]
+    df_final = df_final.melt(id_vars=['Produto'], var_name='Categoria', value_name='Valor')
 
     df_final.to_excel(os.path.join(sheets_path, 'g8.3.xlsx'), index=False, sheet_name='g8.3')
 
