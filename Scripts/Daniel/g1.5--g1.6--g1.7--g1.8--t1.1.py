@@ -43,58 +43,6 @@ try:
         except:
             attempts += 1
             year -= 1
-    
-    # attempts = 0
-    # while attempts <= 5:
-    #     try:
-    #         response = session.get(url, timeout=session.request_timeout, headers=c.headers)
-    #         df = pd.DataFrame(response.json())
-    #         break
-    #     except:
-    #         attempts += 1
-
-    # # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    # df = df.loc[
-    #     (df['name'].str.startswith('2')) &
-    #     (df['name'].str.len() == 4),
-    #     ['name', 'path']
-    # ]
-    # df['name'] = df['name'].astype(int)
-    # df.sort_values(by='name', ascending=False, inplace=True)
-    # df.reset_index(drop=True, inplace=True)
-
-    # # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    # last_year = df['name'][0]
-    # url_to_get = url + '/' + str(last_year) + '/xls'
-    # attempts = 0
-    # while attempts <= 5:
-    #     try:
-    #         response = session.get(url_to_get, timeout=session.request_timeout, headers=c.headers)
-    #         df = pd.DataFrame(response.json())
-    #         break
-    #     except:
-    #         attempts += 1
-
-    # while True:
-    #     try:
-    #         url_to_get_pib = df.loc[
-    #             (df['name'].str.startswith('PIB_Otica_Renda')) &
-    #             (df['name'].str.endswith('.xls')),
-    #             'url'
-    #         ].values[0]
-    #         break
-    #     except:
-    #         last_year -= 1
-    #         url_to_get = url + '/' + str(last_year) + '/xls'
-    #         response = c.open_url(url_to_get)
-    #         df = pd.DataFrame(response.json())
-    #         if last_year == 2020:
-    #             errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
-    #             raise Exception('Arquivo não encontrado em anos anteriores')
-
-    # # downloading e organização do arquivo pib pela ótica da renda
-    # file = c.open_url(url_to_get_pib)
-    # c.to_file(dbs_path, 'ibge_pib_otica_renda.xls', file.content)
 except Exception as e:
     errors['PIB - Contas Regionais'] = traceback.format_exc()
 
@@ -116,46 +64,6 @@ try:
         except:
             attempts += 1
             year -= 1
-    
-    # response = c.open_url(url)
-    # df = pd.DataFrame(response.json())
-
-    # # pequisa pela publicação mais recente --> inicia com '2' e possui 4 caracteres
-    # df = df.loc[
-    #     (df['name'].str.startswith('2')) &
-    #     (df['name'].str.len() == 4),
-    #     ['name', 'path']
-    # ]
-    # df['name'] = df['name'].astype(int)
-    # df.sort_values(by='name', ascending=False, inplace=True)
-    # df.reset_index(drop=True, inplace=True)
-
-    # # obtém o caminho da publicação mais recente e adiciona à url de acesso aos arquivos
-    # last_year = df['name'][0]
-    # url_to_get = url + '/' + str(last_year) + '/xls'
-    # response = c.open_url(url_to_get)
-    # df = pd.DataFrame(response.json())
-
-    # while True:
-    #     try:
-    #         url_to_get_esp = df.loc[
-    #             (df['name'].str.startswith('Especiais_2010')) &
-    #             (df['name'].str.endswith('.zip')),
-    #             'url'
-    #         ].values[0]
-    #         break
-    #     except:
-    #         last_year -= 1
-    #         url_to_get_esp = url + '/' + str(last_year) + '/xls'
-    #         response = c.open_url(url_to_get_esp)
-    #         df = pd.DataFrame(response.json())
-    #         if last_year == 0:
-    #             errors[url + ' (PIB)'] = 'Arquivo não encontrado em anos anteriores'
-    #             raise Exception('Arquivo não encontrado em anos anteriores')
-
-    # # downloading e organização do arquivo: especiais 2010
-    # file = c.open_url(url_to_get_esp)
-    # c.to_file(dbs_path, 'ibge_especiais.zip', file.content)
 except Exception as e:
     errors['Especiais - Contas Regionais'] = traceback.format_exc()
 
@@ -395,22 +303,18 @@ try:
             df_diff_top6 = pd.concat([df_diff_states.query('Rank <= 6 or UF == "Sergipe"'), df_diff.query('UF in ["Brasil", "Nordeste"]')])  # senão, adiciona sergipe
         
         df_diff_top6 = df_diff_top6[['UF', 'Diff', 'Rank']]
+        df_diff_top6.rename(columns={'Diff': 'Valor'}, inplace=True)
 
         if years[1] != min_year:  # se for variação do último ano, define o texto abaixo
-            df_diff_top6.rename(columns={'Diff': f'Variação (%) {max_year}'}, inplace=True)
+            df_diff_top6['Categoria'] = f'Variação (%) {max_year}'
         else:
-            df_diff_top6.rename(columns={'Diff': f'Variação (%) {max_year}/{min_year}'}, inplace=True)  # senão, define ao lado
+            df_diff_top6['Categoria'] = f'Variação (%) {max_year}/{min_year}'
 
         df_diff_top6['UF'] = df_diff_top6['UF'].map(c.mapping_states_abbreviation)
         dfs.append(df_diff_top6)
         columns.extend(df_diff_top6.columns)
 
-    # transformação do dataframes em listas de tuplas para unir cada tuplca como uma linha única no novo dataframe
-    tuple1 = list(dfs[0].itertuples(index=False, name=None))
-    tuple2 = list(dfs[1].itertuples(index=False, name=None))
-    tuple_final = [a + b for a, b in zip(tuple1, tuple2)]
-
-    df_final = pd.DataFrame(tuple_final, columns=columns)
+    df_final = pd.concat(dfs, ignore_index=True)
 
     df_final.to_excel(os.path.join(sheets_path, 'g1.1.xlsx'), index=False, sheet_name='g1.1')
 
@@ -590,13 +494,15 @@ try:
 
     df_all_top6['UF'] = df_all_top6['UF'].map(c.mapping_states_abbreviation)
 
-    # transformação do dataframes em listas de tuplas para unir cada tuplca como uma linha única no novo dataframe
-    tuple1 = list(df_rank_last_year_top6.itertuples(index=False, name=None))
-    tuple2 = list(df_all_top6.itertuples(index=False, name=None))
-    tuple_final = [a + b for a, b in zip(tuple1, tuple2)]
+    cat_last_year = df_rank_last_year_top6.columns[1]
+    df_rank_last_year_top6.columns = ['UF', 'Valor', 'Rank']
+    df_rank_last_year_top6['Categoria'] = cat_last_year
 
-    columns = df_rank_last_year_top6.columns.tolist() + df_all_top6.columns.tolist()
-    df_final = pd.DataFrame(tuple_final, columns=columns)
+    cat_all = df_all_top6.columns[1]
+    df_all_top6.columns = ['UF', 'Valor', 'Rank']
+    df_all_top6['Categoria'] = cat_all
+
+    df_final = pd.concat([df_rank_last_year_top6, df_all_top6], ignore_index=True)
 
     df_final.to_excel(os.path.join(sheets_path, 'g1.3.xlsx'), index=False, sheet_name='g1.3')
 
