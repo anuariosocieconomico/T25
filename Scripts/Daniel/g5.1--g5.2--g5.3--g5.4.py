@@ -111,21 +111,21 @@ try:
 
     df_concat = pd.concat(dfs, ignore_index=True)
     df_concat['Valor Ajustado'] = (df_concat[cols[-1]] / df_concat['Index']) * 100.00  # calcula o valor ajustado
-    df_concat['VAB: variação do volume (direta)'] = (df_concat[cols[2]] - 1) * 100.00  # calcula a variação do volume
+    df_concat['VAB: variação do volume (direita)'] = (df_concat[cols[2]] - 1) * 100.00  # calcula a variação do volume
 
     # organização da tabela
-    df_concat = df_concat[[cols[0], 'Variável', 'Valor Ajustado', 'VAB: variação do volume (direta)']].copy()
+    df_concat = df_concat[[cols[0], 'Variável', 'Valor Ajustado', 'VAB: variação do volume (direita)']].copy()
     df_concat['Variável'] = df_concat['Variável'].apply(lambda x:
         'Valor Bruto da Produção' if 'valor bruto da produção' in x.lower().strip() else
         'Consumo intermediário' if 'consumo intermediário' in x.lower().strip() else
         'Valor Adicionado Bruto' if 'valor adicionado bruto' in x.lower().strip() else x
     )
-    vab = df_concat.query("Variável == 'Valor Adicionado Bruto'")[['ANO', 'VAB: variação do volume (direta)']]  # filtra o valor adicionado bruto
+    vab = df_concat.query("Variável == 'Valor Adicionado Bruto'")[['ANO', 'VAB: variação do volume (direita)']]  # filtra o valor adicionado bruto
     df_pivot = df_concat.pivot(index=cols[0], columns='Variável', values='Valor Ajustado').reset_index()
     df_pivot = df_pivot.merge(vab, on=cols[0], how='left', validate='1:1')  # junta o valor adicionado bruto
 
     df_pivot.rename(columns={'ANO': 'Ano'}, inplace=True)  # renomeia a coluna de ano
-    df_pivot = df_pivot[['Ano', 'Valor Bruto da Produção', 'Consumo intermediário', 'Valor Adicionado Bruto', 'VAB: variação do volume (direta)']]  # reordena as colunas
+    df_pivot = df_pivot[['Ano', 'Valor Bruto da Produção', 'Consumo intermediário', 'Valor Adicionado Bruto', 'VAB: variação do volume (direita)']]  # reordena as colunas
     df_pivot['Ano'] = df_pivot['Ano'].astype(int)  # converte a coluna de ano para inteiro
 
     df_pivot.to_excel(os.path.join(sheets_path, 'g5.1.xlsx'), index=False, sheet_name='g5.1')
