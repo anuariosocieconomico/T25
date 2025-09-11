@@ -611,21 +611,26 @@ try:
 
             # dataframes com variações
             df_last = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 1]').copy()
-            df_all = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.min()]').copy()
+            df_all = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 10]').copy()
             
             for i, tb in enumerate([df_last, df_all]):
                 tb.sort_values(by='Ano', ascending=True, inplace=True)
-                tb['Variação'] = tb['Valor'].diff() / tb['Valor'].shift(1) * 100
+
+                if i == 0:
+                    tb['Variação'] = tb['Valor'].diff() / tb['Valor'].shift(1) * 100
+                else:
+                    tb['Variação'] = tb['Valor'].diff()
+                
                 tb['Atividade'] = df_var
                 tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
                 tb = tb[['Variação', 'Atividade', 'Período']].copy()
                 tb.dropna(inplace=True)
                 tb.reset_index(drop=True, inplace=True)
                 
-                if i == 0:
-                    tb['Categoria'] = 'Último ano da série histórica'
-                else:
-                    tb['Categoria'] = 'Toda a série histórica'
+                # if i == 0:
+                #     tb['Categoria'] = 'Último ano da série histórica'
+                # else:
+                #     tb['Categoria'] = 'Toda a série histórica'
 
                 dfs.append(tb)
             
@@ -633,63 +638,63 @@ try:
     df_concat['Rank'] = df_concat.groupby(['Período'])['Variação'].rank(method='first', ascending=False)
     df_concat.sort_values(by=['Período', 'Variação'], ascending=[True, False], inplace=True)
 
-    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período', 'Categoria']].copy()
+    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período']].copy()
 
     c.to_excel(df_concat, sheets_path, 'g1.9.xlsx')
 
 except Exception as e:
     errors['Gráfico 1.9'] = traceback.format_exc()
 
-# gráfico 1.10
-try:
-    data = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab05.xls', skiprows=3)
+# # gráfico 1.10
+# try:
+#     data = c.open_file(dbs_path, 'ibge_especiais.zip', 'zip', excel_name='tab05.xls', skiprows=3)
     
-    dfs_last = []
-    dfs_all = []
-    dfs = []
-    for k in data.keys():
-        if k != 'Sumário' and k != 'Tabela5.1' and k != 'Tabela5.13':
-            df = data[k].copy()
-            df_var = df.iloc[0, 0]  # extrai a atividade econômica
+#     dfs_last = []
+#     dfs_all = []
+#     dfs = []
+#     for k in data.keys():
+#         if k != 'Sumário' and k != 'Tabela5.1' and k != 'Tabela5.13':
+#             df = data[k].copy()
+#             df_var = df.iloc[0, 0]  # extrai a atividade econômica
 
-            # limpeza do dataframe
-            df.rename(columns={'Unnamed: 0': 'UF'}, inplace=True)
-            df['UF'] = df['UF'].str.strip()
-            df = df.melt(
-                id_vars='UF', value_vars=list(df.columns[1:]),
-                var_name='Ano', value_name='Valor'
-            )
+#             # limpeza do dataframe
+#             df.rename(columns={'Unnamed: 0': 'UF'}, inplace=True)
+#             df['UF'] = df['UF'].str.strip()
+#             df = df.melt(
+#                 id_vars='UF', value_vars=list(df.columns[1:]),
+#                 var_name='Ano', value_name='Valor'
+#             )
 
-            # dataframes com variações
-            df_last = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 1]').copy()
-            df_all = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.min()]').copy()
+#             # dataframes com variações
+#             df_last = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 1]').copy()
+#             df_all = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.min()]').copy()
             
-            for i, tb in enumerate([df_last, df_all]):
-                tb.sort_values(by='Ano', ascending=True, inplace=True)
-                tb['Variação'] = tb['Valor'].diff() / tb['Valor'].shift(1) * 100
-                tb['Atividade'] = df_var
-                tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
-                tb = tb[['Variação', 'Atividade', 'Período']].copy()
-                tb.dropna(inplace=True)
-                tb.reset_index(drop=True, inplace=True)
+#             for i, tb in enumerate([df_last, df_all]):
+#                 tb.sort_values(by='Ano', ascending=True, inplace=True)
+#                 tb['Variação'] = tb['Valor'].diff() / tb['Valor'].shift(1) * 100
+#                 tb['Atividade'] = df_var
+#                 tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
+#                 tb = tb[['Variação', 'Atividade', 'Período']].copy()
+#                 tb.dropna(inplace=True)
+#                 tb.reset_index(drop=True, inplace=True)
                 
-                if i == 0:
-                    tb['Categoria'] = 'Último ano da série histórica'
-                else:
-                    tb['Categoria'] = 'Toda a série histórica'
+#                 if i == 0:
+#                     tb['Categoria'] = 'Último ano da série histórica'
+#                 else:
+#                     tb['Categoria'] = 'Toda a série histórica'
                 
-                dfs.append(tb)
+#                 dfs.append(tb)
 
-    df_concat = pd.concat(dfs, ignore_index=True)
-    df_concat['Rank'] = df_concat.groupby(['Período'])['Variação'].rank(method='first', ascending=True)
-    df_concat.sort_values(by=['Período', 'Variação'], ascending=[True, True], inplace=True)
+#     df_concat = pd.concat(dfs, ignore_index=True)
+#     df_concat['Rank'] = df_concat.groupby(['Período'])['Variação'].rank(method='first', ascending=True)
+#     df_concat.sort_values(by=['Período', 'Variação'], ascending=[True, True], inplace=True)
 
-    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período', 'Categoria']].copy()
+#     df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período', 'Categoria']].copy()
 
-    c.to_excel(df_concat, sheets_path, 'g1.10.xlsx')
+#     c.to_excel(df_concat, sheets_path, 'g1.10.xlsx')
 
-except Exception as e:
-    errors['Gráfico 1.10'] = traceback.format_exc()
+# except Exception as e:
+#     errors['Gráfico 1.10'] = traceback.format_exc()
 
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
