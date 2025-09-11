@@ -177,8 +177,8 @@ try:
     df_concat['last_year'] = df_concat.groupby([cols[2], cols[-2]])[cols[-1]].shift(1)
 
     df_final = df_concat.loc[df_concat['ANO'] == max_year].copy()
-    df_final[f'{max_year}-{max_year - 1}'] = ((df_final[cols[-1]] / df_final['last_year']) - 1) * 100
-    df_final[f'{max_year}/{min_year}'] = ((df_final[cols[-1]] / df_final['min_year']) - 1) * 100
+    df_final['atual-ano anterior'] = ((df_final[cols[-1]] / df_final['last_year']) - 1) * 100
+    df_final['atual/1997'] = ((df_final[cols[-1]] / df_final['min_year']) - 1) * 100
     final_cols = df_final.columns.tolist()
     
     # tratamento da coluna 'PRODUTO'
@@ -191,7 +191,7 @@ try:
     df_final.rename(columns={cols[-2]: 'Produto'}, inplace=True)
     df_final.sort_values(by='Produto', inplace=True)
     df_final = df_final[['Produto'] + final_cols[-2:]]
-    df_final = df_final.melt(id_vars=['Produto'], var_name='Categoria', value_name='Valor')
+    # df_final = df_final.melt(id_vars=['Produto'], var_name='Categoria', value_name='Valor')
 
     df_final.to_excel(os.path.join(sheets_path, 'g8.3.xlsx'), index=False, sheet_name='g8.3')
 
