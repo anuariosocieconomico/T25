@@ -618,11 +618,13 @@ try:
 
                 if i == 0:
                     tb['Variação'] = tb['Valor'].diff() / tb['Valor'].shift(1) * 100
+                    tb['Período'] = 'atual/ano anterior'
                 else:
                     tb['Variação'] = tb['Valor'].diff()
+                    tb['Período'] = 'atual/dez anos antes'
                 
                 tb['Atividade'] = df_var
-                tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
+                # tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
                 tb = tb[['Variação', 'Atividade', 'Período']].copy()
                 tb.dropna(inplace=True)
                 tb.reset_index(drop=True, inplace=True)
