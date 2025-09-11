@@ -306,8 +306,8 @@ except Exception as e:
 try:
     data = c.open_file(dbs_path, 'sidra_tables.xlsx', 'xls', sheet_name='Sheet1')
     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
-    min_year = data['Ano'].min()  # ano mínimo da tabela
     max_year = data['Ano'].max()  # ano máximo da tabela
+    min_year = max_year - 10  # ano mínimo da tabela
 
     # tratamento do deflator
     deflator = data_deflator.query('YEAR >= @min_year and YEAR <= @max_year').copy()
@@ -378,7 +378,7 @@ try:
 
     # ajuste final
     df_last_year = df_last_year[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
-    df_last_year.rename(columns={'QTD_Variation': f'Quantidade {max_year}/{max_year - 1}', 'VAL_Variation': f'Valor {max_year}/{max_year - 1}'}, inplace=True)
+    df_last_year.rename(columns={'QTD_Variation': 'Quantidade (atual/ano anterior)', 'VAL_Variation': 'Valor (atual/ano anterior)'}, inplace=True)
 
     # calcula a variação percentual das variáveis em relação a toda a série histórica
     df_all_years = df_joined.query('Ano in [@max_year, @min_year]')[cols].copy()
@@ -402,7 +402,7 @@ try:
 
     # ajuste final
     df_all_years = df_all_years[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
-    df_all_years.rename(columns={'QTD_Variation': f'Quantidade {max_year}/{min_year}', 'VAL_Variation': f'Valor {max_year}/{min_year}'}, inplace=True)
+    df_all_years.rename(columns={'QTD_Variation': 'Quantidade (atual/dez anos antes)', 'VAL_Variation': 'Valor (atual/dez anos antes)'}, inplace=True)
 
     # join das duas tabelas
     df_merged = pd.merge(df_all_years, df_last_year, how='left', on='Produto', validate='1:1')
