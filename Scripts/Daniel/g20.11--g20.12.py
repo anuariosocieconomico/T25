@@ -76,7 +76,7 @@ try:
     dfs = []
     attempts = 0
     for reg in regions:
-        while attempts <= 5:
+        while attempts <= 3:
             try:
                 data = sidrapy.get_table(table_code='7435', territorial_level=reg[0], ibge_territorial_code=reg[1],
                                         variable='10681', period='all', header='n')

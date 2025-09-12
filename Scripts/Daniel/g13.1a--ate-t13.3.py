@@ -47,7 +47,7 @@ try:
         dfs = []
         attempts = 0
         for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
-            while attempts <= 5:
+            while attempts <= 3:
                 try:
                     data = sidrapy.get_table(
                         table_code=table['tb'],

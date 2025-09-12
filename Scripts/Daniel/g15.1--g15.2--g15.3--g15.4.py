@@ -92,7 +92,7 @@ try:
     dfs = []
     attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        while attempts <= 5:
+        while attempts <= 3:
             try:
                 data = sidrapy.get_table(
                     table_code='3727',
@@ -174,7 +174,7 @@ try:
     dfs = []
     attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        while attempts <= 5:
+        while attempts <= 3:
             try:
                 data = sidrapy.get_table(
                     table_code='3834',
@@ -257,7 +257,7 @@ try:
     dfs = []
     attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', '28')]:
-        while attempts <= 5:
+        while attempts <= 3:
             try:
                 data = sidrapy.get_table(
                     table_code='1174',

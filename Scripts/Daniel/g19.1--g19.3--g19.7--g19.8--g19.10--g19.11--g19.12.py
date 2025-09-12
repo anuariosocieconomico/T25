@@ -96,7 +96,7 @@ try:
 
     # coleta dados populacionais das UFs (GERAL)
     attempts = 0
-    while attempts <= 5:
+    while attempts <= 3:
         try:
             data = sidrapy.get_table(
                 table_code='7358',
