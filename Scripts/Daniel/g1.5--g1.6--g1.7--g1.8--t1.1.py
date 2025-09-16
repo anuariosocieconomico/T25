@@ -30,7 +30,7 @@ session = c.create_session_with_retries()
 try:
     attempts = 0
     year = datetime.now().year
-    while attempts <= 5:
+    while attempts <= 3:
         try:
             url = f'https://ftp.ibge.gov.br/Contas_Regionais/{year}/xls/PIB_Otica_Renda_UF.xls'
             response = session.get(url, timeout=session.request_timeout, headers=c.headers)
@@ -51,7 +51,7 @@ except Exception as e:
 try:
     attempts = 0
     year = datetime.now().year
-    while attempts <= 5:
+    while attempts <= 3:
         try:
             url = f'https://ftp.ibge.gov.br/Contas_Regionais/{year}/xls/Especiais_2010_{year}_xls.zip'
             response = session.get(url, timeout=session.request_timeout, headers=c.headers)
@@ -72,7 +72,7 @@ try:
     dfs = []
     attempts = 0
     for reg in [('1', 'all'), ('2', '2'), ('3', 'all')]:
-        while attempts <= 5:
+        while attempts <= 3:
             try:
                 data = sidrapy.get_table(
                     table_code='6579',
@@ -618,14 +618,14 @@ try:
 
                 if i == 0:
                     tb['Variação'] = tb['Valor'].diff() / tb['Valor'].shift(1) * 100
-                    tb['Período'] = 'atual/ano anterior'
+                    tb['Categoria'] = 'Variação do último ano'
                 else:
                     tb['Variação'] = tb['Valor'].diff()
-                    tb['Período'] = 'atual/dez anos antes'
+                    tb['Categoria'] = 'Variação em dez anos'
                 
                 tb['Atividade'] = df_var
-                # tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
-                tb = tb[['Variação', 'Atividade', 'Período']].copy()
+                tb['Período'] = f'{tb.Ano.min()} / {tb.Ano.max()}'
+                tb = tb[['Variação', 'Atividade', 'Período', 'Categoria']].copy()
                 tb.dropna(inplace=True)
                 tb.reset_index(drop=True, inplace=True)
                 
@@ -640,7 +640,7 @@ try:
     df_concat['Rank'] = df_concat.groupby(['Período'])['Variação'].rank(method='first', ascending=False)
     df_concat.sort_values(by=['Período', 'Variação'], ascending=[True, False], inplace=True)
 
-    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período']].copy()
+    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período', 'Categoria']].copy()
 
     c.to_excel(df_concat, sheets_path, 'g1.9.xlsx')
 
