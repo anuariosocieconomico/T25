@@ -307,7 +307,7 @@ try:
     data = c.open_file(dbs_path, 'sidra_tables.xlsx', 'xls', sheet_name='Sheet1')
     data_deflator = c.open_file(dbs_path, 'ipeadata_ipa_di.xlsx', 'xls', sheet_name='Sheet1')
     max_year = data['Ano'].max()  # ano máximo da tabela
-    min_year = max_year - 10  # ano mínimo da tabela
+    min_year = max_year - 9  # ano mínimo da tabela
 
     # tratamento do deflator
     deflator = data_deflator.query('YEAR >= @min_year and YEAR <= @max_year').copy()
