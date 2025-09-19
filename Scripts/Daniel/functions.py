@@ -548,7 +548,7 @@ mapping_states_ibge_code = {
 }
 
 
-def create_session_with_retries(total_retries=5, backoff_factor=2, timeout=60):
+def create_session_with_retries(total_retries=3, backoff_factor=2, timeout=60):
     """
     Cria uma sessão requests com retries e timeout configuráveis.
     
