@@ -611,7 +611,7 @@ try:
 
             # dataframes com variações
             df_last = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 1]').copy()
-            df_all = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 10]').copy()
+            df_all = df.query('UF == "Sergipe" and Ano in [@df.Ano.max(), @df.Ano.max() - 9]').copy()
             
             for i, tb in enumerate([df_last, df_all]):
                 tb.sort_values(by='Ano', ascending=True, inplace=True)
@@ -640,7 +640,7 @@ try:
     df_concat['Rank'] = df_concat.groupby(['Período'])['Variação'].rank(method='first', ascending=False)
     df_concat.sort_values(by=['Período', 'Variação'], ascending=[True, False], inplace=True)
 
-    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período', 'Categoria']].copy()
+    df_concat = df_concat.loc[df_concat['Rank'] <= 6, ['Atividade', 'Variação', 'Período']].copy()
 
     c.to_excel(df_concat, sheets_path, 'g1.9.xlsx')
 
