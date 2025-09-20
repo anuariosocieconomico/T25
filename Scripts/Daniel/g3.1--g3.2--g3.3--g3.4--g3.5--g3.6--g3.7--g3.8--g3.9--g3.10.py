@@ -43,9 +43,6 @@ try:
         
         except:
             year -= 1
-    
-    if response.status_code == 200:
-        print(f'Download da base "Contas da Produção" realizado com sucesso para o ano de {year}.')
 
 except Exception as e:
     errors[url + ' (Conta da Produção)'] = traceback.format_exc()
