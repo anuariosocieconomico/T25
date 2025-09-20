@@ -31,6 +31,7 @@ try:
     driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/table[2]/thead/tr[2]/td[2]/center/form/select[1]/option[11]')
     # seleciona as opções da tabela
     driver.click([
         '/html/body/table[2]/thead/tr[2]/td[2]/center/form/select[1]/option[11]',  # linha UF

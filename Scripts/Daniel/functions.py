@@ -176,6 +176,9 @@ class Google:
         self.options.add_argument('--disable-dev-shm-usage')  # REMOVER EM CASO DE ERRO
         self.options.add_argument('--no-sandbox')  # REMOVER EM CASO DE ERRO
         self.options.add_argument('--remote-debugging-port=9222')  # REMOVER EM CASO DE ERRO
+        self.options.add_argument('--disable-gpu')  # REMOVER EM CASO DE ERRO
+        self.options.add_argument('--disable-software-rasterizer')  # REMOVER EM CASO DE ERRO
+        self.options.add_argument('--disable-extensions')  # REMOVER EM CASO DE ERRO
 
         if not visible:
             self.options.add_argument('--headless=new')

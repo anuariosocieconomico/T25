@@ -132,6 +132,15 @@ try:
     driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')  # clica no link de download da planilha
     time.sleep(2)
 
+    files = os.listdir(dbs_path)
+    print("Arquivos encontrados:", files)
+
+    for file in files:
+        print("Tamanho do arquivo:", os.path.getsize(os.path.join(dbs_path, file)))
+
+        with open(os.path.join(dbs_path, file), 'rb') as f:
+            print("Primeiros bytes:", f.read(100))
+
     # abre o arquivo zip
     data = c.open_file(dbs_path, os.listdir(dbs_path)[0], ext='zip', excel_name='divulgacao', skiprows=9)
     df_tb = data[list(data.keys())[0]].copy()  # cópia da primeira aba da planilha
@@ -165,6 +174,15 @@ try:
     driver.wait('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
     driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')  # clica no link de download da planilha
     time.sleep(2)
+
+    files = os.listdir(dbs_path)
+    print("Arquivos encontrados:", files)
+
+    for file in files:
+        print("Tamanho do arquivo:", os.path.getsize(os.path.join(dbs_path, file)))
+
+        with open(os.path.join(dbs_path, file), 'rb') as f:
+            print("Primeiros bytes:", f.read(100))
 
     # abre o arquivo zip
     dfs = []
