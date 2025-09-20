@@ -12,6 +12,8 @@ permissions:
 jobs:
   run-script-1:
     runs-on: windows-latest
+    env:
+      DADOS_ABERTOS_API: ${{ secrets.DADOS_ABERTOS_API }}
 
     steps:
       - name: Checkout repository
