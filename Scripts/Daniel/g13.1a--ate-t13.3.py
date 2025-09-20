@@ -760,19 +760,20 @@ except Exception as e:
 # Gráfico 13.8
 try:
     # projeção da taxa
+    session = c.create_session_with_retries()
     url = 'https://servicodados.ibge.gov.br/api/v1/downloads/estatisticas?caminho=Indicadores_Sociais/Sintese_de_Indicadores_Sociais'
-    response = c.open_url(url)
+    response = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(response.json())
 
     df = df.loc[df['name'].str.startswith('Sintese_de_Indicadores_Sociais_2'),
                 ['name', 'path']].sort_values(by='name', ascending=False).reset_index(drop=True)
 
     url_to_get = df['path'][0].split('/')[-1]
-    response = c.open_url(url + '/' + url_to_get + '/Tabelas/xls')
+    response = session.get(url + '/' + url_to_get + '/Tabelas/xls', timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(response.json())
     url_to_get_pib = df.loc[df['name'].str.startswith('1_'), 'url'].values[0]
 
-    file = c.open_url(url_to_get_pib)
+    file = session.get(url_to_get_pib, timeout=session.request_timeout, headers=c.headers)
 
     # importação dos indicadores
     df = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 1.42', skiprows=6)
