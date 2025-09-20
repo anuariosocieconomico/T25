@@ -27,7 +27,7 @@ session = c.create_session_with_retries()
 try:
     # looping de requisições para cada tabela da figura
     attempts = 0
-    while True:
+    while attempts <= 3:
         try:
             data = sidrapy.get_table(
                 table_code='6706',
@@ -36,16 +36,14 @@ try:
                 classifications={'2': '6794', '58': 'all'},
                 period="all"
             )
+            data.drop(0, axis='index', inplace=True)
+            break
         except:
             attempts += 1
-
-        if not data.empty or attempts == 5:
-            break
 
     # remoção da linha 0, dados para serem usados como rótulos das colunas
     # não foram usados porque variam de acordo com a tabela
     # seleção das colunas de interesse
-    data.drop(0, axis='index', inplace=True)
     data = data[['D1N', 'D5N', 'D2N', 'V']].copy()
     data['D2N'] = pd.to_datetime(data['D2N'], format='%Y')
     data = data.query('D2N.dt.year >= 2015')
