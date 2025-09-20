@@ -131,7 +131,6 @@ try:
     driver.wait('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
     driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')  # clica no link de download da planilha
     time.sleep(2)
-    driver.quit()  # encerra o driver do Selenium
 
     # abre o arquivo zip
     data = c.open_file(dbs_path, os.listdir(dbs_path)[0], ext='zip', excel_name='divulgacao', skiprows=9)
@@ -149,7 +148,7 @@ try:
     df_melted['Valor'] = pd.to_numeric(df_melted['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df_melted, dbs_path, 'ideb_anos_iniciais.xlsx')
-    
+    driver.quit()  # encerra o driver do Selenium
 
 except Exception as e:
     errors['IDEB - Anos Iniciais'] = traceback.format_exc()
@@ -166,7 +165,6 @@ try:
     driver.wait('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
     driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')  # clica no link de download da planilha
     time.sleep(2)
-    driver.quit()  # encerra o driver do Selenium
 
     # abre o arquivo zip
     dfs = []
@@ -190,6 +188,7 @@ try:
 
     df_final = pd.concat(dfs, ignore_index=True)
     c.to_excel(df_final, dbs_path, 'ideb_resultados.xlsx')
+    driver.quit()  # encerra o driver do Selenium
     
 except Exception as e:
     errors['IDEB Resultados'] = traceback.format_exc()

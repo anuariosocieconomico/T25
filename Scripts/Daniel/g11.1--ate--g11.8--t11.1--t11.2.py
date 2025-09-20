@@ -215,6 +215,7 @@ try:
         'chave-api-dados-abertos': os.environ.get('DADOS_ABERTOS_API', '')
     }
     response = session.get(url, timeout=session.request_timeout, headers=headers)
+    response.raise_for_status()
     data = response.json()
     link = data['recursos'][0]['link']
 

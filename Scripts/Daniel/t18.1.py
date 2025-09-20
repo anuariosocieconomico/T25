@@ -30,6 +30,7 @@ driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]')
     # seleciona as opções da tabela
     driver.click(
         [
@@ -64,6 +65,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/leiintbr.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]')
     # seleciona as opções da tabela
     driver.click(
         [
@@ -105,6 +107,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/leiintbr.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]')
     # seleciona as opções da tabela
     driver.click(
         [
@@ -148,6 +151,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/leiintbr.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]')
     # seleciona as opções da tabela
     driver.click(
         [
@@ -182,6 +186,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/leiintbr.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]')
     # seleciona as opções da tabela
     driver.click(
         [
@@ -224,6 +229,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?cnes/cnv/leiintbr.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[14]')
     # seleciona as opções da tabela
     driver.click(
         [
@@ -266,6 +272,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/projpopuf.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]')
     # seleciona as opções da tabela
     driver.click(
         [

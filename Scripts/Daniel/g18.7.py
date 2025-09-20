@@ -27,6 +27,7 @@ driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]')
     # seleciona as opções da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]',

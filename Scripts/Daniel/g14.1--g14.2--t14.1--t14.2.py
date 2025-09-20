@@ -30,7 +30,8 @@ errors = {}
 # sidra 5442
 url = 'https://apisidra.ibge.gov.br/values/t/5442/n1/all/n2/2/n3/28/v/5932/p/all/c888/47946,47947,47948,47949,47950,56622,56623,56624,60032?formato=json'
 try:
-    data = c.open_url(url)
+    session = c.create_session_with_retries()
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D4N', 'V']].copy()
     df.columns = ['Data', 'Região', 'Variável', 'Valor']
@@ -53,7 +54,8 @@ Enquanto o professor busca uma alternativa, ele pediu que coletasse os dados do 
 # sintese de indicadores sociais
 try:
     url = 'https://ftp.ibge.gov.br/Indicadores_Sociais/Sintese_de_Indicadores_Sociais/Sintese_de_Indicadores_Sociais_2020/xls/2_Rendimento_xls.zip'
-    file = c.open_url(url)
+    session = c.create_session_with_retries()
+    file = session.get(url, timeout=session.request_timeout, headers=c.headers)
     content = c.open_file(file_path=file.content, ext='zip', excel_name='Tabela 2.3', skiprows=6)
     dfs = []
     for tb in content.keys():
@@ -75,7 +77,8 @@ except Exception as e:
 # sidra 5606
 url = 'https://apisidra.ibge.gov.br/values/t/5606/n1/all/n2/2/n3/28/v/6293/p/all?formato=json'
 try:
-    data = c.open_url(url)
+    session = c.create_session_with_retries()
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'D2N', 'V']].copy()
     df.columns = ['Data', 'Região', 'Variável', 'Valor']
@@ -305,7 +308,7 @@ except:
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
 # se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
 if errors:
-    with open(os.path.join(errors_path, 'g14.1--g14.2--t14.1--t14.2.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(errors_path, 'script--g14.1--g14.2--t14.1--t14.2.txt'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(errors, indent=4, ensure_ascii=False))
 
 # remove os arquivos baixados

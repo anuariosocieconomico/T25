@@ -22,10 +22,11 @@ errors = {}
 # PLANILHA
 # ************************
 
+session = c.create_session_with_retries()
 # g20.11
 url = 'https://apisidra.ibge.gov.br/values/t/7435/n1/all/n2/2/n3/all/v/10681/p/all/d/v10681%203?formato=json'
 try:
-    data = c.open_url(url)
+    data = session.get(url, timeout=session.request_timeout, headers=c.headers)
     df = pd.DataFrame(data.json())
     df = df[['D3N', 'D1N', 'V']].copy()
     df.columns = ['Ano', 'Região', 'Valor']

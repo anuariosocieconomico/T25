@@ -688,17 +688,23 @@ except:
 
 # Gráfico 13.7
 try:
-    # download dos dados
-    data = sidrapy.get_table(
-        table_code='4097',
-        territorial_level='3',ibge_territorial_code='28',
-        variable='4108',
-        classifications={'11913': '31722,31723,31725,31726,31727,31731,96170,96171'},
-        period="all"
-    )
+    attempts = 0
+    while attempts < 3:
+        try:
+            # download dos dados
+            data = sidrapy.get_table(
+                table_code='4097',
+                territorial_level='3',ibge_territorial_code='28',
+                variable='4108',
+                classifications={'11913': '31722,31723,31725,31726,31727,31731,96170,96171'},
+                period="all"
+            )
 
-    # remoção da linha 0, dados para serem usados como rótulos das colunas
-    data.drop(0, axis='index', inplace=True)
+            # remoção da linha 0, dados para serem usados como rótulos das colunas
+            data.drop(0, axis='index', inplace=True)
+            break
+        except:
+            attempts += 1
 
     # seleção das colunas e linhas de interesse e tratamentos básicos
     df = data[['D1N', 'D3N', 'D4N', 'D2N', 'V']].copy()
@@ -804,19 +810,25 @@ except:
 
 # Tabela 13.2
 try:
-    data = sidrapy.get_table(
-        table_code='5434',
-        territorial_level='3', ibge_territorial_code='28',
-        variable='4090,4108',
-        classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
-        period="all"
-    )
+    attempts = 0
+    while attempts <= 3:
+        try:
+            data = sidrapy.get_table(
+                table_code='5434',
+                territorial_level='3', ibge_territorial_code='28',
+                variable='4090,4108',
+                classifications={'888': '47947,47948,47949,47950,56622,56623,56624,60032'},
+                period="all"
+            )
 
-    # remoção da linha 0, dados para serem usados como rótulos das colunas
-    # não foram usados porque variam de acordo com a tabela
-    # seleção das colunas de interesse
-    data.drop(0, axis='index', inplace=True)
-    data = data[['MN', 'D1N', 'D2N', 'D3N', 'D4N', 'V']]
+            # remoção da linha 0, dados para serem usados como rótulos das colunas
+            # não foram usados porque variam de acordo com a tabela
+            # seleção das colunas de interesse
+            data.drop(0, axis='index', inplace=True)
+            data = data[['MN', 'D1N', 'D2N', 'D3N', 'D4N', 'V']]
+            break
+        except:
+            attempts += 1
 
     # separação de valores; valores inteiros e percentuais estão armazenados na mesma coluna
     data_ab = data.loc[data['MN'] == 'Mil pessoas']

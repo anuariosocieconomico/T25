@@ -29,6 +29,7 @@ driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',
@@ -63,6 +64,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/projpopuf.def'  # 
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',
@@ -109,6 +111,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/projpopuf.def'  # 
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',
@@ -155,6 +158,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/ext10uf.def'  # url
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',
@@ -195,6 +199,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/ext10uf.def'  # url
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',
@@ -244,6 +249,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/ext10uf.def'  # url
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',
@@ -293,6 +299,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/ext10uf.def'  # url
 try:
     driver.get(url)  # acesso à pagina fonte
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]')
     # ações de click para definição das variáveis da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[3]',

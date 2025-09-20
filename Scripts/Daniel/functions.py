@@ -318,7 +318,7 @@ class Google:
         Raises:
             TimeoutException: Se o elemento não aparecer no tempo especificado.
         """
-        WebDriverWait(self.browser, 600).until(
+        WebDriverWait(self.browser, 180).until(
             EC.presence_of_element_located((By.XPATH, xpath))
         )
         self.browser.implicitly_wait(3)

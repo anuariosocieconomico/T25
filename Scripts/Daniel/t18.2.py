@@ -30,6 +30,7 @@ for i in range(3):
     try:
         driver.get(url)  # acessa a página
 
+        driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[24]')
         # seleciona as opções da tabela
         driver.click([
             '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[24]',
@@ -84,6 +85,7 @@ url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?ibge/cnv/projpopuf.def'
 try:
     driver.get(url)  # acessa a página
 
+    driver.wait('/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]')
     # seleciona as opções da tabela
     driver.click([
         '/html/body/div/div/center/div/form/div[2]/div/div[1]/select/option[2]',
