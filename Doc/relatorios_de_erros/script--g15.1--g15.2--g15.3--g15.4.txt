@@ -1,0 +1,3 @@
+{
+    "Gráfico 15.1": "Traceback (most recent call last):\n  File \"D:\\a\\T25\\T25\\Scripts\\Daniel\\g15.1--g15.2--g15.3--g15.4.py\", line 42, in <module>\n    if not data.empty or attempts == 5:\nNameError: name 'data' is not defined\n"
+}
