@@ -141,8 +141,10 @@ try:
         with open(os.path.join(dbs_path, file), 'rb') as f:
             print("Primeiros bytes:", f.read(100))
 
+    file_name = [file for file in files if '.zip' in file.lower()][0]
+    print('Arquivo escolhido:', file_name)
     # abre o arquivo zip
-    data = c.open_file(dbs_path, os.listdir(dbs_path)[0], ext='zip', excel_name='divulgacao', skiprows=9)
+    data = c.open_file(dbs_path, file_name, ext='zip', excel_name='divulgacao', skiprows=9)
     df_tb = data[list(data.keys())[0]].copy()  # cópia da primeira aba da planilha
     index = df_tb[df_tb[df_tb.columns[0]].str.lower().str.contains('fonte', na=False)].index  # localiza a linha de fonte para remover tudo que vem depois dela
     df_tb = df_tb.iloc[:index[0], :].copy()  # mantém apenas as linhas até a linha de fonte
@@ -157,7 +159,7 @@ try:
     df_melted['Valor'] = pd.to_numeric(df_melted['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df_melted, dbs_path, 'ideb_anos_iniciais.xlsx')
-    driver.quit()  # encerra o driver do Selenium
+    # driver.quit()  # encerra o driver do Selenium
 
 except Exception as e:
     errors['IDEB - Anos Iniciais'] = traceback.format_exc()
@@ -166,7 +168,7 @@ except Exception as e:
 # ideb resultados anos iniciais
 url = 'https://www.gov.br/inep/pt-br/areas-de-atuacao/pesquisas-estatisticas-e-indicadores/ideb/resultados'
 try:
-    driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
+    # driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
     driver.get(url)  # acessa a página
     time.sleep(2)
     driver.random_click()
@@ -185,8 +187,10 @@ try:
             print("Primeiros bytes:", f.read(100))
 
     # abre o arquivo zip
+    file_name = [file for file in files if '.zip' in file.lower() and file != 'ideb_anos_iniciais.xlsx'][0]
+    print('Arquivo escolhido:', file_name)
     dfs = []
-    data = c.open_file(dbs_path, os.listdir(dbs_path)[0], ext='zip', excel_name='divulgacao', skiprows=9)
+    data = c.open_file(dbs_path, file_name, ext='zip', excel_name='divulgacao', skiprows=9)
     for tb in list(data.keys()):
         df_tb = data[tb].copy()  # cópia da primeira aba da planilha
         index = df_tb[df_tb[df_tb.columns[0]].str.lower().str.contains('fonte', na=False)].index  # localiza a linha de fonte para remover tudo que vem depois dela

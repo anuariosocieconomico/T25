@@ -7,6 +7,7 @@ import traceback
 import tempfile
 import shutil
 from datetime import datetime
+from time import sleep
 
 
 # obtém o caminho desse arquivo de comandos para adicionar os diretórios que armazenará as bases de dados e planilhas
@@ -40,6 +41,7 @@ try:
             break
         except:
             attempts += 1
+            sleep(1)
 
     # remoção da linha 0, dados para serem usados como rótulos das colunas
     # não foram usados porque variam de acordo com a tabela
@@ -106,6 +108,7 @@ try:
                 break
             except:
                 attempts += 1
+                sleep(1)
 
     data = pd.concat(dfs, ignore_index=True)
 
@@ -188,6 +191,7 @@ try:
                 break
             except:
                 attempts += 1
+                sleep(1)
 
     data = pd.concat(dfs, ignore_index=True)
 
@@ -271,6 +275,7 @@ try:
                 break
             except:
                 attempts += 1
+                sleep(1)
 
     data = pd.concat(dfs, ignore_index=True)
 

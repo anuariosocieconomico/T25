@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   run-script-1:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     env:
       DADOS_ABERTOS_API: ${{ secrets.DADOS_ABERTOS_API }}
 
@@ -33,10 +33,9 @@ jobs:
         run: python Scripts/Daniel/1_GRUPO_SCRIPTS.py
 
       - name: Commit results
-        shell: pwsh
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Script 1 - atualização em $(Get-Date -Format u)" || Write-Host "Sem mudanças"
+          git commit -m "Script 1 - atualização em $(date -u)" || echo "Sem mudanças"
           git push origin main
