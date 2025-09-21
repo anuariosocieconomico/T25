@@ -502,7 +502,7 @@ try:
     df_all.sort_values(by='Ranking', ascending=True, inplace=True)
     df_all = df_all[['Região', 'Razão', 'Ranking']].query('Ranking <= 6 | `Região` in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_all.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
-    df_all['Ano'] = f'{min_year}-{max_year}'
+    df_all['Ano'] = f'{max_year}-{min_year}'
 
     df_all.to_excel(os.path.join(sheets_path, 'g3.9b.xlsx'), index=False, sheet_name=f'g3.11b média')
 
