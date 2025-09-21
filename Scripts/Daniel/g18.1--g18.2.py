@@ -114,6 +114,7 @@ try:
     df_last_year_final = df_last_year_final.query('Rank <= 6 or UF in ["Nordeste", "Brasil", "Sergipe"]', engine='python').copy()  # filtra apenas os 5 primeiros colocados, Nordeste e Brasil
     df_last_year_final.sort_values(by=['Rank', 'UF'], inplace=True)
     df_last_year_final.rename(columns={'UF': 'Região', 'Valor': 'Gasto ', 'Rank': 'Posição'}, inplace=True)
+    df_last_year_final['Ano'] = max_year
 
     c.to_excel(df_last_year_final, sheets_path, 'g18.1a.xlsx')
 
