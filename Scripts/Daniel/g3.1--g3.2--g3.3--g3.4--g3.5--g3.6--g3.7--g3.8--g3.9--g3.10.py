@@ -492,7 +492,7 @@ try:
     df_last_year.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
     df_last_year['Ano'] = max_year
 
-    df_last_year.to_excel(os.path.join(sheets_path, 'g3.9a.xlsx'), index=False, sheet_name=f'g3.11a')
+    df_last_year.to_excel(os.path.join(sheets_path, 'g3.9a.xlsx'), index=False, sheet_name=f'g3.9a')
 
     # maiores razões da série histórica
     df_all = df_joined.groupby('Região', as_index=False)['Razão'].mean()  # calcula a média da razão por região e variável
@@ -504,7 +504,7 @@ try:
     df_all.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
     df_all['Ano'] = f'{max_year}-{min_year}'
 
-    df_all.to_excel(os.path.join(sheets_path, 'g3.9b.xlsx'), index=False, sheet_name=f'g3.11b média')
+    df_all.to_excel(os.path.join(sheets_path, 'g3.9b.xlsx'), index=False, sheet_name=f'g3.9b média')
 
     # maiores variações de toda a série histórica
     df_diff = df_joined.query('Ano in [@max_year, @min_year]').copy()
@@ -518,7 +518,7 @@ try:
     df_diff.rename(columns={'Razão': 'Preço médio', 'Ranking': 'Posição'}, inplace=True)  # renomeia as colunas
     df_diff['Ano'] = f'{max_year}-{min_year}'
 
-    df_diff.to_excel(os.path.join(sheets_path, 'g3.9c.xlsx'), index=False, sheet_name=f'g3.11c variação')
+    df_diff.to_excel(os.path.join(sheets_path, 'g3.9c.xlsx'), index=False, sheet_name=f'g3.9c variação')
 
 except Exception as e:
     errors['Gráfico 3.9'] = traceback.format_exc()
