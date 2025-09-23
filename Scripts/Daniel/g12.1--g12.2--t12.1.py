@@ -100,161 +100,192 @@ errors = {}
 session = c.create_session_with_retries()
 
 try:
-    url = "https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%222025%22%2C%22typeForm%22%3A3%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2212%22%2C%2227%22%2C%2216%22%2C%2213%22%2C%2232%22%2C%2223%22%2C%2254%22%2C%2234%22%2C%2253%22%2C%2221%22%2C%2252%22%2C%2255%22%2C%2233%22%2C%2242%22%2C%2225%22%2C%2215%22%2C%2226%22%2C%2222%22%2C%2224%22%2C%2245%22%2C%2236%22%2C%2211%22%2C%2214%22%2C%2244%22%2C%2231%22%2C%2241%22%2C%2217%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
-    headers = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        "dnt": "1",
-        "origin": "https://comexstat.mdic.gov.br",
-        "priority": "u=1, i",
-        "referer": "https://comexstat.mdic.gov.br/",
-        "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-    }
-    response = session.get(url, timeout=session.request_timeout, headers=headers, verify=False)
-    if response.json()['success']:
-        # Salva os dados em Excel para uso posterior
-        exports = pd.json_normalize(response.json()['data']['list']['exports'])
-        exports['categoria'] = 'Exportação'
-        imports = pd.json_normalize(response.json()['data']['list']['imports'])
-        imports['categoria'] = 'Importação'
-        df = pd.concat([exports, imports], ignore_index=True)
-        df.columns = ['ano', 'valor', 'categoria']
-        df[['ano', 'valor']] = df[['ano', 'valor']].astype('Int64')
-        df['uf'] = 'Brasil'
-        
-        c.to_csv(df, dbs_path, 'balanca_comercial_brasil.csv')
+    year = datetime.now().year
+    while year >= 2025:
+        url = f"https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%22{str(year)}%22%2C%22typeForm%22%3A3%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2212%22%2C%2227%22%2C%2216%22%2C%2213%22%2C%2232%22%2C%2223%22%2C%2254%22%2C%2234%22%2C%2253%22%2C%2221%22%2C%2252%22%2C%2255%22%2C%2233%22%2C%2242%22%2C%2225%22%2C%2215%22%2C%2226%22%2C%2222%22%2C%2224%22%2C%2245%22%2C%2236%22%2C%2211%22%2C%2214%22%2C%2244%22%2C%2231%22%2C%2241%22%2C%2217%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
+        headers = {
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "dnt": "1",
+            "origin": "https://comexstat.mdic.gov.br",
+            "priority": "u=1, i",
+            "referer": "https://comexstat.mdic.gov.br/",
+            "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+        response = session.get(url, timeout=session.request_timeout, headers=headers, verify=False)
+        if response.json()['success']:
+            # Salva os dados em Excel para uso posterior
+            exports = pd.json_normalize(response.json()['data']['list']['exports'])
+            exports['categoria'] = 'Exportação'
+            imports = pd.json_normalize(response.json()['data']['list']['imports'])
+            imports['categoria'] = 'Importação'
+            df = pd.concat([exports, imports], ignore_index=True)
+            df.columns = ['ano', 'valor', 'categoria']
+            df[['ano', 'valor']] = df[['ano', 'valor']].astype('Int64')
+            df['uf'] = 'Brasil'
+            
+            c.to_csv(df, dbs_path, 'balanca_comercial_brasil.csv')
+            break
+
+        year -= 1
+
 except Exception as e:
     errors['Balança comercial - Brasil'] = traceback.format_exc()
 
 
 try:
-    url_sergipe = "https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%222025%22%2C%22typeForm%22%3A3%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
-    headers_sergipe = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        "dnt": "1",
-        "origin": "https://comexstat.mdic.gov.br",
-        "priority": "u=1, i",
-        "referer": "https://comexstat.mdic.gov.br/",
-        "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-    }
-    response_sergipe = session.get(url_sergipe, timeout=session.request_timeout, headers=headers_sergipe, verify=False)
-    if response_sergipe.json()['success']:
-        exports_sergipe = pd.json_normalize(response_sergipe.json()['data']['list']['exports'])
-        exports_sergipe['categoria'] = 'Exportação'
-        imports_sergipe = pd.json_normalize(response_sergipe.json()['data']['list']['imports'])
-        imports_sergipe['categoria'] = 'Importação'
-        df_sergipe = pd.concat([exports_sergipe, imports_sergipe], ignore_index=True)
-        df_sergipe.columns = ['ano', 'valor', 'categoria']
-        df_sergipe[['ano', 'valor']] = df_sergipe[['ano', 'valor']].astype('Int64')
-        df_sergipe['uf'] = 'Sergipe'
-        c.to_csv(df_sergipe, dbs_path, 'balanca_comercial_sergipe.csv')
+    year = datetime.now().year
+    while year >= 2025:
+        url_sergipe = f"https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%22{str(year)}%22%2C%22typeForm%22%3A3%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
+        headers_sergipe = {
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "dnt": "1",
+            "origin": "https://comexstat.mdic.gov.br",
+            "priority": "u=1, i",
+            "referer": "https://comexstat.mdic.gov.br/",
+            "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+        response_sergipe = session.get(url_sergipe, timeout=session.request_timeout, headers=headers_sergipe, verify=False)
+        if response_sergipe.json()['success']:
+            exports_sergipe = pd.json_normalize(response_sergipe.json()['data']['list']['exports'])
+            exports_sergipe['categoria'] = 'Exportação'
+            imports_sergipe = pd.json_normalize(response_sergipe.json()['data']['list']['imports'])
+            imports_sergipe['categoria'] = 'Importação'
+            df_sergipe = pd.concat([exports_sergipe, imports_sergipe], ignore_index=True)
+            df_sergipe.columns = ['ano', 'valor', 'categoria']
+            df_sergipe[['ano', 'valor']] = df_sergipe[['ano', 'valor']].astype('Int64')
+            df_sergipe['uf'] = 'Sergipe'
+            c.to_csv(df_sergipe, dbs_path, 'balanca_comercial_sergipe.csv')
+            break
+
+        year -= 1
+
 except Exception as e:
     errors['Balança comercial - Sergipe'] = traceback.format_exc()
 
 
 try:
-    url_nordeste = "https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%222025%22%2C%22typeForm%22%3A3%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%2C%2227%22%2C%2232%22%2C%2223%22%2C%2225%22%2C%2226%22%2C%2224%22%2C%2221%22%2C%2222%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
-    headers_nordeste = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        "dnt": "1",
-        "origin": "https://comexstat.mdic.gov.br",
-        "priority": "u=1, i",
-        "referer": "https://comexstat.mdic.gov.br/",
-        "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-    }
-    response_nordeste = session.get(url_nordeste, timeout=session.request_timeout, headers=headers_nordeste, verify=True)
-    if response_nordeste.json()['success']:
-        exports_nordeste = pd.json_normalize(response_nordeste.json()['data']['list']['exports'])
-        exports_nordeste['categoria'] = 'Exportação'
-        imports_nordeste = pd.json_normalize(response_nordeste.json()['data']['list']['imports'])
-        imports_nordeste['categoria'] = 'Importação'
-        df_nordeste = pd.concat([exports_nordeste, imports_nordeste], ignore_index=False)
-        df_nordeste.columns = ['ano', 'valor', 'categoria']
-        df_nordeste[['ano', 'valor']] = df_nordeste[['ano', 'valor']].astype('Int64')
-        df_nordeste['uf'] = 'Nordeste'
-        c.to_csv(df_nordeste, dbs_path, 'balanca_comercial_nordeste.csv')
+    year = datetime.now().year
+    while year >= 2025:
+        url_nordeste = f"https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%22{str(year)}%22%2C%22typeForm%22%3A3%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%2C%2227%22%2C%2232%22%2C%2223%22%2C%2225%22%2C%2226%22%2C%2224%22%2C%2221%22%2C%2222%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
+        headers_nordeste = {
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "dnt": "1",
+            "origin": "https://comexstat.mdic.gov.br",
+            "priority": "u=1, i",
+            "referer": "https://comexstat.mdic.gov.br/",
+            "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+        response_nordeste = session.get(url_nordeste, timeout=session.request_timeout, headers=headers_nordeste, verify=True)
+        if response_nordeste.json()['success']:
+            exports_nordeste = pd.json_normalize(response_nordeste.json()['data']['list']['exports'])
+            exports_nordeste['categoria'] = 'Exportação'
+            imports_nordeste = pd.json_normalize(response_nordeste.json()['data']['list']['imports'])
+            imports_nordeste['categoria'] = 'Importação'
+            df_nordeste = pd.concat([exports_nordeste, imports_nordeste], ignore_index=False)
+            df_nordeste.columns = ['ano', 'valor', 'categoria']
+            df_nordeste[['ano', 'valor']] = df_nordeste[['ano', 'valor']].astype('Int64')
+            df_nordeste['uf'] = 'Nordeste'
+            c.to_csv(df_nordeste, dbs_path, 'balanca_comercial_nordeste.csv')
+            break
+
+        year -= 1
+
 except Exception as e:
     errors['Balança comercial - Nordeste'] = traceback.format_exc()
 
 # Fonte da tabela 12.1 a partir daqui
 try:
-    url_cuci = "https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%222025%22%2C%22typeForm%22%3A1%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%7B%22id%22%3A%22noCuciPospt%22%2C%22text%22%3A%22CUCI%20Grupo%20(produtos)%22%2C%22parentId%22%3A%22coCuciPos%22%2C%22parent%22%3A%22C%C3%B3digo%20CUCI%20Grupo%22%2C%22group%22%3A%22cuci%22%2C%22groupText%22%3A%22Classifica%C3%A7%C3%A3o%20Uniforme%20para%20o%20Com%C3%A9rcio%20Internacional%20(CUCI%20Ver.3)%22%7D%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
-    headers_cuci = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        "dnt": "1",
-        "origin": "https://comexstat.mdic.gov.br",
-        "priority": "u=1, i",
-        "referer": "https://comexstat.mdic.gov.br/",
-        "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-    }
-    response_cuci = session.get(url_cuci, timeout=session.request_timeout, headers=headers_cuci, verify=False)
-    if response_cuci.json().get('success'):
-        exports_cuci = pd.json_normalize(response_cuci.json()['data']['list'])
-        exports_cuci.columns = ['ano', 'código', 'produto', 'valor']
-        exports_cuci[['ano', 'valor']] = exports_cuci[['ano', 'valor']].astype('Int64')
-        exports_cuci['uf'] = 'Sergipe'
-        c.to_csv(exports_cuci, dbs_path, 'exportações_produtos_sergipe_cuci.csv')
+    year = datetime.now().year
+    while year >= 2025:
+        url_cuci = f"https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%22{str(year)}%22%2C%22typeForm%22%3A1%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%7B%22id%22%3A%22noCuciPospt%22%2C%22text%22%3A%22CUCI%20Grupo%20(produtos)%22%2C%22parentId%22%3A%22coCuciPos%22%2C%22parent%22%3A%22C%C3%B3digo%20CUCI%20Grupo%22%2C%22group%22%3A%22cuci%22%2C%22groupText%22%3A%22Classifica%C3%A7%C3%A3o%20Uniforme%20para%20o%20Com%C3%A9rcio%20Internacional%20(CUCI%20Ver.3)%22%7D%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
+        headers_cuci = {
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "dnt": "1",
+            "origin": "https://comexstat.mdic.gov.br",
+            "priority": "u=1, i",
+            "referer": "https://comexstat.mdic.gov.br/",
+            "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+        response_cuci = session.get(url_cuci, timeout=session.request_timeout, headers=headers_cuci, verify=False)
+        if response_cuci.json().get('success'):
+            exports_cuci = pd.json_normalize(response_cuci.json()['data']['list'])
+            exports_cuci.columns = ['ano', 'código', 'produto', 'valor']
+            exports_cuci[['ano', 'valor']] = exports_cuci[['ano', 'valor']].astype('Int64')
+            exports_cuci['uf'] = 'Sergipe'
+            c.to_csv(exports_cuci, dbs_path, 'exportações_produtos_sergipe_cuci.csv')
+            break
+
+        year -= 1
+
 except Exception as e:
     errors['Exportações produtos - Sergipe'] = traceback.format_exc()
 
 
 try:
-    url_ufs = "https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%222025%22%2C%22typeForm%22%3A1%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%2C%2212%22%2C%2227%22%2C%2216%22%2C%2213%22%2C%2232%22%2C%2223%22%2C%2254%22%2C%2234%22%2C%2253%22%2C%2221%22%2C%2252%22%2C%2255%22%2C%2233%22%2C%2242%22%2C%2225%22%2C%2215%22%2C%2226%22%2C%2222%22%2C%2224%22%2C%2245%22%2C%2236%22%2C%2211%22%2C%2214%22%2C%2244%22%2C%2241%22%2C%2217%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
-    headers_ufs = {
-        "accept": "application/json, text/plain, */*",
-        "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-        "dnt": "1",
-        "origin": "https://comexstat.mdic.gov.br",
-        "priority": "u=1, i",
-        "referer": "https://comexstat.mdic.gov.br/",
-        "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"Windows"',
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-    }
-    response_ufs = session.get(url_ufs, timeout=session.request_timeout, headers=headers_ufs, verify=False)
-    if response_ufs.json().get('success'):
-        exports_ufs = pd.json_normalize(response_ufs.json()['data']['list'])
-        exports_ufs.columns = ['ano', 'valor']
-        exports_ufs[['ano', 'valor']] = exports_ufs[['ano', 'valor']].astype('Int64')
-        exports_ufs['uf'] = 'Brasil'
-        c.to_csv(exports_ufs, dbs_path, 'exportacoes_produtos_brasil.csv')
+    year = datetime.now().year
+    while year >= 2025:
+        url_ufs = f"https://api-comexstat.mdic.gov.br/general?filter=%7B%22yearStart%22%3A%222010%22%2C%22yearEnd%22%3A%22{str(year)}%22%2C%22typeForm%22%3A1%2C%22typeOrder%22%3A1%2C%22filterList%22%3A%5B%7B%22id%22%3A%22noUf%22%2C%22text%22%3A%22UF%20do%20Produto%22%2C%22route%22%3A%22/pt/location/states%22%2C%22type%22%3A%221%22%2C%22group%22%3A%22gerais%22%2C%22groupText%22%3A%22Gerais%22%2C%22hint%22%3A%22fieldsForm.general.noUf.description%22%2C%22placeholder%22%3A%22UFs%20do%20Produto%22%7D%5D%2C%22filterArray%22%3A%5B%7B%22item%22%3A%5B%2231%22%2C%2212%22%2C%2227%22%2C%2216%22%2C%2213%22%2C%2232%22%2C%2223%22%2C%2254%22%2C%2234%22%2C%2253%22%2C%2221%22%2C%2252%22%2C%2255%22%2C%2233%22%2C%2242%22%2C%2225%22%2C%2215%22%2C%2226%22%2C%2222%22%2C%2224%22%2C%2245%22%2C%2236%22%2C%2211%22%2C%2214%22%2C%2244%22%2C%2241%22%2C%2217%22%5D%2C%22idInput%22%3A%22noUf%22%7D%5D%2C%22rangeFilter%22%3A%5B%5D%2C%22detailDatabase%22%3A%5B%5D%2C%22monthDetail%22%3Afalse%2C%22metricFOB%22%3Atrue%2C%22metricKG%22%3Afalse%2C%22metricStatistic%22%3Afalse%2C%22metricFreight%22%3Afalse%2C%22metricInsurance%22%3Afalse%2C%22metricCIF%22%3Afalse%2C%22monthStart%22%3A%2201%22%2C%22monthEnd%22%3A%2212%22%2C%22formQueue%22%3A%22general%22%2C%22langDefault%22%3A%22pt%22%2C%22monthStartName%22%3A%22Janeiro%22%2C%22monthEndName%22%3A%22Dezembro%22%7D"
+        headers_ufs = {
+            "accept": "application/json, text/plain, */*",
+            "accept-language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+            "dnt": "1",
+            "origin": "https://comexstat.mdic.gov.br",
+            "priority": "u=1, i",
+            "referer": "https://comexstat.mdic.gov.br/",
+            "sec-ch-ua": '"Chromium";v="140", "Not=A?Brand";v="24", "Google Chrome";v="140"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+        }
+        response_ufs = session.get(url_ufs, timeout=session.request_timeout, headers=headers_ufs, verify=False)
+        if response_ufs.json().get('success'):
+            exports_ufs = pd.json_normalize(response_ufs.json()['data']['list'])
+            exports_ufs.columns = ['ano', 'valor']
+            exports_ufs[['ano', 'valor']] = exports_ufs[['ano', 'valor']].astype('Int64')
+            exports_ufs['uf'] = 'Brasil'
+            c.to_csv(exports_ufs, dbs_path, 'exportacoes_produtos_brasil.csv')
+            break
+
+        year -= 1
+
 except Exception as e:
     errors['Exportações produtos - Brasil'] = traceback.format_exc()
 
 
 # produto interno bruto
 try:
+    year = datetime.now().year
     consulta_url = "https://www3.bcb.gov.br/sgspub/consultarvalores/consultarValoresSeries.do?method=consultarValores"
     headers_bcb = {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -286,7 +317,7 @@ try:
     form_data_bcb = {
         "optSelecionaSerie": "7324",
         "dataInicio": "01/01/2006",
-        "dataFim": "19/09/2025",
+        "dataFim": f"31/12/{str(year)}",
         "selTipoArqDownload": "0",
         "chkPaginar": "on",
         "hdOidSeriesSelecionadas": "7324",
@@ -371,6 +402,7 @@ except Exception as e:
 
 
 try:
+    year = datetime.now().year
     url_bcb = "https://www3.bcb.gov.br/sgspub/consultarvalores/consultarValoresSeries.do?method=consultarValores"
     headers_bcb_curl = {
         "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -393,19 +425,20 @@ try:
     }
     cookies_bcb_curl = {
         "SGS/ConfiguracoesAmbiente": "P/E/E",
-        "TS019aa75b": "012e4f88b3b165ae605bfc9da4d3c61ca4cb8260b2a700b8283637fbc421374abaa0e34e884e0bc0975ace116d5f2bddbb36fdf06a4801812e891f8a172339d7d2f8ef9c48",
-        "JSESSIONID": "0000cnuh7xV1Xrmdp0oEklQIIFp:1dai8m94c",
+        "TS019aa75b": "012e4f88b32ce795a2122986bfdddc4afc7daeafe7613cf91f7d2dd9ecb101b92d1d506b0c65b207c4342ae84745f5997ab36d78ac29f87df7930a22767b47549babe5f062",
+        "JSESSIONID": "0000Hbe97l7jmxerYQPNvVxgDRz:1dr9acgcl",
         "BIGipServer~was_p_as3~was_p~pool_was_443_p": "1020268972.47873.0000",
-        "BIGipServer~www3_p_as3~www3_p~pool_dmz-vs-pwas_443_p": "!0f5FQqhfkrJ0FoMNYXpg27kkhFW1VVUIExbn/gqmyLLwXHG3qnFheo8ToDAUY2CrCai2wrYEr8iqb5g=",
-        "TS012b7e98": "012e4f88b3eb0667460245e1d349fb862b47840bdbb68210c53b32e24a1291859ff615773f8dbeeb953df799b50e77bcb805ab5640cfce12e85349441249f9b85369818b0d9c0d3192adb79f38ed8943edf63f0c934e8fa3fdb5ae7d67fafb2b3221450b6a"
+        "BIGipServer~olinda_as3~olinda_p~pool_dmz-vs-pwas_443_p": "!cwxhSBHq8my5t0uD08StVCO4D8D4NA35pTYeU/6tv5e2QU9aO0hebOA4/3cXYRkKuKQ1phGTID126d0=",
+        "BIGipServer~www3_p_as3~www3_p~pool_dmz-vs-pwas_443_p": "!K8SD2DWz3ckyv1eD08StVCO4D8D4NKbbTlbXiTkpjHng444N1umOWhj0TZbf+xCJfcVuwHK0cO92MSc=",
+        "TS012b7e98": "012e4f88b3f4446d019165c69e4b3a3e01ec2db438613cf91f7d2dd9ecb101b92d1d506b0c7f76c8e3bd098279e3bd148f54ff3d98723020f5650294cdfbfb80d9426dd38fd1f10392cc1fa1707ce5ddf62530447ad416fb2fe54919ad82a383da877b36fa11c30650a80c781e008005b21533466d"
     }
     form_data_bcb_curl = {
-        "optSelecionaSerie": "4386",
+        "optSelecionaSerie": "3693",
         "dataInicio": "01/01/2010",
-        "dataFim": "20/09/2025",
+        "dataFim": f"31/12/{str(year)}",
         "selTipoArqDownload": "0",
         "chkPaginar": "on",
-        "hdOidSeriesSelecionadas": "4386",
+        "hdOidSeriesSelecionadas": "3693",
         "hdPaginar": "true",
         "bilServico": "[SGSFW2301]"
     }
@@ -449,11 +482,9 @@ try:
 
     df_bcb_curl = pd.read_csv(BytesIO(csv_response_bcb_curl.content), sep=";", encoding="latin1")
     df_final = df_bcb_curl.loc[~(df_bcb_curl[df_bcb_curl.columns[0]] == 'Fonte')].copy()
-    df_final.columns = ['data', 'valor']
-    df_final['valor'] = df_final['valor'].str.replace('.', '').astype(int)
-    df_final['ano'] = pd.to_datetime(df_final['data'], format='%m/%Y').dt.year
-    df_final['mes'] = pd.to_datetime(df_final['data'], format='%m/%Y').dt.month
-
+    df_final.columns = ['ano', 'valor']
+    df_final['valor'] = df_final['valor'].str.replace('.', '').str.replace(',', '.').astype(float)
+    df_final['ano'] = df_final['ano'].astype(int)
 
     c.to_excel(df_final, dbs_path, 'bcb_3693.xlsx')
 except Exception as e:
@@ -530,36 +561,79 @@ try:
 except Exception as e:
     errors['Gráfico 12.2'] = traceback.format_exc()
 
-"""
-ao multiplicar exportações de sergipe pela taxa média de cmabio, os valores ficam na casa dos trilhões; validar com o professor
-"""
-# # tabela 12.1
-# try:
-#     df_produtos_sergipe = c.open_file(dbs_path, 'exportações_produtos_sergipe_cuci.csv', 'csv')
-#     df_produtos_brasil = c.open_file(dbs_path, 'exportacoes_produtos_brasil.csv', 'csv')
-#     df_pib_brasil = c.open_file(dbs_path, 'bcb.xlsx', 'xls', sheet_name='Sheet1')
-#     df_pib_sergipe = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.1', skiprows=43)
-#     df_taxa_cambio = c.open_file(dbs_path, 'bcb_3693.xlsx', 'xls', sheet_name='Sheet1')
 
-#     # tratamento produtos
-#     min_year = df_produtos_sergipe['ano'].max() - 14
-#     df_produtos_sergipe = df_produtos_sergipe.query('ano >= @min_year').copy()
-#     df_produtos_brasil = df_produtos_brasil.query('ano >= @min_year').copy()
+# tabela 12.1
+try:
+    data_produtos_sergipe = c.open_file(dbs_path, 'exportações_produtos_sergipe_cuci.csv', 'csv')
+    data_produtos_brasil = c.open_file(dbs_path, 'exportacoes_produtos_brasil.csv', 'csv')
+    data_pib_sergipe = c.open_file(dbs_path, 'ibge_conta_producao.zip', 'zip', excel_name='Tabela17', sheet_name='Tabela17.1', skiprows=43)
+    data_pib_brasil = c.open_file(dbs_path, 'bcb.xlsx', 'xls', sheet_name='Sheet1')
+    data_taxa_cambio = c.open_file(dbs_path, 'bcb_3693.xlsx', 'xls', sheet_name='Sheet1')
 
-#     # tratamento de df_pib_sergipe
-#     col0 = df_pib_sergipe.columns[0]
-#     df_pib_sergipe = df_pib_sergipe.loc[~(df_pib_sergipe[col0].astype(str).str.startswith('Fonte'))].copy()
-#     df_pib_sergipe.columns = [col.split('\n')[0].strip() for col in df_pib_sergipe.columns]
+    # tratamento produtos - filtra ano mínimo para produtos
+    min_year = data_produtos_sergipe['ano'].max() - 14
+    df_produtos_sergipe = data_produtos_sergipe.query('ano >= @min_year').copy()
+    df_produtos_brasil = data_produtos_brasil.query('ano >= @min_year').copy()
 
-#     # tratamento taxa de cambio
-#     df_taxa_cambio = df_taxa_cambio.groupby('ano')['valor'].mean().reset_index()
+    # tratamento do pib - faz limpeza e multiplica por milhão
+    pib_cols = data_pib_sergipe.columns
+    df_pib_sergipe = data_pib_sergipe.loc[~(data_pib_sergipe[pib_cols[0]].astype(str).str.startswith('Fonte'))].copy()
+    df_pib_sergipe['PIB_SERGIPE'] = df_pib_sergipe[pib_cols[-1]] * 1_000_000
+    df_pib_sergipe.columns = [col.split('\n')[0].strip() for col in pib_cols] + ['PIB_SERGIPE']
+    df_pib_sergipe = df_pib_sergipe[[pib_cols[0], 'PIB_SERGIPE']]
 
-#     # união de produtos sergipe e taxa de cambio
-#     df_merged = df_produtos_sergipe.merge(df_taxa_cambio, on='ano', validate='m:1', suffixes=('', '_taxa_cambio'))
-#     df_merged['exportacao/taxa'] = df_merged['valor'] * df_merged['valor_taxa_cambio']
+    df_pib_brasil = data_pib_brasil.copy()
+    df_pib_brasil['PIB_BRASIL'] = df_pib_brasil['valor'] * 1_000_000
 
-# except Exception as e:
-#     errors['Tabela 12.2'] = traceback.format_exc()
+    # união da taxa de cambio com produtos sergipe e pib brasil - produtos e pib brasil precisam ser multiplicados pela taxa de cambio
+    df_taxa_cambio = data_taxa_cambio.copy()
+    df_produtos_sergipe = df_produtos_sergipe.merge(df_taxa_cambio, on='ano', validate='m:1', suffixes=('', '_taxa_cambio'), how='outer')
+    df_produtos_sergipe['exportações_final'] = df_produtos_sergipe['valor'] * df_produtos_sergipe['valor_taxa_cambio']
+    df_pib_brasil = df_pib_brasil.merge(df_taxa_cambio, on='ano', validate='1:1', suffixes=('', '_taxa_cambio'), how='outer')
+    df_pib_brasil['PIB_BRASIL_FINAL'] = df_pib_brasil['PIB_BRASIL'] * df_pib_brasil['valor_taxa_cambio']
+
+    # união exportações com pib - para calcular a razão
+    df_se = df_produtos_sergipe.groupby(['ano'])['exportações_final'].sum().reset_index()
+    df_se = df_se.merge(df_pib_sergipe.rename(columns={'ANO': 'ano'}), on='ano', validate='1:1', how='outer')
+    df_se['razao'] = (df_se['exportações_final'] / df_se['PIB_SERGIPE']) * 100
+
+    df_br = df_produtos_brasil[['ano', 'valor']].copy()
+    df_br = df_br.merge(df_pib_brasil[['ano', 'PIB_BRASIL_FINAL']], on='ano', validate='1:1', how='outer')
+    df_br['razao'] = (df_br['valor'] / df_br['PIB_BRASIL_FINAL']) * 100
+    
+    # proproções dos produtos sobre o total exportado
+    df_produtos_sergipe['anual'] = df_produtos_sergipe.groupby(['ano'])['exportações_final'].transform('sum')
+    df_produtos_sergipe['prop'] = (df_produtos_sergipe['exportações_final'] / df_produtos_sergipe['anual']) * 100
+    
+    # seleção de top produtos
+    top = df_produtos_sergipe.sort_values(by=['ano', 'prop'], ascending=False).head(10)['produto'].unique()
+    df_top = df_produtos_sergipe.loc[df_produtos_sergipe['produto'].isin(top)].copy()
+
+    # seleção de colunas - produtos
+    df_produtos_final = df_top[['ano', 'produto', 'prop']].copy()
+    df_produtos_final.rename(columns={'produto': 'Indicador', 'prop': 'Valor', 'ano': 'Ano'}, inplace=True)
+    df_produtos_final['Unidade'] = '% total exportado'
+    df_produtos_final = df_produtos_final[['Ano', 'Indicador', 'Unidade', 'Valor']].copy()
+
+    # seleção de colunas - razao
+    df_se_final = df_se[['ano', 'razao']].copy()
+    df_se_final.rename(columns={'ano': 'Ano', 'razao': 'Valor'}, inplace=True)
+    df_se_final['Indicador'] = 'Participação das exportações de Sergipe sobre o PIB do Estado'
+    df_se_final['Unidade'] = '%'
+    df_se_final = df_se_final[['Ano', 'Indicador', 'Unidade', 'Valor']].copy()
+
+    df_br_final = df_br[['ano', 'razao']].copy()
+    df_br_final.rename(columns={'ano': 'Ano', 'razao': 'Valor'}, inplace=True)
+    df_br_final['Indicador'] = 'Participação das exportações do Brasil sobre o PIB'
+    df_br_final['Unidade'] = '%'
+    df_br_final = df_br_final[['Ano', 'Indicador', 'Unidade', 'Valor']].copy()
+
+    # unindo as tabelas
+    df_final = pd.concat([df_produtos_final, df_se_final, df_br_final], ignore_index=True)
+    df_final.to_excel(os.path.join(sheets_path, 't12.1.xlsx'), index=False, sheet_name='t12.1')
+
+except Exception as e:
+    errors['Tabela 12.2'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
