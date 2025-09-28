@@ -22,8 +22,8 @@ headers = {
     }
 
 # caminhos
-raw_path = os.path.abspath('Scripts/Municipios/Raw')
-errors_dir = os.path.abspath(os.path.join('Doc', 'relatorios_de_erros'))
+raw_path = os.path.abspath('Raw')
+mart_path = os.path.abspath('Mart')
 
 load_dotenv()
 repo_path = 'anuariosocieconomico/T25'
