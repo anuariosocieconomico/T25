@@ -22,8 +22,8 @@ headers = {
     }
 
 # caminhos
-raw_path = os.path.abspath('Raw')
-mart_path = os.path.abspath('Mart')
+raw_path = os.path.join(os.path.dirname(__file__), 'Raw')
+mart_path = os.path.join(os.path.dirname(__file__), 'Mart')
 
 load_dotenv()
 repo_path = 'anuariosocieconomico/T25'
