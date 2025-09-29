@@ -18,7 +18,7 @@ print('Iniciando extração do IPCA...')
 
 # Parte 1: Extração básica do IPCA (índice)
 print('Baixando índice IPCA...')
-url_ipca = 'https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/all/p/all/d/v2266%2013'
+url_ipca = 'https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2266/p/all/d/v2266%2013'
 response = session.get(url_ipca, timeout=session.request_timeout, headers=c.headers)
 data_ipca = pd.DataFrame(response.json())
 
