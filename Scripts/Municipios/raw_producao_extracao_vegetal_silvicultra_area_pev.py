@@ -38,46 +38,54 @@ for year in range(2010, datetime.now().year + 1):
     file_name = 'raw_' + db_name + f'_{year}.parquet'
     file_path = os.path.join(db_path, file_name)
     
-    # verifica se precisa processar este ano
-    if os.path.exists(file_path) and year in anos_existentes:
-        print(f'Dados do ano {year} já processados. Pulando...')
-        continue
-    
     print(f'Processando dados do ano {year}...')
     
     try:
-        # faz o download se o arquivo não existir
-        if not os.path.exists(file_path):
-            print(f'Baixando dados do ano {year}...')
-            url = f'https://apisidra.ibge.gov.br/values/t/5930/n6/2804409,2804904,2805703,2803401,2803302,2806602,2800506,2802908,2800407,2803005,2803500,2805802,2806206,2802106,2802809,2803203,2804805,2806305,2806701,2807600,2801702,2807501,2806404/v/allxp/p/{year}/c734/allxt'
-            session = c.create_session_with_retries()
-            response = session.get(url, timeout=session.request_timeout, headers=c.headers)
-            response.raise_for_status()  # levanta exceção se houver erro HTTP
-            
-            data = pd.DataFrame(response.json())
-            
-            # tratamento dos dados
-            specific_columns = ['Espécie florestal']
-            data.columns = data.iloc[0]
-            data = data.iloc[1:][['Valor', 'Município', 'Variável', 'Ano'] + specific_columns]
-            data['Ano'] = data['Ano'].astype('int16')
-            data['Valor'] = pd.to_numeric(data['Valor'], errors='coerce', downcast='integer')
-            data['Município'] = data['Município'].astype('category')
-            data['Variável'] = data['Variável'].astype('category')
-            # atenção neste ponto: aqui deve-se ajustar conforme a base que está sendo baixada
-            data[specific_columns[0]] = data[specific_columns[0]].astype('category')
-            data.rename(columns={specific_columns[0]: 'Produto'}, inplace=True)
-            
-            # salva o arquivo individual
-            data.to_parquet(file_path, engine='pyarrow', compression='snappy', index=False)
-            print(f'Arquivo {file_name} salvo com sucesso!')
-        else:
-            # carrega o arquivo existente
-            data = pd.read_parquet(file_path)
-            print(f'Arquivo {file_name} já existe, carregando...')
+        # sempre baixa os dados para verificar mudanças
+        print(f'Baixando dados do ano {year}...')
+        url = f'https://apisidra.ibge.gov.br/values/t/5930/n6/2804409,2804904,2805703,2803401,2803302,2806602,2800506,2802908,2800407,2803005,2803500,2805802,2806206,2802106,2802809,2803203,2804805,2806305,2806701,2807600,2801702,2807501,2806404/v/allxp/p/{year}/c734/allxt'
+        session = c.create_session_with_retries()
+        response = session.get(url, timeout=session.request_timeout, headers=c.headers)
+        response.raise_for_status()  # levanta exceção se houver erro HTTP
         
-        # adiciona aos dados novos se ainda não está na base consolidada
-        if year not in anos_existentes:
+        data = pd.DataFrame(response.json())
+        
+        # tratamento dos dados
+        specific_columns = ['Espécie florestal']
+        data.columns = data.iloc[0]
+        data = data.iloc[1:][['Unidade de Medida', 'Valor', 'Município', 'Variável', 'Ano'] + specific_columns]
+        data['Ano'] = data['Ano'].astype('int16')
+        data['Valor'] = pd.to_numeric(data['Valor'], errors='coerce', downcast='integer')
+        data['Município'] = data['Município'].astype('category')
+        data['Variável'] = data['Variável'].astype('category')
+        # atenção neste ponto: aqui deve-se ajustar conforme a base que está sendo baixada
+        data[specific_columns[0]] = data[specific_columns[0]].astype('category')
+        data.rename(columns={specific_columns[0]: 'Produto'}, inplace=True)
+        
+        # verifica se houve mudanças comparando com arquivo existente
+        arquivo_atualizado = False
+        if os.path.exists(file_path):
+            data_existente = pd.read_parquet(file_path)
+            # compara dimensões (linhas e colunas)
+            if data.shape != data_existente.shape:
+                print(f'Diferença detectada no ano {year}: {data_existente.shape} -> {data.shape}')
+                arquivo_atualizado = True
+            else:
+                print(f'Nenhuma mudança detectada no ano {year}')
+        else:
+            print(f'Arquivo novo para o ano {year}')
+            arquivo_atualizado = True
+        
+        # salva apenas se houve mudança ou é arquivo novo
+        if arquivo_atualizado:
+            data.to_parquet(file_path, engine='pyarrow', compression='snappy', index=False)
+            print(f'Arquivo {file_name} atualizado com sucesso!')
+        else:
+            # carrega o arquivo existente se não houve mudança
+            data = pd.read_parquet(file_path)
+        
+        # adiciona aos dados novos se ainda não está na base consolidada ou se foi atualizado
+        if year not in anos_existentes or arquivo_atualizado:
             dados_novos.append(data)
             print(f'Dados do ano {year} adicionados para consolidação')
             
