@@ -22,8 +22,10 @@ headers = {
     }
 
 # caminhos
-raw_path = os.path.join(os.path.dirname(__file__), 'Raw')
-mart_path = os.path.join(os.path.dirname(__file__), 'Mart')
+# Navega até o diretório raiz do projeto e define os caminhos para Data/Municipios
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+raw_path = os.path.join(project_root, 'Data', 'Municipios', 'Raw')
+mart_path = os.path.join(project_root, 'Data', 'Municipios', 'Mart')
 
 load_dotenv()
 repo_path = 'anuariosocieconomico/T25'
