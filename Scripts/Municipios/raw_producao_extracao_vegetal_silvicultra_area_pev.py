@@ -60,15 +60,18 @@ for year in range(2010, datetime.now().year + 1):
         data['Variável'] = data['Variável'].astype('category')
         # atenção neste ponto: aqui deve-se ajustar conforme a base que está sendo baixada
         data[specific_columns[0]] = data[specific_columns[0]].astype('category')
-        data.rename(columns={specific_columns[0]: 'Produto'}, inplace=True)
+        # data.rename(columns={specific_columns[0]: 'Produto'}, inplace=True)  # sem necessidade de renomear
         
         # verifica se houve mudanças comparando com arquivo existente
         arquivo_atualizado = False
         if os.path.exists(file_path):
             data_existente = pd.read_parquet(file_path)
-            # compara dimensões (linhas e colunas)
+            # compara dimensões (linhas e colunas) e nomes das colunas
             if data.shape != data_existente.shape:
-                print(f'Diferença detectada no ano {year}: {data_existente.shape} -> {data.shape}')
+                print(f'Diferença de dimensões detectada no ano {year}: {data_existente.shape} -> {data.shape}')
+                arquivo_atualizado = True
+            elif not data.columns.equals(data_existente.columns):
+                print(f'Diferença nos nomes das colunas detectada no ano {year}')
                 arquivo_atualizado = True
             else:
                 print(f'Nenhuma mudança detectada no ano {year}')
