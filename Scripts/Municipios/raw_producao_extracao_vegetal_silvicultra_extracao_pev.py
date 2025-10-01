@@ -64,7 +64,7 @@ for year in range(2010, datetime.now().year + 1):
         
         # atenção neste ponto: aqui deve-se ajustar conforme a base que está sendo baixada; tanto a tipologia quanto o rename
         data[specific_columns[0]] = data[specific_columns[0]].astype('category')
-        data.rename(columns={specific_columns[0]: 'Produto'}, inplace=True)
+        # data.rename(columns={specific_columns[0]: 'Produto'}, inplace=True)  # não é necessário renomear
         
         # verifica se houve mudanças comparando com arquivo existente
         arquivo_atualizado = False
