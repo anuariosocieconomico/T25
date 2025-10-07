@@ -129,8 +129,8 @@ data['Código'] = data['Código'].astype(str)
 data['Unidade Territorial'] = data['Unidade Territorial'].astype('category')
 data['UF'] = data['UF'].astype('category')
 data['Referência'] = data['Referência'].astype(str)
-data['Beneficiários até Out/21'] = pd.to_numeric(data['Beneficiários até Out/21'].str.replace('.', '').str.replace('-', '')).astype('float16')
-data['Beneficiários a partir Mar/23'] = pd.to_numeric(data['Beneficiários a partir Mar/23'].str.replace('.', '').str.replace('-', '')).astype('float16')
+data['Beneficiários até Out/21'] = pd.to_numeric(data['Beneficiários até Out/21'].str.replace('.', '').str.replace('-', ''))
+data['Beneficiários a partir Mar/23'] = pd.to_numeric(data['Beneficiários a partir Mar/23'].str.replace('.', '').str.replace('-', ''))
 
 print(f'Dados processados: {data.shape[0]} linhas, {data.shape[1]} colunas')
 
