@@ -5,6 +5,7 @@ Consolida os arquivos consolidados de PAM temporária e permanente em um único 
 Salva o resultado na pasta Mart.
 """
 
+import traceback
 import functions as c
 import os
 import pandas as pd
@@ -13,7 +14,9 @@ import pandas as pd
 # caminhos
 raw_path = c.raw_path
 mart_path = c.mart_path
+error_path = c.error_path
 os.makedirs(mart_path, exist_ok=True)
+os.makedirs(error_path, exist_ok=True)
 
 # arquivos de origem
 temporaria_path = os.path.join(raw_path, 'producao_agricola_municipal_temporaria', 'raw_producao_agricola_municipal_temporaria_consolidado.parquet')
@@ -27,15 +30,14 @@ consolidated_path = os.path.join(mart_path, 'producao_agricola_municipal_consoli
 print('Carregando bases...')
 data_frames = []
 
-if os.path.exists(temporaria_path):
+try:
+
     df_temp = pd.read_parquet(temporaria_path)
     df_temp['Tipo_Lavoura'] = 'Temporária'
     data_frames.append(df_temp)
     print(f'PAM Temporária: {len(df_temp)} registros')
-else:
-    print('ERRO: Base PAM temporária não encontrada')
 
-if os.path.exists(permanente_path):
+
     df_perm = pd.read_parquet(permanente_path)
     df_perm['Tipo_Lavoura'] = 'Permanente'
     # renomeia a coluna para padronizar
@@ -43,20 +45,16 @@ if os.path.exists(permanente_path):
         df_perm.rename(columns={'Produto das lavouras permanentes': 'Produto'}, inplace=True)
     data_frames.append(df_perm)
     print(f'PAM Permanente: {len(df_perm)} registros')
-else:
-    print('ERRO: Base PAM permanente não encontrada')
 
-if os.path.exists(ipca_path):
+
     df_ipca = pd.read_parquet(ipca_path)
     df_ipca_annual = df_ipca.loc[df_ipca['Mes'].dt.month == 12].copy()  # filtra apenas dezembro de cada ano
     df_ipca_annual.rename(columns={'Mes': 'Ano'}, inplace=True)  # renomeia para Ano, para facilitar o merge
     
     print(f'IPCA: {len(df_ipca)} registros')
-else:
-    print('ERRO: Base IPCA não encontrada')
 
 # consolida as bases
-if data_frames:
+
     print('Consolidando...')
     df_concat = pd.concat(data_frames, ignore_index=True).query('not `Variável`.str.contains("percentual do total")', engine='python')  # filtra apenas as variáveis de produção
     df_concat['Município'] = df_concat['Município'].str.replace(' (SE)', '', regex=False)  # remove a sigla do estado
@@ -97,7 +95,9 @@ if data_frames:
     df_final.to_parquet(consolidated_path, engine='pyarrow', compression='snappy', index=False)
     print(f'Consolidado salvo: {len(df_final)} registros totais')
     print(f'Arquivo: {consolidated_path}')
-else:
-    print('ERRO: Nenhuma base encontrada para consolidar')
 
-print('Concluído!')
+except:
+    error = traceback.format_exc()
+    with open(os.path.join(error_path, 'log_mart_pam_consolidado.txt'), 'w', encoding='utf-8') as f:
+        f.write(f'Erro em mart_pam_consolidado.py em {pd.Timestamp.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
+        f.write(error)

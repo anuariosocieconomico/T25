@@ -9,6 +9,7 @@ import requests
 # Configuração de caminhos
 raw_path = c.raw_path
 mart_path = c.mart_path
+error_path = c.error_path
 ipca_path = os.path.join(raw_path, 'ipca.parquet')
 populacao_path = os.path.join(raw_path, 'raw_censo_demografico.parquet')
 beneficiarios_path = os.path.join(raw_path, 'raw_beneficiarios_bolsa_familia.parquet')
@@ -17,6 +18,7 @@ qtd_path = os.path.join(raw_path, 'raw_programa_bolsa_familia_quantidade_benefic
 valor_path = os.path.join(raw_path, 'raw_programa_bolsa_familia_valor_beneficios.parquet')
 cobertura_path = os.path.join(raw_path, 'raw_programa_bolsa_familia_percentual_cobertura.parquet')
 os.makedirs(mart_path, exist_ok=True)
+os.makedirs(error_path, exist_ok=True)
 
 
 try:
@@ -194,4 +196,7 @@ try:
     df_bolsa_familia.to_parquet(os.path.join(mart_path, 'bolsa_familia.parquet'), index=False)
 
 except:
-    print(traceback.format_exc())
+    error = traceback.format_exc()
+    with open(os.path.join(error_path, 'log_mart_bolsa_familia.txt'), 'w', encoding='utf-8') as f:
+        f.write(f'Erro em mart_bolsa_familia.py em {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
+        f.write(error)

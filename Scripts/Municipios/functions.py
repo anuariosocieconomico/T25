@@ -26,6 +26,7 @@ headers = {
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 raw_path = os.path.join(project_root, 'Data', 'Municipios', 'Raw')
 mart_path = os.path.join(project_root, 'Data', 'Municipios', 'Mart')
+error_path = os.path.join(project_root, 'Doc', 'Municipios')
 
 load_dotenv()
 repo_path = 'anuariosocieconomico/T25'

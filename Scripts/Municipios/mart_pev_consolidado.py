@@ -9,6 +9,7 @@ Processa as bases raw de PEV e gera três bases tratadas:
 Baseado no código R de referência.
 """
 
+import traceback
 import functions as c
 import os
 import pandas as pd
@@ -19,15 +20,18 @@ import requests
 # Configuração de caminhos
 raw_path = c.raw_path
 mart_path = c.mart_path
+error_path = c.error_path
 ipca_path = os.path.join(raw_path, 'ipca.parquet')
 os.makedirs(mart_path, exist_ok=True)
+os.makedirs(error_path, exist_ok=True)
 
+try:
 
 # ========================
 # PROCESSAMENTO IPCA
 # ========================
 
-if os.path.exists(ipca_path):
+
     df_ipca = pd.read_parquet(ipca_path)
     df_ipca_annual = df_ipca.loc[df_ipca['Mes'].dt.month == 12].copy()  # filtra apenas dezembro de cada ano
     df_ipca_annual.rename(columns={'Mes': 'Ano'}, inplace=True)  # renomeia para Ano, para facilitar o merge
@@ -43,17 +47,14 @@ if os.path.exists(ipca_path):
     df_ipca_annual.drop(columns=['indice_ipca'], inplace=True)  # remove coluna desnecessária
 
     print(f'IPCA: {len(df_ipca)} registros')
-else:
-    print('ERRO: Base IPCA não encontrada')
 
 
 # ========================
 # PROCESSAMENTO ÁREA PEV
 # ========================
 
-area_path = os.path.join(raw_path, 'producao_extracao_vegetal_silvicultra_area_pev', 'raw_producao_extracao_vegetal_silvicultra_area_pev_consolidado.parquet')
+    area_path = os.path.join(raw_path, 'producao_extracao_vegetal_silvicultra_area_pev', 'raw_producao_extracao_vegetal_silvicultra_area_pev_consolidado.parquet')
 
-if os.path.exists(area_path):
     pevs_area = pd.read_parquet(area_path)[['Município', 'Variável', 'Espécie florestal', 'Ano', 'Valor', 'Unidade de Medida']]
     
     max_year = pevs_area['Ano'].max()  # obtém o ano máximo presente na base
@@ -75,9 +76,8 @@ if os.path.exists(area_path):
 # PROCESSAMENTO EXTRAÇÃO PEV
 # ========================
 
-extracao_path = os.path.join(raw_path, 'producao_extracao_vegetal_silvicultra_extracao_pev', 'raw_producao_extracao_vegetal_silvicultra_extracao_pev_consolidado.parquet')
+    extracao_path = os.path.join(raw_path, 'producao_extracao_vegetal_silvicultra_extracao_pev', 'raw_producao_extracao_vegetal_silvicultra_extracao_pev_consolidado.parquet')
 
-if os.path.exists(extracao_path):
     pevs_extracao = pd.read_parquet(extracao_path)[['Município', 'Variável', 'Tipo de produto extrativo', 'Ano', 'Valor']]
 
     max_year = pevs_extracao['Ano'].max()  # obtém o ano máximo presente na base
@@ -131,9 +131,8 @@ if os.path.exists(extracao_path):
 # PROCESSAMENTO SILVICULTURA PEV
 # ========================
 
-silvicultura_path = os.path.join(raw_path, 'producao_extracao_vegetal_silvicultra_silvicultura_pev', 'raw_producao_extracao_vegetal_silvicultra_silvicultura_pev_consolidado.parquet')
+    silvicultura_path = os.path.join(raw_path, 'producao_extracao_vegetal_silvicultra_silvicultura_pev', 'raw_producao_extracao_vegetal_silvicultra_silvicultura_pev_consolidado.parquet')
 
-if os.path.exists(silvicultura_path):
     pevs_silvicultura = pd.read_parquet(silvicultura_path)[['Município', 'Variável', 'Tipo de produto da silvicultura', 'Ano', 'Valor']]
     
     max_year = pevs_silvicultura['Ano'].max()  # obtém o ano máximo presente na base
@@ -183,4 +182,9 @@ if os.path.exists(silvicultura_path):
     pevs_silvicultura.to_parquet(output_path, engine='pyarrow', compression='snappy', index=False)
     print(f'PEVS_silvicultura processado e salvo em: {output_path}')
 
-print('Processamento mart PEV concluído!')
+except:
+    error = traceback.format_exc()
+    with open(os.path.join(error_path, 'log_mart_pev_consolidado.txt'), 'w', encoding='utf-8') as f:
+        f.write(f'Erro em mart_pev_consolidado.py em {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
+        f.write(error)
+    print('Erro ao processar o PEV. Verifique o log em "Doc/Municipios/log_mart_pev_consolidado.txt".')
