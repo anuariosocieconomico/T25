@@ -1,3 +1,4 @@
+import traceback
 import functions as c
 import os
 import pandas as pd
@@ -18,11 +19,12 @@ cobertura_path = os.path.join(raw_path, 'raw_programa_bolsa_familia_percentual_c
 os.makedirs(mart_path, exist_ok=True)
 
 
+try:
+
 # ========================
 # PROCESSAMENTO IPCA
 # ========================
 
-if os.path.exists(ipca_path):
     df_ipca = pd.read_parquet(ipca_path)
     df_ipca.rename(columns={'Mes': 'Mês'}, inplace=True)  # renomeia para Ano, para facilitar o merge
 
@@ -35,16 +37,12 @@ if os.path.exists(ipca_path):
     )  # fator de correção para valores reais
     df_ipca.drop(columns=['indice_ipca'], inplace=True)  # remove coluna desnecessária
 
-    print(f'IPCA: {len(df_ipca)} registros')
-else:
-    print('ERRO: Base IPCA não encontrada')
-
 
 # ========================
 # PROCESSAMENTO POPULAÇÃO
 # ========================
 
-if os.path.exists(populacao_path):
+
     df_populacao = pd.read_parquet(populacao_path)[['Município', 'Valor']]
     df_populacao['Município'] = df_populacao['Município'].str.replace(' (SE)', '', regex=False)  # remove a sigla do estado
     df_populacao.rename(columns={'Valor': 'População'}, inplace=True)
@@ -54,7 +52,6 @@ if os.path.exists(populacao_path):
 # PROCESSAMENTO BENEFICIÁRIOS BOLSA FAMÍLIA
 # ========================
 
-if os.path.exists(beneficiarios_path):
     df_beneficiarios = pd.read_parquet(beneficiarios_path)[[
         'UF', 'Unidade Territorial', 'Referência', 'Beneficiários até Out/21', 'Beneficiários a partir Mar/23'
     ]].query('UF == "SE"')
@@ -72,7 +69,6 @@ if os.path.exists(beneficiarios_path):
 # PROCESSAMENTO PROGRAMA BOLSA FAMÍLIA - QUANTIDADE DE BENEFICIÁRIOS
 # ========================
 
-if os.path.exists(qtd_path):
     df_qtd = pd.read_parquet(qtd_path).query('UF == "SE"')
     df_qtd.rename(columns={'Mês/Ano': 'Mês'}, inplace=True)
     df_qtd['Mês'] = pd.to_datetime(df_qtd['Mês'], format='%m/%Y')  # converte para datetime
@@ -89,7 +85,6 @@ if os.path.exists(qtd_path):
 # PROCESSAMENTO PROGRAMA BOLSA FAMÍLIA
 # ========================
 
-if os.path.exists(pbf_path):
     df_pbf = pd.read_parquet(pbf_path).query('UF == "SE"')
     df_pbf.rename(columns={'Referência': 'Mês'}, inplace=True)
     df_pbf['Mês'] = pd.to_datetime(df_pbf['Mês'], format='%m/%Y')  # converte para datetime
@@ -104,16 +99,99 @@ if os.path.exists(pbf_path):
         value_name='Valor'
     )
 
+    # join com ipca
+    df_pbf_valores = df_pbf_valores.merge(df_ipca, on='Mês', how='left')
+    df_pbf_valores['Inflação'] = df_pbf_valores['Inflação'].fillna(1)  # se não tiver inflação, considera 1 (sem correção)
+    df_pbf_valores['Valor corrigido'] = df_pbf_valores['Valor'] * df_pbf_valores['Inflação']  # valor corrigido
+    df_pbf_valores.drop(columns=['Inflação'], inplace=True)  # remove coluna desnecessária
+    df_pbf_valores.sort_values(by=['Unidade Territorial', 'Mês', 'Variável'], inplace=True)  # ordena para cálculo da variação
+    groupby_cols = ['Unidade Territorial', 'Variável']
+    df_pbf_valores['Variação mensal nominal'] = (df_pbf_valores['Valor'] - df_pbf_valores.groupby(groupby_cols)['Valor'].shift(1)) / df_pbf_valores.groupby(groupby_cols)['Valor'].shift(1) * 100
+    df_pbf_valores['Variação mensal real'] = (df_pbf_valores['Valor corrigido'] - df_pbf_valores.groupby(groupby_cols)['Valor corrigido'].shift(1)) / df_pbf_valores.groupby(groupby_cols)['Valor corrigido'].shift(1) * 100
+    # substituir NaN ou infinito em colunas numéricas por np.nan
+    num_cols = df_pbf_valores.select_dtypes(include=[np.number]).columns
+    df_pbf_valores[num_cols] = df_pbf_valores[num_cols].where(np.isfinite(df_pbf_valores[num_cols]), np.nan)
 
-"""
-CONTINUAR A PARTIR DE
+    # terceira parte do processamento
+    keep_cols = [col for col in df_pbf.columns if not col.startswith('Valor')]
+    df_pbf_quantidades = df_pbf[keep_cols].copy()
+    df_pbf_quantidades = df_pbf_quantidades.melt(
+        id_vars=['UF', 'Unidade Territorial', 'Mês'],
+        value_vars=[col for col in df_pbf_quantidades.columns if col not in ['UF', 'Unidade Territorial', 'Mês']],
+        var_name='Variável',
+        value_name='Valor'
+    )
 
-ipca_valores <- ipca |> 
-  filter(Mês %in% pbf_valores$Mês) |> 
-  mutate(inflacao = tail(indice_ipca, n = 1)/indice_ipca) |> 
-  select(-indice_ipca)
-"""
+    df_pbf_final = pd.concat([df_pbf_valores, df_pbf_quantidades], ignore_index=True)  # concatena os dois dataframes
 
 
+# ========================
+# PROCESSAMENTO PROGRAMA BOLSA FAMÍLIA - VALOR DOS BENEFÍCIOS
+# ========================
 
-print('OK')
+    df_valor = pd.read_parquet(valor_path).query('UF == "SE"')
+    df_valor.rename(columns={'Referência': 'Mês'}, inplace=True)
+    df_valor['Mês'] = pd.to_datetime(df_valor['Mês'], format='%m/%Y')  # converte para datetime
+    df_valor.drop(columns=['Código'], inplace=True)  # remove coluna desnecessária
+    df_valor = df_valor.melt(
+        id_vars=['UF', 'Unidade Territorial', 'Mês'],
+        value_vars=[col for col in df_valor.columns if col not in ['UF', 'Unidade Territorial', 'Mês']],
+        var_name='Variável',
+        value_name='Valor'
+    )
+
+    # join com ipca
+    df_valor = df_valor.merge(df_ipca, on='Mês', how='left')
+    df_valor['Inflação'] = df_valor['Inflação'].fillna(1)  # se não tiver inflação, considera 1 (sem correção)
+    df_valor['Valor corrigido'] = df_valor['Valor'] * df_valor['Inflação']  # valor corrigido
+    df_valor.drop(columns=['Inflação'], inplace=True)  # remove coluna desnecessária
+    df_valor.sort_values(by=['Unidade Territorial', 'Mês', 'Variável'], inplace=True)  # ordena para cálculo da variação
+    groupby_cols = ['Unidade Territorial', 'Variável']
+    df_valor['Variação mensal nominal'] = (df_valor['Valor'] - df_valor.groupby(groupby_cols)['Valor'].shift(1)) / df_valor.groupby(groupby_cols)['Valor'].shift(1) * 100
+    df_valor['Variação mensal real'] = (df_valor['Valor corrigido'] - df_valor.groupby(groupby_cols)['Valor corrigido'].shift(1)) / df_valor.groupby(groupby_cols)['Valor corrigido'].shift(1) * 100
+    # substituir NaN ou infinito em colunas numéricas por np.nan
+    num_cols = df_valor.select_dtypes(include=[np.number]).columns
+    df_valor[num_cols] = df_valor[num_cols].where(np.isfinite(df_valor[num_cols]), np.nan)
+
+
+# ========================
+# PROCESSAMENTO PROGRAMA BOLSA FAMÍLIA - PERCENTUAL DE COBERTURA
+# ========================
+
+    df_cobertura = pd.read_parquet(cobertura_path).query('UF == "SE"')
+    df_cobertura.rename(columns={'Referência': 'Mês'}, inplace=True)
+    df_cobertura['Mês'] = pd.to_datetime(df_cobertura['Mês'], format='%m/%Y')  # converte para datetime
+    df_cobertura.drop(columns=['Código'], inplace=True)  # remove coluna desnecessária
+    df_cobertura = df_cobertura.melt(
+        id_vars=['UF', 'Unidade Territorial', 'Mês'],
+        value_vars=[col for col in df_cobertura.columns if col not in ['UF', 'Unidade Territorial', 'Mês']],
+        var_name='Variável',
+        value_name='Valor'
+    )
+
+
+# ========================
+# JUNÇÃO DE TODOS OS DATAFRAMES
+# ========================
+
+    df_bolsa_familia = pd.concat([
+        df_beneficiarios,
+        df_pbf_final,
+        df_qtd,
+        df_valor,
+        df_cobertura
+    ], ignore_index=True)
+    df_bolsa_familia.drop(columns=['UF'], inplace=True)  # remove coluna desnecessária
+    df_bolsa_familia.sort_values(by=['Unidade Territorial', 'Mês', 'Variável'], inplace=True)  # ordena para cálculo da variação
+    groupby_cols = ['Mês', 'Variável']
+    df_bolsa_familia['Ranking Valor'] = df_bolsa_familia.groupby(groupby_cols)['Valor'].rank(ascending=False, method='min')
+    df_bolsa_familia['Ranking Valor corrigido'] = df_bolsa_familia.groupby(groupby_cols)['Valor corrigido'].rank(ascending=False, method='min')
+    df_bolsa_familia['Ranking Variação mensal nominal'] = df_bolsa_familia.groupby(groupby_cols)['Variação mensal nominal'].rank(ascending=False, method='min')
+    df_bolsa_familia['Ranking Variação mensal real'] = df_bolsa_familia.groupby(groupby_cols)['Variação mensal real'].rank(ascending=False, method='min')
+    df_bolsa_familia = df_bolsa_familia.loc[df_bolsa_familia['Mês'].dt.year >= 2019]  # remove a linha do estado inteiro
+    df_bolsa_familia['Mês'] = df_bolsa_familia['Mês'].dt.strftime('%d/%m/%Y')  # formata para DD/MM/YYYY
+
+    df_bolsa_familia.to_parquet(os.path.join(mart_path, 'bolsa_familia.parquet'), index=False)
+
+except:
+    print(traceback.format_exc())
