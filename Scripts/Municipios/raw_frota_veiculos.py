@@ -106,6 +106,35 @@ try:
     for index, row in df_links.iterrows():
         file_link = row['file_link']
         year = row['ano']
+        
+        """
+        Este bloco foi criado para identificar o mês do arquivo a partir do link
+        """
+        if 'janeiro' in row['file_link'].lower() or 'jan' in row['file_link'].lower():
+            month = 1
+        elif 'fevereiro' in row['file_link'].lower() or 'fev' in row['file_link'].lower():
+            month = 2
+        elif 'março' in row['file_link'].lower() or 'mar' in row['file_link'].lower():
+            month = 3
+        elif 'abril' in row['file_link'].lower() or 'abr' in row['file_link'].lower():
+            month = 4
+        elif 'maio' in row['file_link'].lower() or 'mai' in row['file_link'].lower():
+            month = 5
+        elif 'junho' in row['file_link'].lower() or 'jun' in row['file_link'].lower():
+            month = 6
+        elif 'julho' in row['file_link'].lower() or 'jul' in row['file_link'].lower():
+            month = 7
+        elif 'agosto' in row['file_link'].lower() or 'ago' in row['file_link'].lower():
+            month = 8
+        elif 'setembro' in row['file_link'].lower() or 'set' in row['file_link'].lower():
+            month = 9
+        elif 'outubro' in row['file_link'].lower() or 'out' in row['file_link'].lower():
+            month = 10
+        elif 'novembro' in row['file_link'].lower() or 'nov' in row['file_link'].lower():
+            month = 11
+        elif 'dezembro' in row['file_link'].lower() or 'dez' in row['file_link'].lower():
+            month = 12
+
         if pd.notna(file_link):
             print(f"Baixando dados do ano {year}...")
             r = session.get(file_link, timeout=session.request_timeout, headers=c.headers)
@@ -119,6 +148,7 @@ try:
             cols = [col for col in df.columns if col not in ['UF', 'MUNICIPIO']]
             df[cols] = df[cols].apply(pd.to_numeric, errors='coerce')
             df['ANO'] = year
+            df['MES'] = month
             df = df.query('UF == "SE"')
 
             files.append(df)
