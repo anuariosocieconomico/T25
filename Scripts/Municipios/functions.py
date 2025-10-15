@@ -34,6 +34,7 @@ git_token = os.environ.get('GIT_TOKEN')
 source_dir = 'VDE'
 caged_login = os.environ.get('CAGED_LOGIN')
 caged_password = os.environ.get('CAGED_PASSWORD')
+google_drive_api_key = os.environ.get('GOOGLE_DRIVE_API_KEY')
 
 # estados do nordeste
 ne_states = [
