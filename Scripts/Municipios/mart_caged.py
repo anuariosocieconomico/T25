@@ -54,10 +54,10 @@ try:
     df_pivoted['Mês'] = df_pivoted['Mês'].dt.strftime('%d/%m/%Y')  # formata a coluna de mês para "YYYY-MM"
 
     # salva o arquivo parquet
-    file_path = os.path.join(mart_path, 'mart_caged.parquet')
+    file_path = os.path.join(mart_path, 'caged.parquet')
     df_pivoted.to_parquet(file_path, engine='pyarrow', compression='snappy', index=False)
-    print(f'Arquivo mart_caged salvo em: {file_path}')
-    
+    print(f'Arquivo caged salvo em: {file_path}')
+
 except:
     error = traceback.format_exc()
     with open(os.path.join(error_path, 'log_mart_caged.txt'), 'w', encoding='utf-8') as f:
