@@ -33,8 +33,8 @@ errors = {}
 file_names = []
 # DOWNLOAD DA BASE DE DADOS REFERENTE HOMICÍDIOS DE HOMENS JOVENS POR ARMA DE FOGO (g19.5) -----------------------------
 url = 'http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sim/cnv/ext10uf.def'  # url fonte
+driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
 try:
-    driver = c.Google(visible=False, rep=dbs_path)  # instância do objeto driver do Selenium
     driver.get(url)  # acesso à pagina fonte
 
     # ações de click para definição das variáveis da tabela
@@ -148,7 +148,15 @@ try:
         ],
         ignore_index=True
     )
-    df_final.rename()
+    df_final = df_final.query('Ano >= 2015')
+    df_final.rename(columns={'UF': 'Região', 'Taxa': 'Valor', 'Rank': 'Posição relativamente às demais UF'}, inplace=True)
+    df_final['Variável'] = 'Morte no trânsito ou em decorrência dele (exceto homicídio doloso)'
+    df_final['Ano'] = '01/01/' + df_final['Ano'].astype(int).astype(str)
+    df_final['Região'] = df_final['Região'].str.split(' ').str[-1]
+    df_final.sort_values(by=['Região', 'Ano'], inplace=True)
+    df_final = df_final[['Região', 'Ano', 'Variável', 'Valor', 'Posição relativamente às demais UF']]
+
+    c.to_excel(df_final, sheets_path, 'g19.9.xlsx')
     
 
 except Exception as e:
@@ -159,7 +167,7 @@ except Exception as e:
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados
 # se a chave do dicionário for o nome da figura, o erro se refere à tentativa de estruturar a tabela
 if errors:
-    with open(os.path.join(errors_path, 'script--g3.1--g3.2--g3.3--g3.4--g3.5--g3.6--g3.7--g3.8--g3.9--g3.10.txt'), 'w', encoding='utf-8') as f:
+    with open(os.path.join(errors_path, 'script--g19.9.txt'), 'w', encoding='utf-8') as f:
         f.write(json.dumps(errors, indent=4, ensure_ascii=False))
 
 # remove os arquivos baixados
