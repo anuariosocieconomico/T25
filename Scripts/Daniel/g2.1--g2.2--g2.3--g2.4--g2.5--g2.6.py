@@ -417,9 +417,9 @@ try:
     # join das duas tabelas
     df_merged = pd.merge(df_all_years, df_last_year, how='left', on='Produto', validate='1:1')
     df_merged = df_merged.melt(id_vars=['Produto'], var_name='Categoria', value_name='Valor')
-    df_merged['Variação'] = df_merged['Categoria'].str.split(' - ').str[0]
+    df_merged['Período'] = df_merged['Categoria'].str.split(' - ').str[0]
     df_merged['Categoria'] = df_merged['Categoria'].str.split(' - ').str[-1]
-    df_merged = df_merged[['Produto', 'Variação', 'Valor']]
+    df_merged = df_merged[['Produto', 'Período', 'Valor']]
     
     df_merged.to_excel(os.path.join(sheets_path, 'g2.3.xlsx'), index=False, sheet_name='g2.3')
 
@@ -504,8 +504,8 @@ try:
     # ajuste final
     df_last_year = df_last_year[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
     df_last_year.rename(columns={
-        'QTD_Variation': f'Quantidade {max_year} / {max_year - 1} - Variação do último ano',
-        'VAL_Variation': f'Valor {max_year} / {max_year - 1} - Variação do último ano'
+        'QTD_Variation': f'Quantidade {max_year}/{max_year - 1} - Variação do último ano',
+        'VAL_Variation': f'Valor {max_year}/{max_year - 1} - Variação do último ano'
     }, inplace=True)
 
     # calcula a variação percentual das variáveis em relação a toda a série histórica
@@ -531,8 +531,8 @@ try:
     # ajuste final
     df_all_years = df_all_years[[LY_cols[1], 'QTD_Variation', 'VAL_Variation']]
     df_all_years.rename(columns={
-        'QTD_Variation': f'Quantidade {max_year} / {min_year} - Variação desde 2010',
-        'VAL_Variation': f'Valor {max_year} / {min_year} - Variação desde 2010'
+        'QTD_Variation': f'Quantidade {max_year}/{min_year} - Variação desde 2010',
+        'VAL_Variation': f'Valor {max_year}/{min_year} - Variação desde 2010'
     }, inplace=True)
 
     # join das duas tabelas
