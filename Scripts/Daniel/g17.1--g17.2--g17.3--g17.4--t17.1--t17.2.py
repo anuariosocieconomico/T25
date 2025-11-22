@@ -36,6 +36,7 @@ try:
     data = ipeadatapy.timeseries('PRECOS_IPCAG')
     data.rename(columns={'YEAR': 'Ano', 'VALUE ((% a.a.))': 'Valor'}, inplace=True)  # renomeia as colunas
     c.to_excel(data, dbs_path, 'ipeadata_ipca.xlsx')
+    print('IPEA IPCA baixado com sucesso!')
 except Exception as e:
     errors['IPEA IPCA'] = traceback.format_exc()
 
@@ -52,6 +53,7 @@ try:
     df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df, dbs_path, 'sidra_1187.xlsx')
+    print('Sidra 1187 baixado com sucesso!')
 except Exception as e:
     errors['Sidra 1187'] = traceback.format_exc()
 
@@ -68,6 +70,7 @@ try:
     df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df, dbs_path, 'sidra_7113.xlsx')
+    print('Sidra 7113 baixado com sucesso!')
 except Exception as e:
     errors['Sidra 7113'] = traceback.format_exc()
 
@@ -84,6 +87,7 @@ try:
     df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df, dbs_path, 'sidra_356.xlsx')
+    print('Sidra 356 baixado com sucesso!')
 except Exception as e:
     errors['Sidra 356'] = traceback.format_exc()
 
@@ -100,6 +104,7 @@ try:
     df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df, dbs_path, 'sidra_7126.xlsx')
+    print('Sidra 7126 baixado com sucesso!')
 except Exception as e:
     errors['Sidra 7126'] = traceback.format_exc()
 
@@ -116,6 +121,7 @@ try:
     df['Valor'] = pd.to_numeric(df['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df, dbs_path, 'sidra_7143.xlsx')
+    print('Sidra 7143 baixado com sucesso!')
 except Exception as e:
     errors['Sidra 7143'] = traceback.format_exc()
 
@@ -159,6 +165,7 @@ try:
     df_melted['Valor'] = pd.to_numeric(df_melted['Valor'], errors='coerce')  # converte a coluna Valor para numérico, tratando erros
 
     c.to_excel(df_melted, dbs_path, 'ideb_anos_iniciais.xlsx')
+    print('IDEB Anos Iniciais baixado com sucesso!')
     # driver.quit()  # encerra o driver do Selenium
 
 except Exception as e:
@@ -172,8 +179,8 @@ try:
     driver.get(url)  # acessa a página
     time.sleep(2)
     driver.random_click()
-    driver.click('/html/body/div[5]/div/div/div/div/div[2]/button[2]')  # aceita os cookies
-    driver.wait('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
+    # driver.click('/html/body/div[5]/div/div/div/div/div[2]/button[2]')  # aceita os cookies
+    # driver.wait('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')
     driver.click('/html/body/div[2]/div[1]/main/div[2]/div/div[4]/div[2]/div/div/ul[4]/li/a')  # clica no link de download da planilha
     time.sleep(2)
 
@@ -210,6 +217,7 @@ try:
 
     df_final = pd.concat(dfs, ignore_index=True)
     c.to_excel(df_final, dbs_path, 'ideb_resultados.xlsx')
+    print('IDEB Resultados baixado com sucesso!')
     driver.quit()  # encerra o driver do Selenium
     
 except Exception as e:
@@ -237,6 +245,7 @@ try:
     df_final = df[['Região', 'Ano', 'Taxa de analfabetismo']].copy()
 
     c.to_excel(df_final, sheets_path, 'g17.1.xlsx')
+    print('Gráfico 17.1 modelado com sucesso!')
 
 except Exception as e:
     errors['Gráfico 17.1'] = traceback.format_exc()
@@ -256,6 +265,7 @@ try:
     df_final = df[['Região', 'Ano', 'Valor']].copy()
 
     c.to_excel(df_final, sheets_path, 'g17.2.xlsx')
+    print('Gráfico 17.2 modelado com sucesso!')
 
 except Exception as e:
     errors['Gráfico 17.2'] = traceback.format_exc()
@@ -273,6 +283,7 @@ try:
     df_final = data[['Região', 'Curso frequentado', 'Rede de ensino', 'Ano', 'Valor']].copy()
 
     c.to_excel(df_final, sheets_path, 't17.1.xlsx')
+    print('Tabela 17.1 modelada com sucesso!')
 
 except Exception as e:
     errors['Tabela 17.1'] = traceback.format_exc()
@@ -294,6 +305,7 @@ try:
     df_final.rename(columns={'OBSERVADO': 'Resultado', 'PROJECAO': 'Meta', 'Rank': 'Ranking nacional'}, inplace=True)
 
     df_final.to_excel(os.path.join(sheets_path, 'g17.3.xlsx'), index=False, sheet_name='g17.3')
+    print('Gráfico 17.3 modelado com sucesso!')
 
 except Exception as e:
     errors['Gráfico 17.3'] = traceback.format_exc()
@@ -315,6 +327,7 @@ try:
     df_final.rename(columns={'OBSERVADO': 'Resultado', 'PROJECAO': 'Meta', 'Rank': 'Ranking nacional'}, inplace=True)
 
     df_final.to_excel(os.path.join(sheets_path, 'g17.4.xlsx'), index=False, sheet_name='g17.4')
+    print('Gráfico 17.4 modelado com sucesso!')
 
 except Exception as e:
     errors['Gráfico 17.4'] = traceback.format_exc()
@@ -335,6 +348,7 @@ try:
     df_final['Ano'] = '01/01/' + df_final['Ano'].astype(str)  # formata a coluna Ano para o formato de data
 
     c.to_excel(df_final, sheets_path, 't17.2.xlsx')
+    print('Tabela 17.2 modelada com sucesso!')
 
 except Exception as e:
     errors['Tabela 17.2'] = traceback.format_exc()
