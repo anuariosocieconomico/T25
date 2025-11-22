@@ -650,7 +650,7 @@ except Exception as e:
 try:
     df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[
         ['data', 'ano', 'mes', 'id_uf', 'va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']
-    ].query('id_uf == "SE"', engine='python')
+    ].query('id_uf == "SE" or id_uf == 28', engine='python')
     df_grouped = df.groupby(['ano', 'id_uf'], as_index=False)[['va_icms_primario', 'va_icms_secundario', 'va_icms_terciario']].sum()
     max_year = df_grouped['ano'].max()
     min_year = df_grouped['ano'].min()
@@ -689,7 +689,7 @@ try:
     df = c.open_file(dbs_path, 'boletim_arrecadacao.xlsx', 'xls', sheet_name='Sheet1')[[
         'data', 'ano', 'id_uf', 'va_icms_terciario', 'va_icms_terciario_atacadista', 'va_icms_terciario_varejista', 'va_icms_terciario_transportes',
         'va_icms_terciario_comunicacao', 'va_icms_terciario_outros', 'va_icms_energia_terciario', 'va_icms_combustiveis_terciario'
-    ]].query('id_uf == "SE"', engine='python')
+    ]].query('id_uf == "SE" or id_uf == 28', engine='python')
     df_grouped = df.groupby('ano', as_index=False).sum(numeric_only=True)
     max_year = df_grouped['ano'].max()
     min_year = df_grouped['ano'].min()
