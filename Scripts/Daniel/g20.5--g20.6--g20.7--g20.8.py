@@ -75,6 +75,7 @@ try:
     df_a.sort_values(by=['rank'], inplace=True)
     df_a_final = df_a[['uf', '< 6,85', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_a_final.columns = ['Região', 'Percentual', 'Posição']
+    df_a_final['Ano'] = df_a['ano'].max()
 
     df_a_final.to_excel(os.path.join(sheets_path, 'g20.5a.xlsx'), index=False, sheet_name='g20.5a')
 
@@ -89,6 +90,7 @@ try:
     df_b.sort_values(by=['ano', 'rank'], inplace=True)
     df_b_final = df_b[['uf', 'diff', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
+    df_b_final['Ano'] = str(df_concat['ano'].max()) + '/' + str(df_concat['ano'].min())
 
     df_b_final.to_excel(os.path.join(sheets_path, 'g20.5b.xlsx'), index=False, sheet_name='g20.5b')
 
@@ -147,6 +149,7 @@ try:
     df_a.sort_values(by=['rank'], inplace=True)
     df_a_final = df_a[['uf', '< 2,15', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_a_final.columns = ['Região', 'Percentual', 'Posição']
+    df_a_final['Ano'] = df_a['ano'].max()
 
     df_a_final.to_excel(os.path.join(sheets_path, 'g20.7a.xlsx'), index=False, sheet_name='g20.7a')
 
@@ -161,6 +164,7 @@ try:
     df_b.sort_values(by=['ano', 'rank'], inplace=True)
     df_b_final = df_b[['uf', 'diff', 'rank']].query('rank <= 6 or uf in ["Brasil", "Nordeste", "Sergipe"]').copy()
     df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
+    df_b_final['Ano'] = str(df_concat['ano'].max()) + '/' + str(df_concat['ano'].min())
 
     df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.b')
 
