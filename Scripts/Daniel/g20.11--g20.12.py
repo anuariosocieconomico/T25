@@ -48,7 +48,10 @@ try:
     df_a['Colocação'] = df_a['rank'].apply(lambda x: np.nan if pd.isna(x) else f"{int(x)}º")
 
     df_a_final = df_a.query('rank <= 6 or Região in ["Brasil", "Nordeste", "Sergipe"]')[['Região', 'Variável', 'Ano', 'Valor', 'Colocação']].copy()
-    c.to_excel(df_a_final, sheets_path, 'g20.11a.xlsx')
+    
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # c.to_excel(df_a_final, sheets_path, 'g20.11a.xlsx')
+    c.to_excel(df_a_final, sheets_path, 'g20.12a.xlsx')
 
     # tabela b
     df_b = df.query('Ano in [@min_year, @max_year]').copy()
@@ -64,12 +67,16 @@ try:
 
     df_b_final = df_b.query('rank <= 6 or Região in ["Brasil", "Nordeste", "Sergipe"]')[['Região', 'Variável', 'diff', 'Colocação']].copy()
     df_b_final.rename(columns={'diff': 'Valor'}, inplace=True)
-    c.to_excel(df_b_final, sheets_path, 'g20.11b.xlsx')
+
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # c.to_excel(df_b_final, sheets_path, 'g20.11b.xlsx')
+    c.to_excel(df_b_final, sheets_path, 'g20.12b.xlsx')
 
 
 
 except Exception as e:
-    errors['Gráfico 20.11'] = traceback.format_exc()
+    # errors['Gráfico 20.11'] = traceback.format_exc()
+    errors['Gráfico 20.12'] = traceback.format_exc()
 
 # g20.12
 try:
@@ -94,10 +101,13 @@ try:
     c.convert_type(df_concat, 'Ano', 'int')
     c.convert_type(df_concat, 'Índice de Gini', 'float')
 
-    c.to_excel(df_concat, sheets_path, 'g20.12.xlsx')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # c.to_excel(df_concat, sheets_path, 'g20.12.xlsx')
+    c.to_excel(df_concat, sheets_path, 'g20.11.xlsx')
 
 except Exception as e:
-    errors['Gráfico 20.12'] = traceback.format_exc()
+    # errors['Gráfico 20.12'] = traceback.format_exc()
+    errors['Gráfico 20.11'] = traceback.format_exc()
 
 # geração do arquivo de erro caso ocorra algum
 # se a chave do dicionário for url, o erro se refere à tentativa de download da base de dados

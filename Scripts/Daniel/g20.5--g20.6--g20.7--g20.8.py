@@ -77,7 +77,9 @@ try:
     df_a_final.columns = ['Região', 'Percentual', 'Posição']
     df_a_final['Ano'] = df_a['ano'].max()
 
-    df_a_final.to_excel(os.path.join(sheets_path, 'g20.5a.xlsx'), index=False, sheet_name='g20.5a')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # df_a_final.to_excel(os.path.join(sheets_path, 'g20.5a.xlsx'), index=False, sheet_name='g20.5a')
+    df_a_final.to_excel(os.path.join(sheets_path, 'g20.6a.xlsx'), index=False, sheet_name='g20.6a')
 
     # tabela b
     df_b = df_concat.copy()
@@ -92,10 +94,13 @@ try:
     df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
     df_b_final['Ano'] = str(df_concat['ano'].max()) + '/' + str(df_concat['ano'].min())
 
-    df_b_final.to_excel(os.path.join(sheets_path, 'g20.5b.xlsx'), index=False, sheet_name='g20.5b')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # df_b_final.to_excel(os.path.join(sheets_path, 'g20.5b.xlsx'), index=False, sheet_name='g20.5b')
+    df_b_final.to_excel(os.path.join(sheets_path, 'g20.6b.xlsx'), index=False, sheet_name='g20.6b')
 
 except:
-    errors['Gráfico 20.5'] = traceback.format_exc()
+    # errors['Gráfico 20.5'] = traceback.format_exc()
+    errors['Gráfico 20.6'] = traceback.format_exc()
 
 
 # Gráfico 20.6
@@ -117,10 +122,13 @@ try:
     df_concat['uf'] = df_concat['uf'].map({'Brasil': 'BR', 'Nordeste': 'NE', 'Sergipe': 'SE'})
     df_pivoted = df_concat.pivot(index='Ano', columns='uf', values='< 6,85').reset_index()
 
-    df_pivoted.to_excel(os.path.join(sheets_path, 'g20.6.xlsx'), index=False, sheet_name='g20.6')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # df_pivoted.to_excel(os.path.join(sheets_path, 'g20.6.xlsx'), index=False, sheet_name='g20.6')
+    df_pivoted.to_excel(os.path.join(sheets_path, 'g20.5.xlsx'), index=False, sheet_name='g20.5')
 
 except:
-    errors['Gráfico 20.6'] = traceback.format_exc()
+    # errors['Gráfico 20.6'] = traceback.format_exc()
+    errors['Gráfico 20.5'] = traceback.format_exc()
 
 
 # Gráfico 20.7
@@ -151,7 +159,9 @@ try:
     df_a_final.columns = ['Região', 'Percentual', 'Posição']
     df_a_final['Ano'] = df_a['ano'].max()
 
-    df_a_final.to_excel(os.path.join(sheets_path, 'g20.7a.xlsx'), index=False, sheet_name='g20.7a')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # df_a_final.to_excel(os.path.join(sheets_path, 'g20.7a.xlsx'), index=False, sheet_name='g20.7a')
+    df_a_final.to_excel(os.path.join(sheets_path, 'g20.8a.xlsx'), index=False, sheet_name='g20.8a')
 
     # tabela b
     df_b = df_concat.copy()
@@ -166,10 +176,13 @@ try:
     df_b_final.columns = ['Região', 'Variação (pp)', 'Posição']
     df_b_final['Ano'] = str(df_concat['ano'].max()) + '/' + str(df_concat['ano'].min())
 
-    df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.b')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # df_b_final.to_excel(os.path.join(sheets_path, 'g20.7b.xlsx'), index=False, sheet_name='g20.b')
+    df_b_final.to_excel(os.path.join(sheets_path, 'g20.8b.xlsx'), index=False, sheet_name='g20.8b')
 
 except:
-    errors['Gráfico 20.7'] = traceback.format_exc()
+    # errors['Gráfico 20.7'] = traceback.format_exc()
+    errors['Gráfico 20.8'] = traceback.format_exc()
 
 
 # Gráfico 20.8
@@ -190,10 +203,13 @@ try:
     df_concat = pd.concat(dfs, ignore_index=True)
     df_pivoted = df_concat.pivot(index='Ano', columns='uf', values='< 2,15').reset_index()
 
-    df_pivoted.to_excel(os.path.join(sheets_path, 'g20.8.xlsx'), index=False, sheet_name='g20.8')
+    # atualizado em 24/11/2025 para trocar o nome do arquivo, conforme solicitado por Wagner
+    # df_pivoted.to_excel(os.path.join(sheets_path, 'g20.8.xlsx'), index=False, sheet_name='g20.8')
+    df_pivoted.to_excel(os.path.join(sheets_path, 'g20.7.xlsx'), index=False, sheet_name='g20.7')
 
 except:
-    errors['Gráfico 20.8'] = traceback.format_exc()
+    # errors['Gráfico 20.8'] = traceback.format_exc()
+    errors['Gráfico 20.7'] = traceback.format_exc()
 
 
 # geração do arquivo de erro caso ocorra algum
