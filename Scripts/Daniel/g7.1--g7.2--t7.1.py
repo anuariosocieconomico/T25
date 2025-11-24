@@ -53,7 +53,7 @@ try:
     # seleção das colunas e das linhas de interesse
     df = c.open_file(dbs_path, 'epe-anuario-energia.xlsx',
                      'xls', sheet_name='Tabela 3.63', skiprows=8)
-    df = df.iloc[:, 1:12]
+    df = df.iloc[:, 1:-1]
     df = df.loc[df[' '].isin(['Brasil', 'Nordeste', 'Sergipe'])]
 
     # reordenação da variável ano para o eixo y
