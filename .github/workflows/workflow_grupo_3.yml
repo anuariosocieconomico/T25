@@ -1,16 +1,16 @@
-name: Scripts Grupo 1
+name: Scripts Grupo 3
 
 on:
   schedule:
-    # Executa todo dia 1 do mês às 00:00 America/Maceio (UTC-3) = 03:00 UTC
-    - cron: "0 3 1 * *"
+    # Executa todo dia 3 do mês às 00:00 America/Maceio (UTC-3) = 03:00 UTC
+    - cron: "0 3 3 * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  run-script-1:
+  run-script-3:
     runs-on: windows-latest
     env:
       DADOS_ABERTOS_API: ${{ secrets.DADOS_ABERTOS_API }}
@@ -40,13 +40,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r Scripts/Daniel/requirements.txt
 
-      - name: Run Script 1
-        run: python Scripts/Daniel/1_GRUPO_SCRIPTS.py
+      - name: Run Script 3
+        run: python Scripts/Daniel/3_GRUPO_SCRIPTS.py
 
       - name: Commit and push to dev
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Script 1 - atualização em $(date -u)" || echo "Sem mudanças"
+          git commit -m "Script 3 - atualização em $(date -u)" || echo "Sem mudanças"
           git push origin dev
