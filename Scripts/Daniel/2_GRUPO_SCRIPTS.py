@@ -50,10 +50,10 @@ def run_script(script_info):
         text=True
     )
     if result.returncode != 0:
-        print(f"  ⚠️ Script {script} finalizou com erro (código: {result.returncode})", flush=True)
+        print(f"Script {script} finalizou com erro (código: {result.returncode})", flush=True)
         return (script, False, result.returncode)
     else:
-        print(f"  ✓ Script {script} concluído com sucesso", flush=True)
+        print(f"Script {script} concluído com sucesso", flush=True)
         return (script, True, 0)
 
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
     with open(os.path.abspath(os.path.join('Doc', 'relatorios_de_erros', 'update_log.txt')), 'w', encoding='utf-8') as f:
         f.write(
-            f'''Executado(s) o(s) script(s) do Grupo 1 em paralelo
+            f'''Executado(s) o(s) script(s) do Grupo 2 em paralelo
 Data da execução: {datetime.datetime.today().strftime('%A, %d de %B de %Y - %H:%M:%S')}
 Duração: {duration:.2f} segundos
 Scripts executados: {len(scripts_to_run)}
