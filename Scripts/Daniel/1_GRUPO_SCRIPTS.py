@@ -57,17 +57,25 @@ def run_script(script_info):
     """Executa um script e retorna o resultado"""
     index, total, script, path = script_info
     print(f"[{index}/{total}] Executando o script: {script}", flush=True)
-    result = subprocess.run(
-        [sys.executable, os.path.join(path, script)],
-        capture_output=True,
-        text=True
-    )
-    if result.returncode != 0:
-        print(f"Script {script} finalizou com erro (código: {result.returncode})", flush=True)
-        return (script, False, result.returncode)
-    else:
-        print(f"Script {script} concluído com sucesso", flush=True)
-        return (script, True, 0)
+    try:
+        result = subprocess.run(
+            [sys.executable, os.path.join(path, script)],
+            capture_output=True,
+            text=True,
+            timeout=1800  # 30 minutos de timeout por script
+        )
+        if result.returncode != 0:
+            print(f"Script {script} finalizou com erro (código: {result.returncode})", flush=True)
+            return (script, False, result.returncode)
+        else:
+            print(f"Script {script} concluído com sucesso", flush=True)
+            return (script, True, 0)
+    except subprocess.TimeoutExpired:
+        print(f"Script {script} excedeu o tempo limite de execução", flush=True)
+        return (script, False, -1)
+    except Exception as e:
+        print(f"Script {script} falhou com exceção: {e}", flush=True)
+        return (script, False, -2)
 
 
 if __name__ == '__main__':
