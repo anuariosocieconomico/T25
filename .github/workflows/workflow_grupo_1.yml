@@ -18,6 +18,9 @@ jobs:
       CAGED_LOGIN: ${{ secrets.CAGED_LOGIN }}
       CAGED_PASSWORD: ${{ secrets.CAGED_PASSWORD }}
       GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_API_KEY }}
+      OUTLOOK_EMAIL: ${{ secrets.OUTLOOK_EMAIL }}
+      OUTLOOK_PASSWORD: ${{ secrets.OUTLOOK_PASSWORD }}
+      NOTIFICATION_EMAIL: ${{ secrets.NOTIFICATION_EMAIL }}
 
     steps:
       - name: Checkout repository
@@ -30,35 +33,263 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10.11'
-          cache: 'pip' # <--- Adicione esta linha
-          cache-dependency-path: 'Scripts/Daniel/requirements.txt' # <--- Indique onde está o seu arquivo de requisitos
+          cache: 'pip'
+          cache-dependency-path: 'Scripts/Daniel/requirements.txt'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r Scripts/Daniel/requirements.txt
 
+      - name: Check for existing PR
+        id: check_pr
+        run: |
+          $prs = gh pr list --base main --head feature/atualizacao-grupo-1 --json number,url --jq '.[0]'
+          if ($prs) {
+            $prNumber = ($prs | ConvertFrom-Json).number
+            $prUrl = ($prs | ConvertFrom-Json).url
+            echo "pr_exists=true" >> $env:GITHUB_OUTPUT
+            echo "pr_number=$prNumber" >> $env:GITHUB_OUTPUT
+            echo "pr_url=$prUrl" >> $env:GITHUB_OUTPUT
+            Write-Host "PR #$prNumber já existe e será atualizado"
+          } else {
+            echo "pr_exists=false" >> $env:GITHUB_OUTPUT
+            Write-Host "Nenhum PR existente. Um novo será criado."
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run Script 1
         run: python Scripts/Daniel/1_GRUPO_SCRIPTS.py
 
-      - name: Create Pull Request
+      - name: Create or Update Pull Request
+        id: cpr
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Script 1 - atualização automática de dados"
-          # A action criará uma branch única automaticamente (ex: create-pull-request/patch-...)
-          # ou pode definir um padrão fixo abaixo:
+          commit-message: "Script 1 - atualização automática de dados (Execução: ${{ github.run_number }})"
           branch: feature/atualizacao-grupo-1
-          delete-branch: true # Elimina a branch após o merge do PR
+          delete-branch: true
           base: main
           title: "Atualização automática - Script Grupo 1"
           body: |
             ## Atualização Automática de Dados
             
+            ⚠️ **Este PR é atualizado automaticamente todo dia 1 do mês**
+            
             As alterações foram geradas pela execução do script `1_GRUPO_SCRIPTS.py`.
             
+            ### Informações da Execução
             - **Executado em:** ${{ github.event_name }}
-            - **Data:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+            - **Data/Hora:** ${{ github.event.repository.updated_at }}
+            - **Run ID:** ${{ github.run_id }}
+            - **Run Number:** ${{ github.run_number }}
+            - **Workflow:** [Ver execução](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            
+            ### Status
+            ${{ steps.check_pr.outputs.pr_exists == 'true' && '🔄 **PR Atualizado** - Este PR já existia e foi atualizado com novos dados.' || '✨ **Novo PR** - Este é um novo Pull Request.' }}
+            
+            ---
+            💡 **Nota:** Se houver múltiplos commits, revise o histórico para ver todas as atualizações.
           labels: |
             automated-pr
             data-update
+
+      - name: Send Email Notification - PR Created
+        if: steps.cpr.outputs.pull-request-number && steps.check_pr.outputs.pr_exists == 'false'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp-mail.outlook.com
+          server_port: 587
+          secure: true
+          username: ${{ secrets.OUTLOOK_EMAIL }}
+          password: ${{ secrets.OUTLOOK_PASSWORD }}
+          subject: "✨ Novo PR - Script Grupo 1 (Run #${{ github.run_number }})"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.OUTLOOK_EMAIL }}
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #0366d6; color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+                .content { background-color: #f6f8fa; padding: 20px; border-radius: 0 0 5px 5px; }
+                .info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #0366d6; }
+                .button { display: inline-block; padding: 10px 20px; background-color: #0366d6; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+                .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2>✨ Novo Pull Request Criado</h2>
+                </div>
+                <div class="content">
+                  <p>Um novo Pull Request foi criado automaticamente pelo workflow <strong>Scripts Grupo 1</strong>.</p>
+                  
+                  <div class="info-box">
+                    <h3>Informações do PR</h3>
+                    <ul>
+                      <li><strong>Número:</strong> #${{ steps.cpr.outputs.pull-request-number }}</li>
+                      <li><strong>Branch:</strong> feature/atualizacao-grupo-1</li>
+                      <li><strong>Base:</strong> main</li>
+                      <li><strong>Data/Hora:</strong> ${{ github.event.repository.updated_at }}</li>
+                      <li><strong>Run ID:</strong> ${{ github.run_id }}</li>
+                    </ul>
+                  </div>
+                  
+                  <p>
+                    <a href="${{ steps.cpr.outputs.pull-request-url }}" class="button">
+                      Ver Pull Request
+                    </a>
+                  </p>
+                  
+                  <p>
+                    <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">
+                      Ver execução do workflow
+                    </a>
+                  </p>
+                  
+                  <div class="footer">
+                    <p>Este é um email automático gerado pelo GitHub Actions.</p>
+                    <p>Repositório: ${{ github.repository }}</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+
+      - name: Send Email Notification - PR Updated
+        if: steps.cpr.outputs.pull-request-number && steps.check_pr.outputs.pr_exists == 'true'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp-mail.outlook.com
+          server_port: 587
+          secure: true
+          username: ${{ secrets.OUTLOOK_EMAIL }}
+          password: ${{ secrets.OUTLOOK_PASSWORD }}
+          subject: "🔄 PR Atualizado - Script Grupo 1 (Run #${{ github.run_number }})"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.OUTLOOK_EMAIL }}
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #f39c12; color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+                .content { background-color: #f6f8fa; padding: 20px; border-radius: 0 0 5px 5px; }
+                .info-box { background-color: white; padding: 15px; margin: 10px 0; border-left: 4px solid #f39c12; }
+                .warning-box { background-color: #fff3cd; border: 1px solid #ffc107; padding: 15px; margin: 10px 0; border-radius: 5px; }
+                .button { display: inline-block; padding: 10px 20px; background-color: #f39c12; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+                .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2>🔄 Pull Request Atualizado</h2>
+                </div>
+                <div class="content">
+                  <div class="warning-box">
+                    <strong>⚠️ Atenção:</strong> O PR #${{ steps.check_pr.outputs.pr_number }} já existia e foi atualizado com novos dados.
+                  </div>
+                  
+                  <p>O Pull Request existente foi atualizado automaticamente pelo workflow <strong>Scripts Grupo 1</strong>.</p>
+                  
+                  <div class="info-box">
+                    <h3>Informações do PR</h3>
+                    <ul>
+                      <li><strong>Número:</strong> #${{ steps.cpr.outputs.pull-request-number }}</li>
+                      <li><strong>Branch:</strong> feature/atualizacao-grupo-1</li>
+                      <li><strong>Base:</strong> main</li>
+                      <li><strong>Data da Atualização:</strong> ${{ github.event.repository.updated_at }}</li>
+                      <li><strong>Run ID:</strong> ${{ github.run_id }}</li>
+                      <li><strong>Execução:</strong> #${{ github.run_number }}</li>
+                    </ul>
+                  </div>
+                  
+                  <p><strong>💡 Lembre-se:</strong> Revise e aprove o PR para que ele não seja atualizado novamente na próxima execução.</p>
+                  
+                  <p>
+                    <a href="${{ steps.cpr.outputs.pull-request-url }}" class="button">
+                      Ver Pull Request
+                    </a>
+                  </p>
+                  
+                  <p>
+                    <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">
+                      Ver execução do workflow
+                    </a>
+                  </p>
+                  
+                  <div class="footer">
+                    <p>Este é um email automático gerado pelo GitHub Actions.</p>
+                    <p>Repositório: ${{ github.repository }}</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+
+      - name: Send Email Notification - Failure
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp-mail.outlook.com
+          server_port: 587
+          secure: true
+          username: ${{ secrets.OUTLOOK_EMAIL }}
+          password: ${{ secrets.OUTLOOK_PASSWORD }}
+          subject: "❌ Falha no Workflow - Script Grupo 1 (Run #${{ github.run_number }})"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: ${{ secrets.OUTLOOK_EMAIL }}
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background-color: #d73a49; color: white; padding: 20px; border-radius: 5px 5px 0 0; }
+                .content { background-color: #f6f8fa; padding: 20px; border-radius: 0 0 5px 5px; }
+                .error-box { background-color: #ffdce0; border: 1px solid #d73a49; padding: 15px; margin: 10px 0; border-radius: 5px; }
+                .button { display: inline-block; padding: 10px 20px; background-color: #d73a49; color: white; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+                .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2>❌ Falha na Execução do Workflow</h2>
+                </div>
+                <div class="content">
+                  <div class="error-box">
+                    <strong>⚠️ Erro:</strong> O workflow <strong>Scripts Grupo 1</strong> falhou durante a execução.
+                  </div>
+                  
+                  <p>Verifique os logs para identificar o problema.</p>
+                  
+                  <ul>
+                    <li><strong>Repositório:</strong> ${{ github.repository }}</li>
+                    <li><strong>Branch:</strong> ${{ github.ref }}</li>
+                    <li><strong>Run ID:</strong> ${{ github.run_id }}</li>
+                    <li><strong>Data/Hora:</strong> ${{ github.event.repository.updated_at }}</li>
+                  </ul>
+                  
+                  <p>
+                    <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" class="button">
+                      Ver Logs do Workflow
+                    </a>
+                  </p>
+                  
+                  <div class="footer">
+                    <p>Este é um email automático gerado pelo GitHub Actions.</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
