@@ -24,23 +24,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Fetch all branches
-        run: |
-          git fetch origin main
-          git fetch origin dev
-
-      - name: Create feature branch
-        run: |
-          $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-          $branchName = "feature/script-grupo-1-$timestamp"
-          git checkout -b $branchName origin/dev
-          echo "FEATURE_BRANCH=$branchName" >> $env:GITHUB_ENV
+          ref: main # Faz checkout direto da branch de desenvolvimento
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10.11'
+          cache: 'pip' # <--- Adicione esta linha
+          cache-dependency-path: 'Scripts/Daniel/requirements.txt' # <--- Indique onde está o seu arquivo de requisitos
 
       - name: Install dependencies
         run: |
@@ -50,28 +41,24 @@ jobs:
       - name: Run Script 1
         run: python Scripts/Daniel/1_GRUPO_SCRIPTS.py
 
-      - name: Commit changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .
-          git diff --staged --quiet || git commit -m "Script 1 - atualização automática $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
-
-      - name: Push feature branch
-        run: git push origin ${{ env.FEATURE_BRANCH }}
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ env.FEATURE_BRANCH }}
-          base: dev
-          title: "🤖 Atualização automática - Script Grupo 1"
+          commit-message: "Script 1 - atualização automática de dados"
+          # A action criará uma branch única automaticamente (ex: create-pull-request/patch-...)
+          # ou pode definir um padrão fixo abaixo:
+          branch: feature/atualizacao-grupo-1
+          delete-branch: true # Elimina a branch após o merge do PR
+          base: main
+          title: "Atualização automática - Script Grupo 1"
           body: |
-            ## Atualização Automática
+            ## Atualização Automática de Dados
             
-            Executado em: ${{ github.event_name == 'schedule' && 'Agendamento' || 'Manual' }}
-            Data/Hora: ${{ github.run_started_at }}
+            As alterações foram geradas pela execução do script `1_GRUPO_SCRIPTS.py`.
             
-            Alterações geradas pelo script `1_GRUPO_SCRIPTS.py`
-          labels: automated, script-update
+            - **Executado em:** ${{ github.event_name }}
+            - **Data:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')
+          labels: |
+            automated-pr
+            data-update
